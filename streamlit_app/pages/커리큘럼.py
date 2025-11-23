@@ -79,10 +79,10 @@ with tab_summary:
     col1, col2, col3 = st.columns(3)
 
     with col1:
-        st.metric("커리큘럼 내 질문 수", "156건", "▲ 42건")
+        st.metric("커리큘럼 내 질문 수", "156건", "42건")
 
     with col2:
-        st.metric("커리큘럼 외 질문 비율", "27%", "▲ 8%p")
+        st.metric("커리큘럼 외 질문 비율", "27%", "8%p")
 
     with col3:
         st.metric("추천 추가 세션 주제", "3개")

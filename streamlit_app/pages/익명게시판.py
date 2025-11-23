@@ -47,11 +47,11 @@ with tab_summary:
 
     col1, col2, col3 = st.columns(3)
     with col1:
-        st.metric("이번 주 익명 게시글 수", "86건", "▲ 12건")
+        st.metric("이번 주 익명 게시글 수", "86건", "12건")
     with col2:
-        st.metric("고민 글 비율", "63%", "▲ 15%p")
+        st.metric("고민 글 비율", "63%", "15%p")
     with col3:
-        st.metric("Negative 감정 비율", "31%", "▲ 9%p")
+        st.metric("Negative 감정 비율", "31%", "9%p")
 
     st.markdown("### 🔍 이번 주 익명 게시판 핵심 이슈")
     st.info(
@@ -59,8 +59,7 @@ with tab_summary:
         이번 주에는 **Git 협업**과 **프로젝트 일정 압박** 관련 고민이 크게 증가했습니다.  
         - git_conflict, 브랜치 꼬임, merge 에러  
         - 일정이 빠르다는 표현, 시간 부족  
-        - 반 분위기, 말 꺼내기 어려움  
-        등이 자주 언급되고 있습니다.
+        - 반 분위기, 말 꺼내기 어려움 등이 자주 언급되고 있습니다.
         """
     )
 
