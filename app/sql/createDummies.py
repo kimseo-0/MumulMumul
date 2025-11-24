@@ -1,9 +1,15 @@
 import sys
-sys.path.append("../..")
+from pathlib import Path
+
+# 이 파일 기준으로 프로젝트 루트 계산
+CURRENT_FILE = Path(__file__).resolve()
+ROOT_DIR = CURRENT_FILE.parents[2]   # .../MumulMumul
+
+sys.path.append(str(ROOT_DIR))
 
 from sqlalchemy.orm import sessionmaker
 from app.core.schemas import UserType, User, Camp, init_db
-from config import DB_URL
+from app.config import DB_URL
 
 
 def seed_dummy_data():
@@ -56,7 +62,7 @@ def seed_dummy_data():
         instructors.append(
             User(
                 login_id=login_id,
-                password_hash=generate_password_hash(login_id),
+                password_hash=login_id,
                 name=f"백엔드강사{i}",
                 email=f"{login_id}@mumul.com",
                 user_type_id=instructor_type.type_id,
@@ -70,7 +76,7 @@ def seed_dummy_data():
         instructors.append(
             User(
                 login_id=login_id,
-                password_hash=generate_password_hash(login_id),
+                password_hash=login_id,
                 name=f"프론트강사{i}",
                 email=f"{login_id}@mumul.com",
                 user_type_id=instructor_type.type_id,
@@ -92,7 +98,7 @@ def seed_dummy_data():
         students.append(
             User(
                 login_id=login_id,
-                password_hash=generate_password_hash(login_id),
+                password_hash=login_id,
                 name=f"백엔드학생{i}",
                 email=f"{login_id}@mumul.com",
                 user_type_id=student_type.type_id,
@@ -106,7 +112,7 @@ def seed_dummy_data():
         students.append(
             User(
                 login_id=login_id,
-                password_hash=generate_password_hash(login_id),
+                password_hash=login_id,
                 name=f"프론트학생{i}",
                 email=f"{login_id}@mumul.com",
                 user_type_id=student_type.type_id,
@@ -122,4 +128,5 @@ def seed_dummy_data():
 
 
 if __name__ == "__main__":
+    print("??????")
     seed_dummy_data()
