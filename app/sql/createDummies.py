@@ -2,7 +2,7 @@ import sys
 sys.path.append("../..")
 
 from sqlalchemy.orm import sessionmaker
-from app.core.shcemas import UserType, User, Camp, init_db
+from app.core.schemas import UserType, User, Camp, init_db
 from config import DB_URL
 
 
