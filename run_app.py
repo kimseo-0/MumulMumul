@@ -12,32 +12,30 @@ def _spawn_process(cmd: list[str]) -> subprocess.Popen:
 def main() -> int:
     python = sys.executable
 
-    uvicorn_cmd = [
+    streamlit_cmd = [
         python,
         "-m",
-        "uvicorn",
-        "app.main:app",
-        "--reload",
-        "--host",
-        "127.0.0.1",
-        "--port",
-        "8020",
+        "streamlit",
+        "run",
+        "streamlit_app/main.py",
+        "--server.port",
+        "8501",
+        "--server.headless",
+        "true",
     ]
 
-  
-
     print("Starting uvicorn and streamlit...")
-    uvicorn_proc: Optional[subprocess.Popen] = None
+    streamlit_proc: Optional[subprocess.Popen] = None
 
     try:
-        uvicorn_proc = _spawn_process(uvicorn_cmd)
+        streamlit_proc = _spawn_process(streamlit_cmd)
 
-        print(f"uvicorn PID: {uvicorn_proc.pid}")
+        print(f"streamlit PID: {streamlit_proc.pid}")
 
         # Wait until one of them exits or we get KeyboardInterrupt
         while True:
-            if uvicorn_proc.poll() is not None:
-                print("uvicorn exited")
+            if streamlit_proc.poll() is not None:
+                print("streamlit exited")
                 break
             time.sleep(0.5)
 
