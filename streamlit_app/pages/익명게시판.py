@@ -199,7 +199,7 @@ with tab_summary:
         )
         .properties(height=260)
     )
-    st.altair_chart(keyword_chart, use_container_width=True)
+    st.altair_chart(keyword_chart, width='stretch')
 
     st.markdown("---")
     st.markdown("### 지표 한눈에 보기")
@@ -223,7 +223,7 @@ with tab_summary:
         )
         .properties(height=260)
     )
-    st.altair_chart(trend_chart, use_container_width=True)
+    st.altair_chart(trend_chart, width='stretch')
 
     top_left, top_right = st.columns(2)
 
@@ -241,7 +241,7 @@ with tab_summary:
             )
             .properties(height=260)
         )
-        st.altair_chart(worry_chart, use_container_width=True)
+        st.altair_chart(worry_chart, width='stretch')
 
         selected_worry = st.selectbox(
             "자세히 보고 싶은 고민글 분류 선택",
@@ -270,7 +270,7 @@ with tab_summary:
             )
             .properties(height=260)
         )
-        st.altair_chart(suggest_chart, use_container_width=True)
+        st.altair_chart(suggest_chart, width='stretch')
 
         selected_suggest = st.selectbox(
             "자세히 보고 싶은 건의글 분류 선택",
@@ -366,7 +366,7 @@ with tab_ai:
             )
             .properties(height=260)
         )
-        st.altair_chart(keyword_chart_ai, use_container_width=True)
+        st.altair_chart(keyword_chart_ai, width='stretch')
         st.caption("이번 주 기준 키워드별 언급 빈도 분포임.")
 
     st.markdown("---")
@@ -417,7 +417,7 @@ with tab_ai:
             )
             .properties(height=260)
         )
-        st.altair_chart(worry_chart_ai, use_container_width=True)
+        st.altair_chart(worry_chart_ai, width='stretch')
         st.caption("분류별 고민 글 분포를 통해 어떤 영역에서 부담이 큰지 확인 가능함.")
 
     with st.expander("2-3. 고민 글 예시 문장"):
@@ -477,7 +477,7 @@ with tab_ai:
             )
             .properties(height=260)
         )
-        st.altair_chart(suggest_chart_ai, use_container_width=True)
+        st.altair_chart(suggest_chart_ai, width='stretch')
         st.caption("어떤 영역에서 ‘구체적인 개선 제안’이 많이 나오는지 확인 가능함.")
 
     with st.expander("3-3. 건의 글 예시 문장"):
