@@ -95,8 +95,8 @@ class SessionActivityLog(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     user_id = Column(Integer, ForeignKey("user.user_id"), nullable=False)
-    join_at = Column(Boolean, nullable=True)   # ERD 기준: BOOLEAN
-    leave_at = Column(Boolean, nullable=True)  # 필요하면 DateTime 으로 변경 가능
+    join_at = Column(DateTime, nullable=True) 
+    leave_at = Column(DateTime, nullable=True) 
 
     user = relationship("User")
 
