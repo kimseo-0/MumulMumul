@@ -13,7 +13,7 @@ from datetime import datetime, timedelta, time
 from sqlalchemy.orm import sessionmaker
 
 from app.core.schemas import User, Camp, SessionActivityLog, init_db
-from app.config import DB_URL
+from app.config import SQLITE_URL
 
 
 DAYS_TO_GENERATE = 21  # 3주
@@ -192,7 +192,7 @@ def choose_pattern_for_student(camp_name: str) -> str:
 
 
 def generate_dummy_attendance():
-    engine = init_db(DB_URL)
+    engine = init_db(SQLITE_URL)
     SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
     session = SessionLocal()
 
