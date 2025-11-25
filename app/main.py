@@ -1,28 +1,24 @@
-from __future__ import annotations
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
 from app.api.connection import router as connection_router
 from app.api.chatbot import router as chatbot_router
 from app.api.attendance import router as attendance_router
+from app.core.mongodb import init_mongo
 from app.core.schemas import init_db
-from app.config import DB_URL
-from app.core.db import engine
-from app.core import schemas
+from app.config import SQLITE_URL
+from app.core.db import mongo_db
+
 
 # ------------------------------
-# 1) DB 테이블 자동 생성 (개발용)
-# ------------------------------
-schemas.Base.metadata.create_all(bind=engine)
-
-# ------------------------------
-# 2) FastAPI 앱 생성
+# FastAPI 앱 생성
 # ------------------------------
 def create_app() -> FastAPI:
     @asynccontextmanager
     async def lifespan(app: FastAPI):
         try:
             print("DB 마이그레이션 적용")
-            init_db(DB_URL)
+            init_db(SQLITE_URL)
+            init_mongo(mongo_db)
         except Exception:
             print("DB 마이그레이션 실패")
         yield   
@@ -34,7 +30,7 @@ def create_app() -> FastAPI:
 app = create_app()
 
 # ------------------------------
-# 3) 라우터 등록
+# 라우터 등록
 # ------------------------------
 app.include_router(connection_router, prefix="/connection")
 app.include_router(chatbot_router)

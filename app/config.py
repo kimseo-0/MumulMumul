@@ -5,7 +5,9 @@ from dotenv import load_dotenv
 # .env 파일 로드 (선택)
 load_dotenv()
 
-DB_URL = os.getenv("DB_URL", "sqlite:///storage/mumul.db")
+SQLITE_URL = os.getenv("DB_URL", "sqlite:///storage/mumul.db")
+MONGO_URL = "mongodb://localhost:27017"
+MONGO_DB_NAME = "mumul"
 
 DAILY_SCHEDULE = {
     "morning": {"start": 9, "end": 12},
