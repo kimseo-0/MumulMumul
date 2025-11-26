@@ -24,56 +24,25 @@ def main() -> int:
         "8020",
     ]
 
-    streamlit_cmd = [
-        python,
-        "-m",
-        "streamlit",
-        "run",
-        "streamlit_app/main.py",
-        "--server.port",
-        "8501",
-        "--server.headless",
-        "true",
-    ]
+  
 
     print("Starting uvicorn and streamlit...")
     uvicorn_proc: Optional[subprocess.Popen] = None
-    streamlit_proc: Optional[subprocess.Popen] = None
 
     try:
         uvicorn_proc = _spawn_process(uvicorn_cmd)
-        time.sleep(0.5)
-        streamlit_proc = _spawn_process(streamlit_cmd)
 
-        print(f"uvicorn PID: {uvicorn_proc.pid} | streamlit PID: {streamlit_proc.pid}")
+        print(f"uvicorn PID: {uvicorn_proc.pid}")
 
         # Wait until one of them exits or we get KeyboardInterrupt
         while True:
             if uvicorn_proc.poll() is not None:
                 print("uvicorn exited")
                 break
-            if streamlit_proc.poll() is not None:
-                print("streamlit exited")
-                break
             time.sleep(0.5)
 
     except KeyboardInterrupt:
         print("Interrupted. Stopping processes...")
-    finally:
-        for p in (uvicorn_proc, streamlit_proc):
-            if p and p.poll() is None:
-                try:
-                    p.terminate()
-                except Exception:
-                    pass
-        # give them a moment to quit, then kill if necessary
-        time.sleep(0.5)
-        for p in (uvicorn_proc, streamlit_proc):
-            if p and p.poll() is None:
-                try:
-                    p.kill()
-                except Exception:
-                    pass
 
     return 0
 

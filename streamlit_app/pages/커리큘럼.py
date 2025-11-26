@@ -79,10 +79,10 @@ with tab_summary:
     col1, col2, col3 = st.columns(3)
 
     with col1:
-        st.metric("커리큘럼 내 질문 수", "156건", "▲ 42건")
+        st.metric("커리큘럼 내 질문 수", "156건", "42건")
 
     with col2:
-        st.metric("커리큘럼 외 질문 비율", "27%", "▲ 8%p")
+        st.metric("커리큘럼 외 질문 비율", "27%", "8%p")
 
     with col3:
         st.metric("추천 추가 세션 주제", "3개")
@@ -122,7 +122,7 @@ with tab_summary:
             )
             .properties(height=260)
         )
-        st.altair_chart(chart_ratio, use_container_width=True)
+        st.altair_chart(chart_ratio, width='stretch')
         st.caption("전체 질문 중 커리큘럼에 포함된 주제와 외부 주제의 비율입니다.")
 
     # 3) 주차/파트 라벨이 길어서 잘리는 문제 해결 → 가로 막대 + 라벨 줄바꿈
@@ -152,7 +152,7 @@ with tab_summary:
             .properties(height=280)
         )
 
-        st.altair_chart(chart_week, use_container_width=True)
+        st.altair_chart(chart_week, width='stretch')
         st.caption("질문이 가장 많이 발생한 학습 구간입니다.")
 
 
@@ -305,7 +305,7 @@ with tab_detail:
             )
             .properties(height=320)
         )
-        st.altair_chart(chart_week_detail, use_container_width=True)
+        st.altair_chart(chart_week_detail, width='stretch')
 
     # --- 서브 탭 2: 커리큘럼 외 질문 ---
     with subtab2:
@@ -332,7 +332,7 @@ with tab_detail:
                 )
                 .properties(height=300)
             )
-            st.altair_chart(chart_ratio_detail, use_container_width=True)
+            st.altair_chart(chart_ratio_detail, width='stretch')
 
         with col_x2:
             st.markdown("**2) 커리큘럼 외 질문 주요 주제 Top4**")
@@ -347,7 +347,7 @@ with tab_detail:
                 )
                 .properties(height=300)
             )
-            st.altair_chart(chart_extra_topics, use_container_width=True)
+            st.altair_chart(chart_extra_topics, width='stretch')
 
     # --- 서브 탭 3: 어려움 유형 분포 ---
     with subtab3:
@@ -371,17 +371,17 @@ with tab_detail:
             )
             .properties(height=320)
         )
-        st.altair_chart(chart_diff_types, use_container_width=True)
+        st.altair_chart(chart_diff_types, width='stretch')
 
     # --- 서브 탭 4: 표 형식 ---
     with subtab4:
         st.markdown("#### 원본 수치를 표로 한 번에 보기")
 
         st.markdown("**주차/파트별 커리큘럼 내 질문 수**")
-        st.dataframe(df_curr_by_week, use_container_width=True)
+        st.dataframe(df_curr_by_week, width='stretch')
 
         st.markdown("**커리큘럼 내에서 자주 등장한 어려움 유형**")
-        st.dataframe(df_curr_difficulty_types, use_container_width=True)
+        st.dataframe(df_curr_difficulty_types, width='stretch')
 
         st.markdown("**커리큘럼 외 질문 주요 주제**")
-        st.dataframe(df_extra_topics, use_container_width=True)
+        st.dataframe(df_extra_topics, width='stretch')
