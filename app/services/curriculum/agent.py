@@ -5,6 +5,8 @@ from typing import Any, Dict, List
 from sqlalchemy.orm import Session
 from pymongo.database import Database
 
+from app.services.db_service.camp import get_camp_by_id
+
 from .schemas import CurriculumReportPayload, CurriculumAIInsights
 from .repository import (
     get_weekly_curriculum_logs,
@@ -27,6 +29,8 @@ def generate_ai_insights(
         week_index=week_index,
     )
 
+    camp = get_camp_by_id(db, camp_id)
+
     # 2) 집계
     stats: Dict[str, Any] = aggregate_curriculum_stats(weekly_logs)
 
@@ -37,6 +41,13 @@ def generate_ai_insights(
 
     # 4) 최종 payload
     payload = CurriculumReportPayload(
+        camp_id=camp_id,
+        camp_name=camp.name if camp else "Unknown Camp",
+        week_index=week_index,
+        week_label=f"{week_index}주차",
+        week_start= camp.start_date,
+        week_end= camp.end_date,
+
         summary_cards=stats["summary_cards"],
         charts=stats["charts"],
         tables=stats["tables"],

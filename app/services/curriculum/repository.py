@@ -10,6 +10,18 @@ from pymongo.database import Database
 from sqlalchemy.orm import Session
 
 from app.core.schemas import Camp
+from app.services.curriculum.schemas import (
+    CurriculumScope,
+    CurriculumSummaryCards,
+    CurriculumCharts,
+    CurriculumTables,
+    TopQuestionCategory,
+    TopQuestionItem,
+    CategoryQuestionCount,
+    ScopeRatioPoint,
+    QuestionRow,
+    CategoryQuestionBlock,
+)
 
 
 # -----------------------------
@@ -89,132 +101,215 @@ def aggregate_curriculum_stats(
 
     반환 구조:
     {
-        "summary_cards": {...},
-        "charts": {...},
-        "tables": {...},
-        "raw_stats": {...},
+        "summary_cards": CurriculumSummaryCards,
+        "charts": CurriculumCharts,
+        "tables": CurriculumTables,
+        "raw_stats": {...},   # LLM용 생데이터
     }
     """
 
     total_questions = len(weekly_logs)
 
-    # in/out 집계
     in_count = 0
     out_count = 0
-    by_category: Counter[str] = Counter()
+
+    # (category, scope) 단위로 카운트
+    by_category_scope: Counter[Tuple[str, CurriculumScope]] = Counter()
+
+    # 카테고리별 예시 질문 (LLM용)
     example_questions_per_category: defaultdict[str, List[str]] = defaultdict(list)
 
-    # 테이블용 전체 row
-    question_rows: List[Dict[str, Any]] = []
+    # 테이블용 QuestionRow 리스트
+    question_rows: List[QuestionRow] = []
+
+    # 카테고리별 scope 카운트 (TopQuestionCategory의 scope 결정을 위해)
+    category_scope_counts: defaultdict[str, Counter] = defaultdict(Counter)
 
     for log in weekly_logs:
-        scope = log.get("curriculum_scope")  # "in" / "out" / None
-        category = log.get("question_category") or "기타"
+        # scope: "in" / "out" / None
+        scope_raw = log.get("curriculum_scope") or "in"
+        scope: CurriculumScope = "in" if scope_raw == "in" else "out"
+
+        category = (log.get("question_category") or "기타").strip() or "기타"
+        content = log.get("content") or ""
 
         if scope == "in":
             in_count += 1
-        elif scope == "out":
+        else:
             out_count += 1
 
-        by_category[category] += 1
-        content = log.get("content", "")
+        by_category_scope[(category, scope)] += 1
+        category_scope_counts[category][scope] += 1
 
-        # LLM용 예시 질문 저장 (카테고리당 최대 5개 정도만 써도 충분)
+        # LLM용 예시 질문
         if len(example_questions_per_category[category]) < 5 and content:
             example_questions_per_category[category].append(content)
 
-        # 테이블 row 구성
-        created_at = log.get("created_at")
-        if isinstance(created_at, datetime):
-            created_str = created_at.isoformat()
-        else:
-            created_str = str(created_at)
+        # created_at 파싱
+        created_at_val = log.get("created_at")
+        created_at_dt: datetime | None = None
+        if isinstance(created_at_val, datetime):
+            created_at_dt = created_at_val
+        elif isinstance(created_at_val, str):
+            try:
+                created_at_dt = datetime.fromisoformat(created_at_val)
+            except Exception:
+                created_at_dt = None
+
+        # question_id (Mongo ObjectId 등)
+        raw_id = log.get("_id") or log.get("id")
+        question_id = str(raw_id) if raw_id is not None else None
 
         question_rows.append(
-            {
-                "user_id": log.get("user_id"),
-                "camp_id": log.get("camp_id"),
-                "created_at": created_str,
-                "curriculum_scope": scope,
-                "question_category": category,
-                "content": content,
-            }
+            QuestionRow(
+                question_id=question_id,
+                user_id=log.get("user_id"),
+                camp_id=log.get("camp_id"),
+                scope=scope,
+                category=category,
+                question_text=content,
+                answer_summary=log.get("answer_summary"),
+                created_at=created_at_dt,
+            )
         )
 
-    # 0으로 나누는 것 방지
+    # 비율 계산 (0으로 나누기 방지)
     curriculum_out_ratio = (
         out_count / total_questions if total_questions > 0 else 0.0
     )
 
-    # 상위 카테고리 Top3
-    top_categories_list = [
-        {"category": cat, "count": cnt}
-        for cat, cnt in by_category.most_common(3)
-    ]
+    # -------------------------------
+    # 상위 카테고리 (scope 상관없이)
+    # -------------------------------
+    by_category_total: Counter[str] = Counter()
+    for (cat, _scope), cnt in by_category_scope.items():
+        by_category_total[cat] += cnt
 
-    # charts: 카테고리별 막대, in/out 비율
-    questions_by_category_chart = [
-        {"category": cat, "count": cnt}
-        for cat, cnt in by_category.most_common()
-    ]
+    # Top 3 카테고리
+    top_categories_sorted = by_category_total.most_common(3)
 
-    scope_ratio_chart = [
-        {"scope": "curriculum_in", "count": in_count},
-        {"scope": "curriculum_out", "count": out_count},
-    ]
+    # 카테고리별 대표 scope (in/out 중 더 많이 나온 쪽)
+    def get_main_scope_for_category(cat: str) -> CurriculumScope:
+        counts = category_scope_counts[cat]
+        in_cnt = counts.get("in", 0)
+        out_cnt = counts.get("out", 0)
+        return "in" if in_cnt >= out_cnt else "out"
 
-    # 커리큘럼 외 질문 리스트
-    curriculum_out_questions = [
-        row for row in question_rows if row["curriculum_scope"] == "out"
-    ]
+    # TopQuestionCategory 리스트
+    top_question_categories: List[TopQuestionCategory] = []
+    for cat, cnt in top_categories_sorted:
+        main_scope = get_main_scope_for_category(cat)
+        top_question_categories.append(
+            TopQuestionCategory(
+                category=cat,
+                question_count=cnt,
+                scope=main_scope,
+            )
+        )
 
-    # 상위 카테고리별 대표 질문 1개씩 (top_questions)
-    top_questions: List[Dict[str, Any]] = []
-    for cat, _cnt in by_category.most_common(3):
-        q = next(
+    # TopQuestionItem 리스트 (카테고리별 대표 질문 + 전체 개수)
+    top_questions: List[TopQuestionItem] = []
+    for cat, cnt in top_categories_sorted:
+        main_scope = get_main_scope_for_category(cat)
+        # 해당 카테고리 + scope에 속하는 첫 질문 하나를 대표로 사용
+        q_row = next(
             (
                 row
                 for row in question_rows
-                if row["question_category"] == cat
+                if row.category == cat and row.scope == main_scope
             ),
             None,
         )
-        if q:
-            top_questions.append(q)
+        if q_row:
+            top_questions.append(
+                TopQuestionItem(
+                    question_id=q_row.question_id,
+                    category=cat,
+                    scope=main_scope,
+                    question_text=q_row.question_text,
+                    total_count=cnt,
+                )
+            )
 
-    # summary_cards
-    summary_cards = {
-        "total_questions": total_questions,
-        "total_user_questions": total_questions,
-        "curriculum_in_questions": in_count,
-        "curriculum_out_questions": out_count,
-        "curriculum_out_ratio": curriculum_out_ratio,
-        "top_categories": top_categories_list,
-    }
+    # -------------------------------
+    # Charts: questions_by_category, curriculum_scope_ratio
+    # -------------------------------
+    questions_by_category_chart: List[CategoryQuestionCount] = []
+    for (cat, scope), cnt in by_category_scope.most_common():
+        questions_by_category_chart.append(
+            CategoryQuestionCount(
+                category=cat,
+                scope=scope,
+                question_count=cnt,
+            )
+        )
 
-    charts = {
-        "questions_by_category": questions_by_category_chart,
-        "curriculum_scope_ratio": scope_ratio_chart,
-    }
+    scope_ratio_chart: List[ScopeRatioPoint] = [
+        ScopeRatioPoint(scope="in", question_count=in_count),
+        ScopeRatioPoint(scope="out", question_count=out_count),
+    ]
 
-    tables = {
-        # Streamlit에서 raw 테이블로 탐색할 전체 질문
-        "questions_by_category": question_rows,
-        # 커리큘럼 외 질문만 따로 모은 표
-        "curriculum_out_questions": curriculum_out_questions,
-        # 상위 카테고리 대표 질문 1개씩
-        "top_questions": top_questions,
-    }
+    # -------------------------------
+    # Tables
+    # -------------------------------
+    # 1) 분류별로 묶인 질문 리스트
+    grouped_blocks_map: dict[tuple[str, CurriculumScope], CategoryQuestionBlock] = {}
 
+    for row in question_rows:
+        key = (row.category, row.scope)
+        if key not in grouped_blocks_map:
+            grouped_blocks_map[key] = CategoryQuestionBlock(
+                category=row.category,
+                scope=row.scope,
+                questions=[],
+            )
+        grouped_blocks_map[key].questions.append(row)
+
+    questions_grouped_by_category = list(grouped_blocks_map.values())
+
+    # 2) 커리큘럼 외 질문만 리스트
+    curriculum_out_questions: List[QuestionRow] = [
+        row for row in question_rows if row.scope == "out"
+    ]
+
+    # -------------------------------
+    # SummaryCards / Charts / Tables 모델 생성
+    # -------------------------------
+    summary_cards = CurriculumSummaryCards(
+        total_questions=total_questions,
+        curriculum_out_ratio=curriculum_out_ratio,
+        curriculum_in_questions=in_count,
+        curriculum_out_questions=out_count,
+        top_question_categories=top_question_categories,
+        top_questions=top_questions,
+    )
+
+    charts = CurriculumCharts(
+        questions_by_category=questions_by_category_chart,
+        curriculum_scope_ratio=scope_ratio_chart,
+    )
+
+    tables = CurriculumTables(
+        questions_grouped_by_category=questions_grouped_by_category,
+        curriculum_out_questions=curriculum_out_questions,
+    )
+
+    # -------------------------------
+    # LLM용 raw_stats (그냥 dict로 둬도 됨)
+    # -------------------------------
     raw_stats = {
         "total_questions": total_questions,
         "in_count": in_count,
         "out_count": out_count,
-        "by_category": [
-            {"category": cat, "count": cnt}
-            for cat, cnt in by_category.most_common()
+        "by_category_scope": [
+            {
+                "category": cat,
+                "scope": scope,
+                "count": cnt,
+            }
+            for (cat, scope), cnt in by_category_scope.most_common()
         ],
-        "example_questions_per_category": example_questions_per_category,
+        "example_questions_per_category": dict(example_questions_per_category),
     }
 
     return {
