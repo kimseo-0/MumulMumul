@@ -19,7 +19,7 @@ def main() -> int:
         "app.main:app",
         "--reload",
         "--host",
-        "127.0.0.1",
+        "0.0.0.0",
         "--port",
         "8020",
     ]
