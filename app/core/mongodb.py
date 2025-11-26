@@ -14,6 +14,12 @@ from app.config import MONGO_URL, MONGO_DB_NAME
 mongo_client = MongoClient(MONGO_URL)
 mongo_db = mongo_client[MONGO_DB_NAME]
 
+def get_mongo_db() -> MongoClient:
+    """
+    MongoDB 데이터베이스 인스턴스 반환
+    """
+    return mongo_db
+
 
 # =====================================
 # 2. MongoDB 모델 레지스트리 및 초기화
