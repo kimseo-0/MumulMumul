@@ -172,34 +172,34 @@ def answer(question, grade):
 
 # ==============================================================
 
-# #CSV 파일 경로
-# CSV_PATH = r"C:\POTENUP\MumulMumul\storage\rag_question_set.csv"
+#CSV 파일 경로
+CSV_PATH = r"C:\POTENUP\MumulMumul\storage\rag_question_set.csv"
 
-# if __name__ == "__main__":
-#     rag_chain = answer()
+if __name__ == "__main__":
+    rag_chain = answer()
 
-#     # 1) CSV 파일 불러오기
-#     df = pd.read_csv(CSV_PATH, encoding="utf-8-sig")
+    # 1) CSV 파일 불러오기
+    df = pd.read_csv(CSV_PATH, encoding="utf-8-sig")
 
-#     # 2) answer 컬럼 없으면 만들기
-#     if "answer" not in df.columns:
-#         df["answer"] = ""
+    # 2) answer 컬럼 없으면 만들기
+    if "answer" not in df.columns:
+        df["answer"] = ""
 
-#     # 3) 각 질문 처리
-#     for idx, row in df.iterrows():
-#         question = str(row["질문"]).strip()
-#         if not question:
-#             df.loc[idx, "answer"] = ""
-#             continue
+    # 3) 각 질문 처리
+    for idx, row in df.iterrows():
+        question = str(row["질문"]).strip()
+        if not question:
+            df.loc[idx, "answer"] = ""
+            continue
         
-#         print(f"\n[{idx+1}] 질문: {question}")
-#         answer = rag_chain.invoke(question)
-#         df.loc[idx, "answer"] = answer
-#         print(f"➡ 답변 저장 완료")
+        print(f"\n[{idx+1}] 질문: {question}")
+        answer = rag_chain.invoke(question)
+        df.loc[idx, "answer"] = answer
+        print(f"➡ 답변 저장 완료")
 
-#     # 4) CSV 다시 저장
-#     df.to_csv(CSV_PATH, index=False, encoding="utf-8-sig")
-#     print("\n🎉 CSV 답변 생성 완료!")
+    # 4) CSV 다시 저장
+    df.to_csv(CSV_PATH, index=False, encoding="utf-8-sig")
+    print("\n🎉 CSV 답변 생성 완료!")
 
 # ==============================================================
 
@@ -209,9 +209,9 @@ def answer(question, grade):
 # 예시 실행
 # ==============================================================
 
-if __name__ == "__main__":
-    result = answer("리스트에 대해 설명해줘", grade="초급")
-    print(result)
+# if __name__ == "__main__":
+#     result = answer("리스트에 대해 설명해줘", grade="초급")
+#     print(result)
 
-# 사용 예시
-answer("리스트 알려줘", grade="초급")
+# # 사용 예시
+# answer("리스트 알려줘", grade="초급")

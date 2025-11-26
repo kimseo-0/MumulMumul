@@ -8,12 +8,15 @@ from typing import Dict, List, Literal
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, HTTPException
 from pydantic import BaseModel
+from app.services.learning_chatbot.service import answer
 
 router = APIRouter()
 
 # 아주 단순한 in-memory 세션 저장소 (실서비스면 Redis/DB 등으로 교체)
 # key: sessionId, value: list of {"role": "user"/"assistant", "content": str}
-CHAT_SESSIONS: Dict[str, List[Dict]] = {}
+CHAT_SESSIONS: Dict[str, List[Dict]] = {
+    "user1:" : []
+}
 
 
 # ===========================
@@ -95,7 +98,7 @@ async def learning_chatbot_ws(websocket: WebSocket):
                 )
 
                 # TODO: 실제 학습 도우미 로직 (LLM/RAG 등) 으로 대체
-                assistant_reply = f"질문에 대한 예시 답변입니다: {query_text}"
+                assistant_reply = answer(query_text)
 
                 CHAT_SESSIONS[session_id].append(
                     {"role": "assistant", "content": assistant_reply}
