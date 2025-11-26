@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 
 from app.core.db import get_db
 from app.core.schemas import Camp, User
-from app.services.attendance.agent import generate_attendance_report
+from app.services.attendance.service import create_attendance_report
 from app.services.attendance.schemas import AttendanceReportPayload  # 이미 만든 페이로드
 
 router = APIRouter()
@@ -26,7 +26,6 @@ def list_camps(db: Session = Depends(get_db)):
                 "end_date": c.end_date.date().isoformat() if c.end_date else None,
             }
         )
-    print("????????")
     print(result)
     return result
 
@@ -79,7 +78,7 @@ def get_attendance_report(
     if start_date > end_date:
         raise HTTPException(status_code=400, detail="start_date 가 end_date 이후임")
 
-    payload = generate_attendance_report(
+    payload = create_attendance_report(
         db=db,
         camp_id=camp_id,
         start_date=start_date,
