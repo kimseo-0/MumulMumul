@@ -3,10 +3,10 @@ from contextlib import asynccontextmanager
 from app.api.connection import router as connection_router
 from app.api.chatbot import router as chatbot_router
 from app.api.attendance import router as attendance_router
-from app.core.mongodb import init_mongo
+from app.api.curriculum import router as curriculum_router
+from app.core.mongodb import init_mongo, get_mongo_db
 from app.core.schemas import init_db
 from app.config import SQLITE_URL
-from app.core.db import mongo_db
 
 
 # ------------------------------
@@ -18,7 +18,7 @@ def create_app() -> FastAPI:
         try:
             print("DB 마이그레이션 적용")
             init_db(SQLITE_URL)
-            init_mongo(mongo_db)
+            init_mongo(get_mongo_db())
         except Exception:
             print("DB 마이그레이션 실패")
         yield   
@@ -35,3 +35,4 @@ app = create_app()
 app.include_router(connection_router, prefix="/connection")
 app.include_router(chatbot_router)
 app.include_router(attendance_router, prefix="/attendance")
+app.include_router(curriculum_router, prefix="/curriculum")
