@@ -1,9 +1,11 @@
+# uvicorn app.main:app --reload --host 0.0.0.0 --port 8020
 from __future__ import annotations
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
 from app.api.connection import router as connection_router
 from app.api.chatbot import router as chatbot_router
 from app.api.attendance import router as attendance_router
+from app.api.meeting import router as meeting_router
 from app.core.schemas import init_db
 from app.config import DB_URL
 from app.core.db import engine
@@ -39,3 +41,4 @@ app = create_app()
 app.include_router(connection_router, prefix="/connection")
 app.include_router(chatbot_router)
 app.include_router(attendance_router, prefix="/attendance")
+app.include_router(meeting_router, prefix="/meeting")

@@ -1,8 +1,9 @@
 # config.py
 import os
 from dotenv import load_dotenv
+from pydantic_settings import BaseSettings, SettingsConfigDict
+from pathlib import Path
 
-# .env 파일 로드 (선택)
 load_dotenv()
 
 DB_URL = os.getenv("DB_URL", "sqlite:///storage/mumul.db")
@@ -15,3 +16,39 @@ DAILY_SCHEDULE = {
 MEETING_CONFIG = {
     "min_active_seconds": 60,   # 1분 미만 참여는 무효 처리 등
 }
+
+class Settings(BaseSettings):
+
+    model_config = SettingsConfigDict(
+        extra="ignore",
+        env_file=".env",
+        case_sensitive=True,
+        )
+    # 앱 설정
+    DEBUG: bool = True
+
+    OPENAI_API_KEY: str | None = None
+    
+    # MongoDB
+    MONGODB_URI: str = ""
+    # MONGODB_URI: str = "mongodb://localhost:27017/"
+    
+    # 파일 저장소 (로컬)
+    DATA_DIR: Path = Path("storage")
+    MEETINGS_DIR: Path = DATA_DIR / "meetings"
+    
+    # Whisper 설정
+    WHISPER_DEVICE: str = "cuda"
+    WHISPER_MODEL: str = "large"
+    
+    # class Config:
+    #     env_file = ".env"
+    #     case_sensitive = True
+    
+    def __init__(self, **data):
+        super().__init__(**data)
+        # 디렉토리 자동 생성
+        for path in [self.DATA_DIR, self.MEETINGS_DIR]:
+            path.mkdir(parents=True, exist_ok=True)
+
+settings = Settings()
