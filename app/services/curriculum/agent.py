@@ -10,8 +10,8 @@ from app.services.db_service.camp import get_camp_by_id
 from .schemas import CurriculumReportPayload, CurriculumAIInsights
 from .repository import (
     get_weekly_curriculum_logs,
-    aggregate_curriculum_stats,
 )
+from .calculator import aggregate_curriculum_stats
 from .llm import generate_curriculum_ai_insights
 
 

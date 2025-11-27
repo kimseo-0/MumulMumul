@@ -10,6 +10,60 @@ from streamlit_app.api.curriculum import (
 st.set_page_config(layout="wide")
 st.title("📚 커리큘럼 난이도 & 추가 학습 요구 분석")
 
+# 리포트 가이드
+def render_curriculum_analysis_rules():
+    """커리큘럼 난이도 & 추가 학습 요구 분석 기준 안내 블록."""
+    st.markdown("""
+    ### 📐 커리큘럼 분석 기준 (AI 인사이트가 따르는 룰)
+
+    **1️⃣ '어려운 파트'(커리큘럼 내) 선정 기준**
+
+    - 질문 비율 기준  
+    - 해당 카테고리가 **커리큘럼 내(in) 질문의 20% 이상**이면 High-Friction Topic으로 간주함.
+    - 질문 수 기준  
+    - 질문 수 **상위 Top 3 카테고리**는 모두 어려운 파트 후보로 포함함.
+    - 질문 패턴 기준  
+    - "왜 이런 결과가 나오나요?", "A와 B 차이가 뭐죠?"처럼  
+        **개념 혼란/이해도 부족**을 드러내는 질문이 많은 카테고리는 난이도가 높은 파트로 판단함.
+
+    ---
+
+    **2️⃣ '커리큘럼 외 추가 요구' 선정 기준**
+
+    - 최소 언급 수  
+    - 동일 주제에 대한 질문이 **2건 이상**이면 우연이 아닌 반복 요구로 판단함.
+    - 비율 기준  
+    - 커리큘럼 외(out) 질문의 **15% 이상**을 차지하면 주요 요구 토픽으로 간주함.
+    - 주제 성격  
+    - 포트폴리오, 커리어/면접, IDE·환경 설정, 협업(Git)처럼  
+        **학습 성과와 직접 연결되는 주제**는 중요도 높게 다룸.
+
+    ---
+
+    **3️⃣ '즉시 보완 vs 다음 기수 개선' 기준**
+
+    - **즉시 보완**
+    - Week 1–2의 기초 파트이고, in 질문 비율이 **25% 이상**이거나 Top 3에 해당함.
+    - 해당 파트에서 개념 혼란성 질문이 많이 발생함.
+    - **다음 기수 개선**
+    - Week 3–5의 심화 개념으로, 난이도는 높지만 상대적으로 질문 비율이 낮음.
+    - 커리어/포트폴리오/환경 설정 등 **구조적 개선**이 필요한 영역임.
+
+    ---
+
+    **4️⃣ 참고한 교육·학습 분석 자료**
+
+    - Learning Analytics Handbook (2022)  
+    - Carnegie Mellon Eberly Center – Learning Engineering Framework  
+    - Coursera Engagement Analytics Report (2020)  
+    - Stanford HCI Learner Pattern Study (2019)  
+    - Bloom’s Taxonomy & Cognitive Load Theory
+
+    위 기준을 바탕으로 AI 인사이트가 생성되며,  
+    운영진은 이 규칙을 참고하여 리포트의 해석 및 후속 액션을 결정할 수 있음.
+    """)
+
+
 # --------------------------------
 # 1) 캠프 목록 / 주차 선택
 # --------------------------------
@@ -26,13 +80,39 @@ selected_week_label = st.sidebar.selectbox("주차 선택", weeks)
 week_index = int(selected_week_label.split()[1])  # "Week 3" -> 3
 
 # --------------------------------
-# 2) 리포트 API 호출
+# 1-1) 리포트 생성 버튼 + 세션 캐싱
 # --------------------------------
-payload = fetch_curriculum_report(
-    camp_id=camp_id,
-    week_index=week_index,
-)
+if "curriculum_reports" not in st.session_state:
+    st.session_state["curriculum_reports"] = {} 
 
+report_key = f"{camp_id}_{week_index}"
+
+generate_clicked = st.sidebar.button("리포트 생성하기") 
+
+if generate_clicked:
+    with st.spinner("리포트 생성 중입니다..."): 
+        payload = fetch_curriculum_report(
+            camp_id=camp_id,
+            week_index=week_index,
+        )
+        st.session_state["curriculum_reports"][report_key] = payload
+
+# 세션에서 현재 선택된 캠프/주차의 리포트 가져오기
+payload = st.session_state["curriculum_reports"].get(report_key)
+
+# 아직 생성된 리포트가 없다면 안내만 띄우고 종료
+if payload is None:
+    week_label = f"{week_index}주차"
+    st.info(
+        f"현재 **{camp_name} / {week_label}** 리포트가 없습니다.\n\n"
+        "좌측 사이드바에서 **'해당 Week 리포트 생성하기'** 버튼을 눌러 리포트를 생성해 주세요."
+    )
+    st.stop()
+
+# --------------------------------
+# 2) (기존) 리포트 payload 사용
+#    - 여기부터는 기존 코드 그대로 사용 가능
+# --------------------------------
 summary = payload["summary_cards"]
 charts = payload["charts"]
 tables = payload["tables"]
@@ -203,11 +283,34 @@ with tab_summary:
 with tab_ai:
     st.subheader(f"🤖 AI 심층 분석 — {week_label} ({camp_name})")
 
+    # ---------------------------
+    # 분석 기준 토글 / 팝업 블록
+    # ---------------------------
+    with st.container():
+        with st.expander("🔎 AI 분석 기준 보기", expanded=False):
+            render_curriculum_analysis_rules()
+
+    st.markdown("---")
+
+    # ---------------------------
+    # 상단 요약 블록
+    # ---------------------------
     colA, colB, colC = st.columns(3)
 
-    colA.info(ai_insights.get("hardest_part_summary", "가장 어려운 파트 요약 없음"))
-    colB.warning(ai_insights.get("curriculum_out_summary", "커리큘럼 외 질문 요약 없음"))
-    colC.success(ai_insights.get("improvement_summary", "개선 방향 요약 없음"))
+    with colA:
+        st.markdown("#### 🔥 가장 어려운 파트 요약")
+        st.info(ai_insights.get("hardest_part_summary", "가장 어려운 파트 요약 없음"))
+
+    with colB:
+        st.markdown("#### 🧩 커리큘럼 외 질문 요약")
+        st.warning(ai_insights.get("curriculum_out_summary", "커리큘럼 외 질문 요약 없음"))
+
+    with colC:
+        st.markdown("#### 🛠 개선 방향 요약")
+        st.success(ai_insights.get("improvement_summary", "개선 방향 요약 없음"))
+    # colA.info(ai_insights.get("hardest_part_summary", "가장 어려운 파트 요약 없음"))
+    # colB.warning(ai_insights.get("curriculum_out_summary", "커리큘럼 외 질문 요약 없음"))
+    # colC.success(ai_insights.get("improvement_summary", "개선 방향 요약 없음"))
 
     st.markdown("---")
 
