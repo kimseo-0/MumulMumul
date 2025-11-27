@@ -74,6 +74,7 @@ class LearningChatLog(BaseModel):
     학습 챗봇과의 채팅 로그
 
     - user_id: SQL(User.user_id)와 연결
+    - session_id: 세션 식별자 (옵션)
     - camp_id: SQL(Camp.camp_id)와 연결 (옵션)
     - role: 'user' or 'assistant'
     - content: 실제 채팅 내용
@@ -82,7 +83,9 @@ class LearningChatLog(BaseModel):
     - created_at: 생성 시각
     """
     user_id: int
+    session_id: Optional[int] = None
     camp_id: Optional[int] = None
+
     role: Literal["user", "assistant"]
     content: str
 
