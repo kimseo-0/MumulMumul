@@ -69,6 +69,7 @@ async def learning_chatbot_ws(websocket: WebSocket):
 
                 # 새 세션 초기화
                 CHAT_SESSIONS[session_id] = []
+                print(f"학습 세션 시작 : sessionid-{session_id} userid-{user_id}")
                 await websocket.send_json(
                     {
                         "event": "chat_started",
@@ -106,6 +107,7 @@ async def learning_chatbot_ws(websocket: WebSocket):
                     {"role": "assistant", "content": assistant_reply}
                 )
 
+                print(f"학습 쿼리 요청 : sessionid-{session_id}")
                 await websocket.send_json(
                     {
                         "event": "answer",
@@ -123,6 +125,7 @@ async def learning_chatbot_ws(websocket: WebSocket):
                     # 필요하다면 여기서 세션 정리/저장 로직 추가
                     pass
 
+                print(f"학습 세션 종료 : sessionid-{session_id}")
                 await websocket.send_json(
                     {
                         "event": "chat_ended",
@@ -130,6 +133,8 @@ async def learning_chatbot_ws(websocket: WebSocket):
                         "message": "학습 세션이 종료되었습니다.",
                     }
                 )
+                await websocket.close()  # 서버에서 웹소켓 연결 종료
+                break
 
             # -------------------------
             # 4) unknown event
