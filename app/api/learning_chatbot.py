@@ -34,7 +34,9 @@ class ChatHistoryResponse(BaseModel):
 # ===========================
 @router.websocket("/")
 async def learning_chatbot_ws(websocket: WebSocket):
-    await websocket.accept()
+    print(f"client connected : {websocket.client}")
+    await websocket.accept() # client의 websocket접속 허용
+    await websocket.send_text(f"Welcome client : {websocket.client}")
 
     try:
         while True:
