@@ -10,6 +10,7 @@ from app.core.schemas import init_db
 from app.config import DB_URL
 from app.core.db import engine
 from app.core import schemas
+from app.services.meeting.audio_processor import AudioProcessor
 
 # ------------------------------
 # 1) DB 테이블 자동 생성 (개발용)
@@ -27,6 +28,12 @@ def create_app() -> FastAPI:
             init_db(DB_URL)
         except Exception:
             print("DB 마이그레이션 실패")
+
+        # whisper 모델 : 앱 시작시 1회 로드
+        print("Initializing Whisper model...")
+        AudioProcessor.initialize_whisper("large")
+        print("Whisper model ready!")
+        
         yield   
 
     app = FastAPI(title="Mumul Mumul Api", version="0.1.0", lifespan=lifespan)
