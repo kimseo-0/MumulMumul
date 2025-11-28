@@ -7,7 +7,6 @@ from langchain_chroma import Chroma
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import RunnablePassthrough
 from langchain_core.output_parsers import StrOutputParser
-import pandas as pd
 from operator import itemgetter
 
 load_dotenv()
@@ -25,12 +24,18 @@ EMBEDDING_MODEL = "text-embedding-3-large"
 SEARCH_K = 5
 FETCH_K = 20
 
+# RAG 체인을 한 번만 만들고 재사용하기 위한 전역 변수
+RAG_CHAIN = None
+
+
 # ==============================================================
 # 수준별 답변 규칙
 # ==============================================================
 
 GRADE_RULES = {
     "초급": """
+[초급자 답변 규칙]
+
 당신은 프로그래밍/데이터 분야를 처음 배우는 초급자를 돕는 학습 도우미입니다.
 설명은 반드시 쉬운 한국어로, 짧은 문장 위주로 작성해야 합니다.
 
@@ -75,20 +80,26 @@ GRADE_RULES = {
 - 필요 시 용어 사용 가능하나 불필요한 확장 금지
 - 왜 이런 개념이 필요한지 1번 설명
 - 실무에서 헷갈리는 포인트도 함께 제공
+- 출처를 함께 명시
 """,
     "고급": """
 - 내부 동작 원리 중심으로 설명
 - 구조, 메커니즘, 메모리·성능 등 심화 내용 포함 가능
 - 필요한 경우 수식·전문 용어 사용 가능
 - 다른 기술과 비교 설명 가능
+- 출처를 함께 명시
 """
 }
 
+
 # ==============================================================
-# RAG 체인 초기화
+# RAG 체인 초기화 & 재사용
 # ==============================================================
 
 def initialize_rag_chain():
+    """
+    Chroma 벡터DB + OpenAI 임베딩 + RAG 체인 초기화
+    """
     embeddings = OpenAIEmbeddings(model=EMBEDDING_MODEL)
 
     vectorstore = Chroma(
@@ -102,46 +113,46 @@ def initialize_rag_chain():
         search_kwargs={"k": SEARCH_K, "fetch_k": FETCH_K}
     )
 
-    # ----------------------------
-    # 시스템 프롬프트 (최적화 버전)
-    # ----------------------------
+    # 시스템 프롬프트 (history + context + grade 반영)
     template = """
-    당신은 부트캠프 학생을 위한 학습 도우미 챗봇입니다.
-    답변은 반드시 제공된 [Context] 안의 정보만 사용해야 합니다.
-    문서에 없는 내용은 절대 지어내지 마세요.
+당신은 부트캠프 학생을 위한 학습 도우미 챗봇입니다.
+답변은 반드시 제공된 [Context] 안의 정보만 사용해야 합니다.
+문서에 없는 내용은 절대 지어내지 마세요.
 
-    [학생 수준]
-    {grade}
+[이전 대화]
+{history}
 
-    [답변 규칙]
-    {grade_rules}
+[학생 수준]
+{grade}
 
-    [답변 조건]
-    - 설명은 반드시 학생 수준에 맞춰서 작성
-    - 답변은 한국어로 작성
-    - 출처(파일명, 페이지 등) 반드시 명시
-    - Context 바깥 정보는 사용 금지
+[답변 규칙]
+{grade_rules}
 
-    -------------------------
-    [Context]
-    {context}
+[답변 조건]
+- 설명은 반드시 학생 수준에 맞춰서 작성
+- 답변은 한국어로 작성
+- 출처(파일명, 페이지 등) 반드시 명시
+- Context 바깥 정보는 사용 금지
 
-    [Question]
-    {question}
-    -------------------------
-    """
+-------------------------
+[Context]
+{context}
 
+[Question]
+{question}
+-------------------------
+"""
     prompt = ChatPromptTemplate.from_template(template)
     model = ChatOpenAI(model=LLM_MODEL, temperature=0.2)
 
     rag_chain = (
         {
-            # 질문 문자열만 꺼내서 retriever에 전달
+            # 질문 문자열만 retriever에 전달
             "context": itemgetter("question") | retriever,
-            # 나머지도 각각 필요한 키만 전달
             "question": itemgetter("question"),
             "grade": itemgetter("grade"),
             "grade_rules": itemgetter("grade_rules"),
+            "history": itemgetter("history"),
         }
         | prompt
         | model
@@ -149,54 +160,113 @@ def initialize_rag_chain():
     )
     return rag_chain
 
+
+def get_rag_chain():
+    """
+    RAG 체인을 전역에서 한 번만 생성하고 재사용.
+    """
+    global RAG_CHAIN
+    if RAG_CHAIN is None:
+        RAG_CHAIN = initialize_rag_chain()
+    return RAG_CHAIN
+
+
 # ==============================================================
-# History 기반 멀티턴 지원 함수 추가
+# History 유틸 함수 (멀티턴용)
 # ==============================================================
 
 def build_history_text(history, max_turns=3):
     """
-    최근 max_turns개의 대화 기록을 문자열로 합쳐 반환.
-    GPT가 이전 맥락을 이해하도록 도와준다.
+    최근 max_turns개의 (질문, 답변)을 history 문자열로 만든다.
+    LLM이 이전 대화 흐름을 이해하는 데 사용.
     """
     if not history:
         return ""
 
     recent = history[-max_turns:]
-
-    hist_text = ""
+    lines = []
     for turn in recent:
-        hist_text += f"학생: {turn['question']}\n"
-        hist_text += f"AI: {turn['answer']}\n\n"
+        lines.append(f"학생: {turn['question']}")
+        lines.append(f"AI: {turn['answer']}")
+        lines.append("")
 
-    return hist_text
+    return "\n".join(lines)
 
 
-def answer_with_history(question, grade, history):
+# ==============================================================
+# 질문 분리 (여러 요청이 섞여 있을 때)
+# ==============================================================
+
+def split_questions(user_message: str):
     """
-    멀티턴 질문을 처리하는 함수:
-    - 최근 history를 시스템 prompt에 추가하여 모델이 맥락을 이해하게 만듦
-    - 새 답변은 history에 저장
+    사용자의 입력에서 '서로 다른 질문/요청'을 의미 단위별로 분리한다.
+    예:
+      "리스트 문제 1개 내주고 RAG 코드도 보여줘"
+    -> ["리스트 문제 1개 내줘", "RAG 코드도 보여줘"]
     """
+    splitter = ChatOpenAI(model=LLM_MODEL, temperature=0)
 
-    rag_chain = initialize_rag_chain()
+    split_prompt = ChatPromptTemplate.from_template(
+        """
+사용자의 입력을 보고, 서로 다른 요청이나 질문이 있다면 항목별로 분리하세요.
 
-    # 최근 대화 기록을 prompt의 'question' 부분 앞에 붙임
+출력 형식 예시는 아래와 같습니다:
+
+1. 첫 번째 질문...
+2. 두 번째 질문...
+3. 세 번째 질문...
+
+가능하면 최대한 잘게 나누지 말고,
+의미상 자연스럽게 나눠지도록 분리하세요.
+
+사용자 입력:
+{message}
+"""
+    )
+
+    chain = split_prompt | splitter | StrOutputParser()
+    raw = chain.invoke({"message": user_message})
+
+    questions = []
+    for line in raw.splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        # "1. 질문..." 형식만 파싱
+        if line[0].isdigit() and "." in line:
+            _, q = line.split(".", 1)
+            q = q.strip()
+            if q:
+                questions.append(q)
+
+    if not questions:
+        return [user_message.strip()]
+
+    return questions
+
+
+# ==============================================================
+# 단일 질문 처리 (history 반영)
+# ==============================================================
+
+def answer_single(question: str, grade: str, history: list):
+    """
+    하나의 질문에 대해:
+    - history(이전 대화)를 반영
+    - RAG 검색 + LLM 답변
+    - 답변을 history에 저장
+    """
+    if grade not in GRADE_RULES:
+        raise ValueError("grade는 '초급', '중급', '고급' 중 하나여야 합니다.")
+
+    rag = get_rag_chain()
     history_text = build_history_text(history)
 
-    # 최종적으로 모델에게 전달할 question 형식
-    full_question = f"""
-(이전 대화 맥락)
-{history_text}
-
-(현재 질문)
-{question}
-"""
-
-    # 답변 생성
-    answer_text = rag_chain.invoke({
-        "question": full_question,
+    answer_text = rag.invoke({
+        "question": question,
         "grade": grade,
-        "grade_rules": GRADE_RULES[grade]
+        "grade_rules": GRADE_RULES[grade],
+        "history": history_text,
     })
 
     # history 저장
@@ -208,125 +278,65 @@ def answer_with_history(question, grade, history):
     return answer_text
 
 
+# ==============================================================
+# 여러 질문 처리 (질문별로 각각 RAG + 출처)
+# ==============================================================
+
+def multi_answer(user_message: str, grade: str, history: list):
+    """
+    한 번에 여러 질문이 섞여 있을 수 있는 user_message를 받아서:
+    1) 질문들을 분리하고
+    2) 각 질문마다 answer_single()로 답변 생성
+    3) 보기 좋게 묶어서 반환
+    """
+    questions = split_questions(user_message)
+
+    # 질문이 하나만 있으면 단일 질문 처리
+    if len(questions) == 1:
+        return answer_single(questions[0], grade, history)
+
+    blocks = []
+    for idx, q in enumerate(questions, start=1):
+        ans = answer_single(q, grade, history)
+        block = f"""### 질문 {idx}
+> {q}
+
+{ans}
+
+-------------------------------------
+"""
+        blocks.append(block)
+
+    return "\n".join(blocks)
+
+
+# ==============================================================
+# 터미널에서 테스트용 main 루프
+# ==============================================================
+
 if __name__ == "__main__":
-    history = []   # 멀티턴 대화 기록 저장
+    print("\n=== 부트캠프 학습 도우미 RAG 챗봇 ===")
+    print("여러 질문을 한 번에 써도 되고, 한 개씩 물어봐도 됩니다.")
+    print("종료하려면 'exit'를 입력하세요.\n")
+
+    history = []  # 멀티턴 대화 기록 (나중에 DB로 확장 가능)
 
     while True:
-        q = input("\n질문 입력(exit 종료): ")
-        if q.lower() == "exit":
+        user_msg = input("\n📌 질문 입력: ")
+        if user_msg.strip().lower() == "exit":
+            print("👋 챗봇을 종료합니다.")
             break
 
-        grade = input("난이도(초급/중급/고급): ").strip()
+        grade = input("💡 난이도 선택 (초급/중급/고급): ").strip()
+        if grade.strip().lower() == "exit":
+            print("👋 챗봇을 종료합니다.")
+            break
 
-        # 멀티턴 적용된 답변 실행
-        result = answer_with_history(q, grade, history)
-        print("\n🧠 답변:\n", result)
+        print("\n⏳ 답변 생성 중...\n")
 
-        print("\n📜 현재 History 턴 수:", len(history))
+        # 멀티 질문 + 멀티턴 + RAG + 출처까지 모두 포함된 최종 호출
+        result = multi_answer(user_message=user_msg, grade=grade, history=history)
 
-
-
-
-# ==============================================================
-# ★★★ 메인 실행 함수 ★★★
-# ==============================================================
-
-# if __name__ == "__main__":
-#     print("\n=== 부트캠프 RAG 학습 도우미 챗봇 ===")
-#     print("종료하려면 'exit' 입력\n")
-
-#     rag = initialize_rag_chain()
-
-#     while True:
-#         question = input("\n📌 질문을 입력하세요: ")
-#         if question.lower() == "exit":
-#             print("\n👋 챗봇을 종료합니다.")
-#             break
-
-#         grade = input("💡 난이도 선택 (초급/중급/고급): ")
-#         if grade.lower() == "exit":
-#             print("\n👋 챗봇을 종료합니다.")
-#             break
-
-#         if grade not in GRADE_RULES:
-#             print("❌ 난이도는 '초급', '중급', '고급' 중 하나여야 합니다.")
-#             continue
-
-#         print("\n⏳ 답변 생성 중...\n")
-
-#         result = rag.invoke({
-#             "question": question,
-#             "grade": grade,
-#             "grade_rules": GRADE_RULES[grade]
-#         })
-
-#         print("🧠 챗봇 답변:\n")
-#         print(result)
-#         print("\n---------------------------------------")
-
-
-
-# ==============================================================
-
-# # CSV 파일 경로
-# CSV_PATH = r"C:\POTENUP\MumulMumul\notebooks\yojun\test_csv\rag_question_set.csv"
-
-# if __name__ == "__main__":
-
-#     # 1) CSV 파일 불러오기
-#     df = pd.read_csv(CSV_PATH, encoding="utf-8-sig")
-
-#     # 2) answer 컬럼 없으면 생성
-#     if "answer" not in df.columns:
-#         df["answer"] = ""
-
-#     print("\n📌 CSV 예상 질문 자동 평가 시작\n")
-
-#     save_interval = 5   # 5개마다 저장
-
-#     # 3) 각 row 처리
-#     for idx, row in df.iterrows():
-#         question = str(row["question"]).strip()
-#         grade = str(row["grade"]).strip()
-
-#         # 비어 있으면 skip
-#         if not question:
-#             df.loc[idx, "answer"] = ""
-#             continue
-
-#         print(f"\n[{idx+1}] 질문: {question}")
-#         print(f"📘 난이도: {grade}")
-
-#         try:
-#             result = answer(question, grade)
-#         except Exception as e:
-#             result = f"ERROR: {e}"
-
-#         df.loc[idx, "answer"] = result
-#         print("➡ 답변 저장 완료")
-
-#         # ---- 5개마다 자동 저장 추가됨 ----
-#         if (idx + 1) % save_interval == 0:
-#             df.to_csv(CSV_PATH, index=False, encoding="utf-8-sig")
-#             print(f"💾 {idx+1}개 처리 완료 → 중간 저장됨")
-
-#     # 4) 전체 처리 후 최종 저장
-#     df.to_csv(CSV_PATH, index=False, encoding="utf-8-sig")
-
-#     print("\n🎉 모든 예상 질문 답변 생성 완료!")
-#     print(f"📄 최종 파일 저장됨 → {CSV_PATH}")
-
-# ==============================================================
-
-
-
-# ==============================================================
-# 예시 실행
-# ==============================================================
-
-# if __name__ == "__main__":
-#     result = answer("리스트에 대해 설명해줘", grade="초급")
-#     print(result)
-
-# # 사용 예시
-# answer("리스트 알려줘", grade="초급")
+        print("🧠 학습 도우미 답변:\n")
+        print(result)
+        print("\n============================================")
