@@ -9,11 +9,12 @@ sys.path.append(str(ROOT_DIR))
 
 from sqlalchemy.orm import sessionmaker
 from app.core.schemas import UserType, User, Camp, init_db
-from app.config import DB_URL
+from app.config import SQLITE_URL
+from datetime import datetime, timedelta, time
 
 
 def seed_dummy_data():
-    engine = init_db(DB_URL)
+    engine = init_db(SQLITE_URL)
     Session = sessionmaker(bind=engine, autoflush=False)
     session = Session()
 
@@ -26,8 +27,8 @@ def seed_dummy_data():
     session.commit()
 
     # 2. camp
-    backend_camp = Camp(name="백엔드캠프")
-    frontend_camp = Camp(name="프론트캠프")
+    backend_camp = Camp(name="백엔드캠프", start_date=datetime(2025, 11, 3), end_date=datetime(2025, 11, 3) + timedelta(weeks=6))
+    frontend_camp = Camp(name="프론트캠프", start_date=datetime(2025, 11, 3), end_date=datetime(2025, 11, 3) + timedelta(weeks=6))
 
     session.add_all([backend_camp, frontend_camp])
     session.commit()
@@ -128,5 +129,4 @@ def seed_dummy_data():
 
 
 if __name__ == "__main__":
-    print("??????")
     seed_dummy_data()

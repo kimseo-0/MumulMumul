@@ -1,0 +1,481 @@
+week,camp_id,user_id,role,content,curriculum_scope,question_category,created_at
+1,1,1,user,데이터 직무 취업을 목표로 할 때 어떤 방향으로 준비를 시작해야 할까요?,out,career,2025-11-25T08:17:24.907191
+1,1,1,assistant,"관심 있는 직무(분석, 엔지니어 등)를 먼저 정하고, JD를 기준으로 필요한 역량을 역추적해 보세요.",out,career,2025-11-25T08:17:24.907191
+1,1,2,user,pandas groupby 결과가 제가 예상한 것과 다르게 나옵니다.,in,pandas,2025-11-25T08:17:24.907224
+1,1,2,assistant,groupby 후에는 집계 함수를 적용해야 의도한 결과가 나오는 경우가 많습니다.,in,pandas,2025-11-25T08:17:24.907224
+1,1,3,user,pandas groupby 결과가 제가 예상한 것과 다르게 나옵니다.,in,pandas,2025-11-25T08:17:24.907232
+1,1,3,assistant,groupby 후에는 집계 함수를 적용해야 의도한 결과가 나오는 경우가 많습니다.,in,pandas,2025-11-25T08:17:24.907232
+1,1,4,user,감성 분석에서 어떤 tokenizer를 선택해야 할지 모르겠습니다.,in,nlp_sentiment,2025-11-25T08:17:24.907242
+1,1,4,assistant,"국문 기준으로는 mecab, khaiii 등이 많이 사용되며 형태소 단위가 중요한 편입니다.",in,nlp_sentiment,2025-11-25T08:17:24.907242
+1,1,5,user,pandas groupby 결과가 제가 예상한 것과 다르게 나옵니다.,in,pandas,2025-11-25T08:17:24.907249
+1,1,5,assistant,groupby 후에는 집계 함수를 적용해야 의도한 결과가 나오는 경우가 많습니다.,in,pandas,2025-11-25T08:17:24.907249
+1,1,6,user,matplotlib로 그래프 스타일을 변경하는 방법이 어렵습니다.,in,visualization,2025-11-25T08:17:24.907255
+1,1,6,assistant,plt.style.use()나 rcParams를 활용하면 전역 스타일을 쉽게 바꿀 수 있습니다.,in,visualization,2025-11-25T08:17:24.907255
+1,1,7,user,정규분포와 표준편차 개념이 잘 와닿지 않습니다.,in,statistics_basic,2025-11-25T08:17:24.907261
+1,1,7,assistant,표준편차는 데이터가 평균을 기준으로 얼마나 퍼져 있는지 나타내는 지표입니다.,in,statistics_basic,2025-11-25T08:17:24.907261
+1,1,8,user,연관어 네트워크에서 edge 가중치는 무엇을 의미하나요?,in,nlp_network,2025-11-25T08:17:24.907270
+1,1,8,assistant,두 단어가 함께 등장한 빈도를 edge weight로 두는 방식이 가장 많이 사용됩니다.,in,nlp_network,2025-11-25T08:17:24.907270
+1,1,9,user,데이터 직무 취업을 목표로 할 때 어떤 방향으로 준비를 시작해야 할까요?,out,career,2025-11-25T08:17:24.907278
+1,1,9,assistant,"관심 있는 직무(분석, 엔지니어 등)를 먼저 정하고, JD를 기준으로 필요한 역량을 역추적해 보세요.",out,career,2025-11-25T08:17:24.907278
+1,1,10,user,포트폴리오에서 프로젝트 설명을 어떻게 구조화하면 좋을까요?,out,portfolio,2025-11-25T08:17:24.907285
+1,1,10,assistant,문제 정의 → 접근 방법 → 해결 과정 → 결과/인사이트 순서로 정리하면 좋습니다.,out,portfolio,2025-11-25T08:17:24.907285
+1,1,11,user,PyCharm에서 디버깅 설정이 제대로 동작하지 않습니다.,out,ide_setting,2025-11-25T08:17:24.907295
+1,1,11,assistant,Run/Debug Configuration에서 Script path와 Python interpreter 설정을 다시 확인해 보세요.,out,ide_setting,2025-11-25T08:17:24.907295
+1,1,12,user,EDA를 할 때 어떤 순서로 데이터를 살펴보면 좋을까요?,in,eda,2025-11-25T08:17:24.907301
+1,1,12,assistant,결측치 확인 → 분포 파악 → 이상치 확인 → 변수 간 관계를 보는 순서를 추천합니다.,in,eda,2025-11-25T08:17:24.907301
+1,1,13,user,matplotlib로 그래프 스타일을 변경하는 방법이 어렵습니다.,in,visualization,2025-11-25T08:17:24.907307
+1,1,13,assistant,plt.style.use()나 rcParams를 활용하면 전역 스타일을 쉽게 바꿀 수 있습니다.,in,visualization,2025-11-25T08:17:24.907307
+1,1,14,user,공공데이터 API를 호출할 때 인증 오류가 발생합니다.,in,public_data,2025-11-25T08:17:24.907313
+1,1,14,assistant,요청 URL에 서비스키가 정확히 포함되어 있는지와 인코딩 여부를 먼저 확인해 보세요.,in,public_data,2025-11-25T08:17:24.907313
+1,1,15,user,EDA를 할 때 어떤 순서로 데이터를 살펴보면 좋을까요?,in,eda,2025-11-25T08:17:24.907318
+1,1,15,assistant,결측치 확인 → 분포 파악 → 이상치 확인 → 변수 간 관계를 보는 순서를 추천합니다.,in,eda,2025-11-25T08:17:24.907318
+1,1,16,user,pandas groupby 결과가 제가 예상한 것과 다르게 나옵니다.,in,pandas,2025-11-25T08:17:24.907325
+1,1,16,assistant,groupby 후에는 집계 함수를 적용해야 의도한 결과가 나오는 경우가 많습니다.,in,pandas,2025-11-25T08:17:24.907325
+1,1,17,user,파이썬 변수와 리스트 차이가 아직 헷갈립니다.,in,python_basic,2025-11-25T08:17:24.907349
+1,1,17,assistant,"변수는 하나의 값을, 리스트는 여러 값을 순서대로 담을 수 있는 자료형입니다.",in,python_basic,2025-11-25T08:17:24.907349
+1,1,18,user,Selenium 실행 시 ChromeDriver 관련 에러가 발생합니다.,in,crawling_selenium,2025-11-25T08:17:24.907362
+1,1,18,assistant,Chrome과 ChromeDriver의 버전이 일치하는지와 드라이버 경로 설정을 먼저 확인해 보세요.,in,crawling_selenium,2025-11-25T08:17:24.907362
+1,1,19,user,연관어 네트워크에서 edge 가중치는 무엇을 의미하나요?,in,nlp_network,2025-11-25T08:17:24.907374
+1,1,19,assistant,두 단어가 함께 등장한 빈도를 edge weight로 두는 방식이 가장 많이 사용됩니다.,in,nlp_network,2025-11-25T08:17:24.907374
+1,1,20,user,PyCharm에서 디버깅 설정이 제대로 동작하지 않습니다.,out,ide_setting,2025-11-25T08:17:24.907385
+1,1,20,assistant,Run/Debug Configuration에서 Script path와 Python interpreter 설정을 다시 확인해 보세요.,out,ide_setting,2025-11-25T08:17:24.907385
+1,2,21,user,데이터 직무 취업을 목표로 할 때 어떤 방향으로 준비를 시작해야 할까요?,out,career,2025-11-25T08:17:24.907398
+1,2,21,assistant,"관심 있는 직무(분석, 엔지니어 등)를 먼저 정하고, JD를 기준으로 필요한 역량을 역추적해 보세요.",out,career,2025-11-25T08:17:24.907398
+1,2,22,user,공공데이터 API를 호출할 때 인증 오류가 발생합니다.,in,public_data,2025-11-25T08:17:24.907408
+1,2,22,assistant,요청 URL에 서비스키가 정확히 포함되어 있는지와 인코딩 여부를 먼저 확인해 보세요.,in,public_data,2025-11-25T08:17:24.907408
+1,2,23,user,데이터 직무 취업을 목표로 할 때 어떤 방향으로 준비를 시작해야 할까요?,out,career,2025-11-25T08:17:24.907415
+1,2,23,assistant,"관심 있는 직무(분석, 엔지니어 등)를 먼저 정하고, JD를 기준으로 필요한 역량을 역추적해 보세요.",out,career,2025-11-25T08:17:24.907415
+1,2,24,user,공공데이터 API를 호출할 때 인증 오류가 발생합니다.,in,public_data,2025-11-25T08:17:24.907420
+1,2,24,assistant,요청 URL에 서비스키가 정확히 포함되어 있는지와 인코딩 여부를 먼저 확인해 보세요.,in,public_data,2025-11-25T08:17:24.907420
+1,2,25,user,Selenium 실행 시 ChromeDriver 관련 에러가 발생합니다.,in,crawling_selenium,2025-11-25T08:17:24.907426
+1,2,25,assistant,Chrome과 ChromeDriver의 버전이 일치하는지와 드라이버 경로 설정을 먼저 확인해 보세요.,in,crawling_selenium,2025-11-25T08:17:24.907426
+1,2,26,user,정규분포와 표준편차 개념이 잘 와닿지 않습니다.,in,statistics_basic,2025-11-25T08:17:24.907432
+1,2,26,assistant,표준편차는 데이터가 평균을 기준으로 얼마나 퍼져 있는지 나타내는 지표입니다.,in,statistics_basic,2025-11-25T08:17:24.907432
+1,2,27,user,LDA 토픽 개수를 몇 개 정도로 설정하는 것이 좋을까요?,in,nlp_topic,2025-11-25T08:17:24.907438
+1,2,27,assistant,"일반적으로 5~15개 사이에서 여러 값을 시도해 보고, 해석이 잘 되는 개수를 선택합니다.",in,nlp_topic,2025-11-25T08:17:24.907438
+1,2,28,user,데이터 직무 취업을 목표로 할 때 어떤 방향으로 준비를 시작해야 할까요?,out,career,2025-11-25T08:17:24.907444
+1,2,28,assistant,"관심 있는 직무(분석, 엔지니어 등)를 먼저 정하고, JD를 기준으로 필요한 역량을 역추적해 보세요.",out,career,2025-11-25T08:17:24.907444
+1,2,29,user,EDA를 할 때 어떤 순서로 데이터를 살펴보면 좋을까요?,in,eda,2025-11-25T08:17:24.907450
+1,2,29,assistant,결측치 확인 → 분포 파악 → 이상치 확인 → 변수 간 관계를 보는 순서를 추천합니다.,in,eda,2025-11-25T08:17:24.907450
+1,2,30,user,ChatGPT를 활용해 데이터 분석할 때 프롬프트를 어떻게 설계해야 할까요?,in,chatgpt_analysis,2025-11-25T08:17:24.907456
+1,2,30,assistant,"역할(Role)을 명시하고, 입력 예시와 원하는 출력 형태를 함께 제시하면 더 안정적인 답변을 얻을 수 있습니다.",in,chatgpt_analysis,2025-11-25T08:17:24.907456
+1,2,31,user,Selenium 실행 시 ChromeDriver 관련 에러가 발생합니다.,in,crawling_selenium,2025-11-25T08:17:24.907749
+1,2,31,assistant,Chrome과 ChromeDriver의 버전이 일치하는지와 드라이버 경로 설정을 먼저 확인해 보세요.,in,crawling_selenium,2025-11-25T08:17:24.907749
+1,2,32,user,OpenAPI 스펙 JSON을 어떤 순서로 읽어야 할지 모르겠습니다.,in,openapi,2025-11-25T08:17:24.907764
+1,2,32,assistant,보통 info → paths → components 순으로 읽어가면 이해가 더 쉽습니다.,in,openapi,2025-11-25T08:17:24.907764
+1,2,33,user,포트폴리오에서 프로젝트 설명을 어떻게 구조화하면 좋을까요?,out,portfolio,2025-11-25T08:17:24.907770
+1,2,33,assistant,문제 정의 → 접근 방법 → 해결 과정 → 결과/인사이트 순서로 정리하면 좋습니다.,out,portfolio,2025-11-25T08:17:24.907770
+1,2,34,user,pandas groupby 결과가 제가 예상한 것과 다르게 나옵니다.,in,pandas,2025-11-25T08:17:24.907777
+1,2,34,assistant,groupby 후에는 집계 함수를 적용해야 의도한 결과가 나오는 경우가 많습니다.,in,pandas,2025-11-25T08:17:24.907777
+1,2,35,user,matplotlib로 그래프 스타일을 변경하는 방법이 어렵습니다.,in,visualization,2025-11-25T08:17:24.907796
+1,2,35,assistant,plt.style.use()나 rcParams를 활용하면 전역 스타일을 쉽게 바꿀 수 있습니다.,in,visualization,2025-11-25T08:17:24.907796
+1,2,36,user,정규분포와 표준편차 개념이 잘 와닿지 않습니다.,in,statistics_basic,2025-11-25T08:17:24.907808
+1,2,36,assistant,표준편차는 데이터가 평균을 기준으로 얼마나 퍼져 있는지 나타내는 지표입니다.,in,statistics_basic,2025-11-25T08:17:24.907808
+1,2,37,user,ChatGPT를 활용해 데이터 분석할 때 프롬프트를 어떻게 설계해야 할까요?,in,chatgpt_analysis,2025-11-25T08:17:24.907814
+1,2,37,assistant,"역할(Role)을 명시하고, 입력 예시와 원하는 출력 형태를 함께 제시하면 더 안정적인 답변을 얻을 수 있습니다.",in,chatgpt_analysis,2025-11-25T08:17:24.907814
+1,2,38,user,matplotlib로 그래프 스타일을 변경하는 방법이 어렵습니다.,in,visualization,2025-11-25T08:17:24.907830
+1,2,38,assistant,plt.style.use()나 rcParams를 활용하면 전역 스타일을 쉽게 바꿀 수 있습니다.,in,visualization,2025-11-25T08:17:24.907830
+1,2,39,user,Selenium 실행 시 ChromeDriver 관련 에러가 발생합니다.,in,crawling_selenium,2025-11-25T08:17:24.907842
+1,2,39,assistant,Chrome과 ChromeDriver의 버전이 일치하는지와 드라이버 경로 설정을 먼저 확인해 보세요.,in,crawling_selenium,2025-11-25T08:17:24.907842
+1,2,40,user,EDA를 할 때 어떤 순서로 데이터를 살펴보면 좋을까요?,in,eda,2025-11-25T08:17:24.907853
+1,2,40,assistant,결측치 확인 → 분포 파악 → 이상치 확인 → 변수 간 관계를 보는 순서를 추천합니다.,in,eda,2025-11-25T08:17:24.907853
+2,1,1,user,Selenium 실행 시 ChromeDriver 관련 에러가 발생합니다.,in,crawling_selenium,2025-11-25T08:17:24.907867
+2,1,1,assistant,Chrome과 ChromeDriver의 버전이 일치하는지와 드라이버 경로 설정을 먼저 확인해 보세요.,in,crawling_selenium,2025-11-25T08:17:24.907867
+2,1,2,user,감성 분석에서 어떤 tokenizer를 선택해야 할지 모르겠습니다.,in,nlp_sentiment,2025-11-25T08:17:24.907879
+2,1,2,assistant,"국문 기준으로는 mecab, khaiii 등이 많이 사용되며 형태소 단위가 중요한 편입니다.",in,nlp_sentiment,2025-11-25T08:17:24.907879
+2,1,3,user,LDA 토픽 개수를 몇 개 정도로 설정하는 것이 좋을까요?,in,nlp_topic,2025-11-25T08:17:24.907890
+2,1,3,assistant,"일반적으로 5~15개 사이에서 여러 값을 시도해 보고, 해석이 잘 되는 개수를 선택합니다.",in,nlp_topic,2025-11-25T08:17:24.907890
+2,1,4,user,연관어 네트워크에서 edge 가중치는 무엇을 의미하나요?,in,nlp_network,2025-11-25T08:17:24.907906
+2,1,4,assistant,두 단어가 함께 등장한 빈도를 edge weight로 두는 방식이 가장 많이 사용됩니다.,in,nlp_network,2025-11-25T08:17:24.907906
+2,1,5,user,ChatGPT를 활용해 데이터 분석할 때 프롬프트를 어떻게 설계해야 할까요?,in,chatgpt_analysis,2025-11-25T08:17:24.907912
+2,1,5,assistant,"역할(Role)을 명시하고, 입력 예시와 원하는 출력 형태를 함께 제시하면 더 안정적인 답변을 얻을 수 있습니다.",in,chatgpt_analysis,2025-11-25T08:17:24.907912
+2,1,6,user,장바구니 분석에서 support 지표 해석이 어렵습니다.,in,market_basket,2025-11-25T08:17:24.907918
+2,1,6,assistant,support는 전체 거래 중 특정 품목 조합이 포함된 비율을 의미합니다.,in,market_basket,2025-11-25T08:17:24.907918
+2,1,7,user,numpy 배열에서 reshape 사용법이 잘 이해가 되지 않습니다.,in,numpy,2025-11-25T08:17:24.907924
+2,1,7,assistant,reshape는 전체 원소 개수가 변하지 않도록 행과 열을 재배치하는 기능입니다.,in,numpy,2025-11-25T08:17:24.907924
+2,1,8,user,데이터 직무 취업을 목표로 할 때 어떤 방향으로 준비를 시작해야 할까요?,out,career,2025-11-25T08:17:24.907930
+2,1,8,assistant,"관심 있는 직무(분석, 엔지니어 등)를 먼저 정하고, JD를 기준으로 필요한 역량을 역추적해 보세요.",out,career,2025-11-25T08:17:24.907930
+2,1,9,user,numpy 배열에서 reshape 사용법이 잘 이해가 되지 않습니다.,in,numpy,2025-11-25T08:17:24.907936
+2,1,9,assistant,reshape는 전체 원소 개수가 변하지 않도록 행과 열을 재배치하는 기능입니다.,in,numpy,2025-11-25T08:17:24.907936
+2,1,10,user,포트폴리오에서 프로젝트 설명을 어떻게 구조화하면 좋을까요?,out,portfolio,2025-11-25T08:17:24.907942
+2,1,10,assistant,문제 정의 → 접근 방법 → 해결 과정 → 결과/인사이트 순서로 정리하면 좋습니다.,out,portfolio,2025-11-25T08:17:24.907942
+2,1,11,user,데이터 직무 취업을 목표로 할 때 어떤 방향으로 준비를 시작해야 할까요?,out,career,2025-11-25T08:17:24.907947
+2,1,11,assistant,"관심 있는 직무(분석, 엔지니어 등)를 먼저 정하고, JD를 기준으로 필요한 역량을 역추적해 보세요.",out,career,2025-11-25T08:17:24.907947
+2,1,12,user,연관어 네트워크에서 edge 가중치는 무엇을 의미하나요?,in,nlp_network,2025-11-25T08:17:24.907953
+2,1,12,assistant,두 단어가 함께 등장한 빈도를 edge weight로 두는 방식이 가장 많이 사용됩니다.,in,nlp_network,2025-11-25T08:17:24.907953
+2,1,13,user,numpy 배열에서 reshape 사용법이 잘 이해가 되지 않습니다.,in,numpy,2025-11-25T08:17:24.907959
+2,1,13,assistant,reshape는 전체 원소 개수가 변하지 않도록 행과 열을 재배치하는 기능입니다.,in,numpy,2025-11-25T08:17:24.907959
+2,1,14,user,EDA를 할 때 어떤 순서로 데이터를 살펴보면 좋을까요?,in,eda,2025-11-25T08:17:24.907978
+2,1,14,assistant,결측치 확인 → 분포 파악 → 이상치 확인 → 변수 간 관계를 보는 순서를 추천합니다.,in,eda,2025-11-25T08:17:24.907978
+2,1,15,user,포트폴리오에서 프로젝트 설명을 어떻게 구조화하면 좋을까요?,out,portfolio,2025-11-25T08:17:24.907984
+2,1,15,assistant,문제 정의 → 접근 방법 → 해결 과정 → 결과/인사이트 순서로 정리하면 좋습니다.,out,portfolio,2025-11-25T08:17:24.907984
+2,1,16,user,PyCharm에서 디버깅 설정이 제대로 동작하지 않습니다.,out,ide_setting,2025-11-25T08:17:24.907992
+2,1,16,assistant,Run/Debug Configuration에서 Script path와 Python interpreter 설정을 다시 확인해 보세요.,out,ide_setting,2025-11-25T08:17:24.907992
+2,1,17,user,파이썬 변수와 리스트 차이가 아직 헷갈립니다.,in,python_basic,2025-11-25T08:17:24.908004
+2,1,17,assistant,"변수는 하나의 값을, 리스트는 여러 값을 순서대로 담을 수 있는 자료형입니다.",in,python_basic,2025-11-25T08:17:24.908004
+2,1,18,user,정규분포와 표준편차 개념이 잘 와닿지 않습니다.,in,statistics_basic,2025-11-25T08:17:24.908015
+2,1,18,assistant,표준편차는 데이터가 평균을 기준으로 얼마나 퍼져 있는지 나타내는 지표입니다.,in,statistics_basic,2025-11-25T08:17:24.908015
+2,1,19,user,포트폴리오에서 프로젝트 설명을 어떻게 구조화하면 좋을까요?,out,portfolio,2025-11-25T08:17:24.908116
+2,1,19,assistant,문제 정의 → 접근 방법 → 해결 과정 → 결과/인사이트 순서로 정리하면 좋습니다.,out,portfolio,2025-11-25T08:17:24.908116
+2,1,20,user,데이터 직무 취업을 목표로 할 때 어떤 방향으로 준비를 시작해야 할까요?,out,career,2025-11-25T08:17:24.908125
+2,1,20,assistant,"관심 있는 직무(분석, 엔지니어 등)를 먼저 정하고, JD를 기준으로 필요한 역량을 역추적해 보세요.",out,career,2025-11-25T08:17:24.908125
+2,2,21,user,BeautifulSoup의 select 사용법이 헷갈립니다.,in,crawling_bs4,2025-11-25T08:17:24.908132
+2,2,21,assistant,select('div.class명') 또는 select_one()을 활용해 CSS 선택자 기반으로 요소를 찾을 수 있습니다.,in,crawling_bs4,2025-11-25T08:17:24.908132
+2,2,22,user,Selenium 실행 시 ChromeDriver 관련 에러가 발생합니다.,in,crawling_selenium,2025-11-25T08:17:24.908138
+2,2,22,assistant,Chrome과 ChromeDriver의 버전이 일치하는지와 드라이버 경로 설정을 먼저 확인해 보세요.,in,crawling_selenium,2025-11-25T08:17:24.908138
+2,2,23,user,정규분포와 표준편차 개념이 잘 와닿지 않습니다.,in,statistics_basic,2025-11-25T08:17:24.908153
+2,2,23,assistant,표준편차는 데이터가 평균을 기준으로 얼마나 퍼져 있는지 나타내는 지표입니다.,in,statistics_basic,2025-11-25T08:17:24.908153
+2,2,24,user,Selenium 실행 시 ChromeDriver 관련 에러가 발생합니다.,in,crawling_selenium,2025-11-25T08:17:24.908159
+2,2,24,assistant,Chrome과 ChromeDriver의 버전이 일치하는지와 드라이버 경로 설정을 먼저 확인해 보세요.,in,crawling_selenium,2025-11-25T08:17:24.908159
+2,2,25,user,포트폴리오에서 프로젝트 설명을 어떻게 구조화하면 좋을까요?,out,portfolio,2025-11-25T08:17:24.908165
+2,2,25,assistant,문제 정의 → 접근 방법 → 해결 과정 → 결과/인사이트 순서로 정리하면 좋습니다.,out,portfolio,2025-11-25T08:17:24.908165
+2,2,26,user,정규분포와 표준편차 개념이 잘 와닿지 않습니다.,in,statistics_basic,2025-11-25T08:17:24.908172
+2,2,26,assistant,표준편차는 데이터가 평균을 기준으로 얼마나 퍼져 있는지 나타내는 지표입니다.,in,statistics_basic,2025-11-25T08:17:24.908172
+2,2,27,user,PyCharm에서 디버깅 설정이 제대로 동작하지 않습니다.,out,ide_setting,2025-11-25T08:17:24.908178
+2,2,27,assistant,Run/Debug Configuration에서 Script path와 Python interpreter 설정을 다시 확인해 보세요.,out,ide_setting,2025-11-25T08:17:24.908178
+2,2,28,user,장바구니 분석에서 support 지표 해석이 어렵습니다.,in,market_basket,2025-11-25T08:17:24.908184
+2,2,28,assistant,support는 전체 거래 중 특정 품목 조합이 포함된 비율을 의미합니다.,in,market_basket,2025-11-25T08:17:24.908184
+2,2,29,user,감성 분석에서 어떤 tokenizer를 선택해야 할지 모르겠습니다.,in,nlp_sentiment,2025-11-25T08:17:24.908189
+2,2,29,assistant,"국문 기준으로는 mecab, khaiii 등이 많이 사용되며 형태소 단위가 중요한 편입니다.",in,nlp_sentiment,2025-11-25T08:17:24.908189
+2,2,30,user,Selenium 실행 시 ChromeDriver 관련 에러가 발생합니다.,in,crawling_selenium,2025-11-25T08:17:24.908195
+2,2,30,assistant,Chrome과 ChromeDriver의 버전이 일치하는지와 드라이버 경로 설정을 먼저 확인해 보세요.,in,crawling_selenium,2025-11-25T08:17:24.908195
+2,2,31,user,OpenAPI 스펙 JSON을 어떤 순서로 읽어야 할지 모르겠습니다.,in,openapi,2025-11-25T08:17:24.908201
+2,2,31,assistant,보통 info → paths → components 순으로 읽어가면 이해가 더 쉽습니다.,in,openapi,2025-11-25T08:17:24.908201
+2,2,32,user,ChatGPT를 활용해 데이터 분석할 때 프롬프트를 어떻게 설계해야 할까요?,in,chatgpt_analysis,2025-11-25T08:17:24.908218
+2,2,32,assistant,"역할(Role)을 명시하고, 입력 예시와 원하는 출력 형태를 함께 제시하면 더 안정적인 답변을 얻을 수 있습니다.",in,chatgpt_analysis,2025-11-25T08:17:24.908218
+2,2,33,user,장바구니 분석에서 support 지표 해석이 어렵습니다.,in,market_basket,2025-11-25T08:17:24.908230
+2,2,33,assistant,support는 전체 거래 중 특정 품목 조합이 포함된 비율을 의미합니다.,in,market_basket,2025-11-25T08:17:24.908230
+2,2,34,user,OpenAPI 스펙 JSON을 어떤 순서로 읽어야 할지 모르겠습니다.,in,openapi,2025-11-25T08:17:24.908243
+2,2,34,assistant,보통 info → paths → components 순으로 읽어가면 이해가 더 쉽습니다.,in,openapi,2025-11-25T08:17:24.908243
+2,2,35,user,파이썬 변수와 리스트 차이가 아직 헷갈립니다.,in,python_basic,2025-11-25T08:17:24.908253
+2,2,35,assistant,"변수는 하나의 값을, 리스트는 여러 값을 순서대로 담을 수 있는 자료형입니다.",in,python_basic,2025-11-25T08:17:24.908253
+2,2,36,user,PyCharm에서 디버깅 설정이 제대로 동작하지 않습니다.,out,ide_setting,2025-11-25T08:17:24.908260
+2,2,36,assistant,Run/Debug Configuration에서 Script path와 Python interpreter 설정을 다시 확인해 보세요.,out,ide_setting,2025-11-25T08:17:24.908260
+2,2,37,user,데이터 직무 취업을 목표로 할 때 어떤 방향으로 준비를 시작해야 할까요?,out,career,2025-11-25T08:17:24.908266
+2,2,37,assistant,"관심 있는 직무(분석, 엔지니어 등)를 먼저 정하고, JD를 기준으로 필요한 역량을 역추적해 보세요.",out,career,2025-11-25T08:17:24.908266
+2,2,38,user,장바구니 분석에서 support 지표 해석이 어렵습니다.,in,market_basket,2025-11-25T08:17:24.908271
+2,2,38,assistant,support는 전체 거래 중 특정 품목 조합이 포함된 비율을 의미합니다.,in,market_basket,2025-11-25T08:17:24.908271
+2,2,39,user,PyCharm에서 디버깅 설정이 제대로 동작하지 않습니다.,out,ide_setting,2025-11-25T08:17:24.908277
+2,2,39,assistant,Run/Debug Configuration에서 Script path와 Python interpreter 설정을 다시 확인해 보세요.,out,ide_setting,2025-11-25T08:17:24.908277
+2,2,40,user,감성 분석에서 어떤 tokenizer를 선택해야 할지 모르겠습니다.,in,nlp_sentiment,2025-11-25T08:17:24.908284
+2,2,40,assistant,"국문 기준으로는 mecab, khaiii 등이 많이 사용되며 형태소 단위가 중요한 편입니다.",in,nlp_sentiment,2025-11-25T08:17:24.908284
+3,1,1,user,PyCharm에서 디버깅 설정이 제대로 동작하지 않습니다.,out,ide_setting,2025-11-25T08:17:24.908297
+3,1,1,assistant,Run/Debug Configuration에서 Script path와 Python interpreter 설정을 다시 확인해 보세요.,out,ide_setting,2025-11-25T08:17:24.908297
+3,1,2,user,감성 분석에서 어떤 tokenizer를 선택해야 할지 모르겠습니다.,in,nlp_sentiment,2025-11-25T08:17:24.908303
+3,1,2,assistant,"국문 기준으로는 mecab, khaiii 등이 많이 사용되며 형태소 단위가 중요한 편입니다.",in,nlp_sentiment,2025-11-25T08:17:24.908303
+3,1,3,user,Selenium 실행 시 ChromeDriver 관련 에러가 발생합니다.,in,crawling_selenium,2025-11-25T08:17:24.908309
+3,1,3,assistant,Chrome과 ChromeDriver의 버전이 일치하는지와 드라이버 경로 설정을 먼저 확인해 보세요.,in,crawling_selenium,2025-11-25T08:17:24.908309
+3,1,4,user,PyCharm에서 디버깅 설정이 제대로 동작하지 않습니다.,out,ide_setting,2025-11-25T08:17:24.908315
+3,1,4,assistant,Run/Debug Configuration에서 Script path와 Python interpreter 설정을 다시 확인해 보세요.,out,ide_setting,2025-11-25T08:17:24.908315
+3,1,5,user,데이터 직무 취업을 목표로 할 때 어떤 방향으로 준비를 시작해야 할까요?,out,career,2025-11-25T08:17:24.908321
+3,1,5,assistant,"관심 있는 직무(분석, 엔지니어 등)를 먼저 정하고, JD를 기준으로 필요한 역량을 역추적해 보세요.",out,career,2025-11-25T08:17:24.908321
+3,1,6,user,PyCharm에서 디버깅 설정이 제대로 동작하지 않습니다.,out,ide_setting,2025-11-25T08:17:24.908327
+3,1,6,assistant,Run/Debug Configuration에서 Script path와 Python interpreter 설정을 다시 확인해 보세요.,out,ide_setting,2025-11-25T08:17:24.908327
+3,1,7,user,포트폴리오에서 프로젝트 설명을 어떻게 구조화하면 좋을까요?,out,portfolio,2025-11-25T08:17:24.908333
+3,1,7,assistant,문제 정의 → 접근 방법 → 해결 과정 → 결과/인사이트 순서로 정리하면 좋습니다.,out,portfolio,2025-11-25T08:17:24.908333
+3,1,8,user,파이썬 변수와 리스트 차이가 아직 헷갈립니다.,in,python_basic,2025-11-25T08:17:24.908339
+3,1,8,assistant,"변수는 하나의 값을, 리스트는 여러 값을 순서대로 담을 수 있는 자료형입니다.",in,python_basic,2025-11-25T08:17:24.908339
+3,1,9,user,포트폴리오에서 프로젝트 설명을 어떻게 구조화하면 좋을까요?,out,portfolio,2025-11-25T08:17:24.908348
+3,1,9,assistant,문제 정의 → 접근 방법 → 해결 과정 → 결과/인사이트 순서로 정리하면 좋습니다.,out,portfolio,2025-11-25T08:17:24.908348
+3,1,10,user,pandas groupby 결과가 제가 예상한 것과 다르게 나옵니다.,in,pandas,2025-11-25T08:17:24.908358
+3,1,10,assistant,groupby 후에는 집계 함수를 적용해야 의도한 결과가 나오는 경우가 많습니다.,in,pandas,2025-11-25T08:17:24.908358
+3,1,11,user,포트폴리오에서 프로젝트 설명을 어떻게 구조화하면 좋을까요?,out,portfolio,2025-11-25T08:17:24.908364
+3,1,11,assistant,문제 정의 → 접근 방법 → 해결 과정 → 결과/인사이트 순서로 정리하면 좋습니다.,out,portfolio,2025-11-25T08:17:24.908364
+3,1,12,user,BeautifulSoup의 select 사용법이 헷갈립니다.,in,crawling_bs4,2025-11-25T08:17:24.908369
+3,1,12,assistant,select('div.class명') 또는 select_one()을 활용해 CSS 선택자 기반으로 요소를 찾을 수 있습니다.,in,crawling_bs4,2025-11-25T08:17:24.908369
+3,1,13,user,PyCharm에서 디버깅 설정이 제대로 동작하지 않습니다.,out,ide_setting,2025-11-25T08:17:24.908375
+3,1,13,assistant,Run/Debug Configuration에서 Script path와 Python interpreter 설정을 다시 확인해 보세요.,out,ide_setting,2025-11-25T08:17:24.908375
+3,1,14,user,감성 분석에서 어떤 tokenizer를 선택해야 할지 모르겠습니다.,in,nlp_sentiment,2025-11-25T08:17:24.908381
+3,1,14,assistant,"국문 기준으로는 mecab, khaiii 등이 많이 사용되며 형태소 단위가 중요한 편입니다.",in,nlp_sentiment,2025-11-25T08:17:24.908381
+3,1,15,user,포트폴리오에서 프로젝트 설명을 어떻게 구조화하면 좋을까요?,out,portfolio,2025-11-25T08:17:24.908387
+3,1,15,assistant,문제 정의 → 접근 방법 → 해결 과정 → 결과/인사이트 순서로 정리하면 좋습니다.,out,portfolio,2025-11-25T08:17:24.908387
+3,1,16,user,데이터 직무 취업을 목표로 할 때 어떤 방향으로 준비를 시작해야 할까요?,out,career,2025-11-25T08:17:24.908400
+3,1,16,assistant,"관심 있는 직무(분석, 엔지니어 등)를 먼저 정하고, JD를 기준으로 필요한 역량을 역추적해 보세요.",out,career,2025-11-25T08:17:24.908400
+3,1,17,user,ChatGPT를 활용해 데이터 분석할 때 프롬프트를 어떻게 설계해야 할까요?,in,chatgpt_analysis,2025-11-25T08:17:24.908406
+3,1,17,assistant,"역할(Role)을 명시하고, 입력 예시와 원하는 출력 형태를 함께 제시하면 더 안정적인 답변을 얻을 수 있습니다.",in,chatgpt_analysis,2025-11-25T08:17:24.908406
+3,1,18,user,OpenAPI 스펙 JSON을 어떤 순서로 읽어야 할지 모르겠습니다.,in,openapi,2025-11-25T08:17:24.908412
+3,1,18,assistant,보통 info → paths → components 순으로 읽어가면 이해가 더 쉽습니다.,in,openapi,2025-11-25T08:17:24.908412
+3,1,19,user,EDA를 할 때 어떤 순서로 데이터를 살펴보면 좋을까요?,in,eda,2025-11-25T08:17:24.908422
+3,1,19,assistant,결측치 확인 → 분포 파악 → 이상치 확인 → 변수 간 관계를 보는 순서를 추천합니다.,in,eda,2025-11-25T08:17:24.908422
+3,1,20,user,데이터 직무 취업을 목표로 할 때 어떤 방향으로 준비를 시작해야 할까요?,out,career,2025-11-25T08:17:24.908428
+3,1,20,assistant,"관심 있는 직무(분석, 엔지니어 등)를 먼저 정하고, JD를 기준으로 필요한 역량을 역추적해 보세요.",out,career,2025-11-25T08:17:24.908428
+3,2,21,user,파이썬 변수와 리스트 차이가 아직 헷갈립니다.,in,python_basic,2025-11-25T08:17:24.908434
+3,2,21,assistant,"변수는 하나의 값을, 리스트는 여러 값을 순서대로 담을 수 있는 자료형입니다.",in,python_basic,2025-11-25T08:17:24.908434
+3,2,22,user,PyCharm에서 디버깅 설정이 제대로 동작하지 않습니다.,out,ide_setting,2025-11-25T08:17:24.908441
+3,2,22,assistant,Run/Debug Configuration에서 Script path와 Python interpreter 설정을 다시 확인해 보세요.,out,ide_setting,2025-11-25T08:17:24.908441
+3,2,23,user,포트폴리오에서 프로젝트 설명을 어떻게 구조화하면 좋을까요?,out,portfolio,2025-11-25T08:17:24.908447
+3,2,23,assistant,문제 정의 → 접근 방법 → 해결 과정 → 결과/인사이트 순서로 정리하면 좋습니다.,out,portfolio,2025-11-25T08:17:24.908447
+3,2,24,user,연관어 네트워크에서 edge 가중치는 무엇을 의미하나요?,in,nlp_network,2025-11-25T08:17:24.908453
+3,2,24,assistant,두 단어가 함께 등장한 빈도를 edge weight로 두는 방식이 가장 많이 사용됩니다.,in,nlp_network,2025-11-25T08:17:24.908453
+3,2,25,user,PyCharm에서 디버깅 설정이 제대로 동작하지 않습니다.,out,ide_setting,2025-11-25T08:17:24.908460
+3,2,25,assistant,Run/Debug Configuration에서 Script path와 Python interpreter 설정을 다시 확인해 보세요.,out,ide_setting,2025-11-25T08:17:24.908460
+3,2,26,user,데이터 직무 취업을 목표로 할 때 어떤 방향으로 준비를 시작해야 할까요?,out,career,2025-11-25T08:17:24.908466
+3,2,26,assistant,"관심 있는 직무(분석, 엔지니어 등)를 먼저 정하고, JD를 기준으로 필요한 역량을 역추적해 보세요.",out,career,2025-11-25T08:17:24.908466
+3,2,27,user,데이터 직무 취업을 목표로 할 때 어떤 방향으로 준비를 시작해야 할까요?,out,career,2025-11-25T08:17:24.908472
+3,2,27,assistant,"관심 있는 직무(분석, 엔지니어 등)를 먼저 정하고, JD를 기준으로 필요한 역량을 역추적해 보세요.",out,career,2025-11-25T08:17:24.908472
+3,2,28,user,포트폴리오에서 프로젝트 설명을 어떻게 구조화하면 좋을까요?,out,portfolio,2025-11-25T08:17:24.908483
+3,2,28,assistant,문제 정의 → 접근 방법 → 해결 과정 → 결과/인사이트 순서로 정리하면 좋습니다.,out,portfolio,2025-11-25T08:17:24.908483
+3,2,29,user,포트폴리오에서 프로젝트 설명을 어떻게 구조화하면 좋을까요?,out,portfolio,2025-11-25T08:17:24.908489
+3,2,29,assistant,문제 정의 → 접근 방법 → 해결 과정 → 결과/인사이트 순서로 정리하면 좋습니다.,out,portfolio,2025-11-25T08:17:24.908489
+3,2,30,user,연관어 네트워크에서 edge 가중치는 무엇을 의미하나요?,in,nlp_network,2025-11-25T08:17:24.908495
+3,2,30,assistant,두 단어가 함께 등장한 빈도를 edge weight로 두는 방식이 가장 많이 사용됩니다.,in,nlp_network,2025-11-25T08:17:24.908495
+3,2,31,user,포트폴리오에서 프로젝트 설명을 어떻게 구조화하면 좋을까요?,out,portfolio,2025-11-25T08:17:24.908501
+3,2,31,assistant,문제 정의 → 접근 방법 → 해결 과정 → 결과/인사이트 순서로 정리하면 좋습니다.,out,portfolio,2025-11-25T08:17:24.908501
+3,2,32,user,Selenium 실행 시 ChromeDriver 관련 에러가 발생합니다.,in,crawling_selenium,2025-11-25T08:17:24.908506
+3,2,32,assistant,Chrome과 ChromeDriver의 버전이 일치하는지와 드라이버 경로 설정을 먼저 확인해 보세요.,in,crawling_selenium,2025-11-25T08:17:24.908506
+3,2,33,user,PyCharm에서 디버깅 설정이 제대로 동작하지 않습니다.,out,ide_setting,2025-11-25T08:17:24.908512
+3,2,33,assistant,Run/Debug Configuration에서 Script path와 Python interpreter 설정을 다시 확인해 보세요.,out,ide_setting,2025-11-25T08:17:24.908512
+3,2,34,user,Selenium 실행 시 ChromeDriver 관련 에러가 발생합니다.,in,crawling_selenium,2025-11-25T08:17:24.908518
+3,2,34,assistant,Chrome과 ChromeDriver의 버전이 일치하는지와 드라이버 경로 설정을 먼저 확인해 보세요.,in,crawling_selenium,2025-11-25T08:17:24.908518
+3,2,35,user,공공데이터 API를 호출할 때 인증 오류가 발생합니다.,in,public_data,2025-11-25T08:17:24.908523
+3,2,35,assistant,요청 URL에 서비스키가 정확히 포함되어 있는지와 인코딩 여부를 먼저 확인해 보세요.,in,public_data,2025-11-25T08:17:24.908523
+3,2,36,user,LDA 토픽 개수를 몇 개 정도로 설정하는 것이 좋을까요?,in,nlp_topic,2025-11-25T08:17:24.908529
+3,2,36,assistant,"일반적으로 5~15개 사이에서 여러 값을 시도해 보고, 해석이 잘 되는 개수를 선택합니다.",in,nlp_topic,2025-11-25T08:17:24.908529
+3,2,37,user,OpenAPI 스펙 JSON을 어떤 순서로 읽어야 할지 모르겠습니다.,in,openapi,2025-11-25T08:17:24.908535
+3,2,37,assistant,보통 info → paths → components 순으로 읽어가면 이해가 더 쉽습니다.,in,openapi,2025-11-25T08:17:24.908535
+3,2,38,user,PyCharm에서 디버깅 설정이 제대로 동작하지 않습니다.,out,ide_setting,2025-11-25T08:17:24.908546
+3,2,38,assistant,Run/Debug Configuration에서 Script path와 Python interpreter 설정을 다시 확인해 보세요.,out,ide_setting,2025-11-25T08:17:24.908546
+3,2,39,user,포트폴리오에서 프로젝트 설명을 어떻게 구조화하면 좋을까요?,out,portfolio,2025-11-25T08:17:24.908552
+3,2,39,assistant,문제 정의 → 접근 방법 → 해결 과정 → 결과/인사이트 순서로 정리하면 좋습니다.,out,portfolio,2025-11-25T08:17:24.908552
+3,2,40,user,matplotlib로 그래프 스타일을 변경하는 방법이 어렵습니다.,in,visualization,2025-11-25T08:17:24.908557
+3,2,40,assistant,plt.style.use()나 rcParams를 활용하면 전역 스타일을 쉽게 바꿀 수 있습니다.,in,visualization,2025-11-25T08:17:24.908557
+4,1,1,user,데이터 직무 취업을 목표로 할 때 어떤 방향으로 준비를 시작해야 할까요?,out,career,2025-11-25T08:17:24.908565
+4,1,1,assistant,"관심 있는 직무(분석, 엔지니어 등)를 먼저 정하고, JD를 기준으로 필요한 역량을 역추적해 보세요.",out,career,2025-11-25T08:17:24.908565
+4,1,2,user,PyCharm에서 디버깅 설정이 제대로 동작하지 않습니다.,out,ide_setting,2025-11-25T08:17:24.908571
+4,1,2,assistant,Run/Debug Configuration에서 Script path와 Python interpreter 설정을 다시 확인해 보세요.,out,ide_setting,2025-11-25T08:17:24.908571
+4,1,3,user,데이터 직무 취업을 목표로 할 때 어떤 방향으로 준비를 시작해야 할까요?,out,career,2025-11-25T08:17:24.908577
+4,1,3,assistant,"관심 있는 직무(분석, 엔지니어 등)를 먼저 정하고, JD를 기준으로 필요한 역량을 역추적해 보세요.",out,career,2025-11-25T08:17:24.908577
+4,1,4,user,OpenAPI 스펙 JSON을 어떤 순서로 읽어야 할지 모르겠습니다.,in,openapi,2025-11-25T08:17:24.908583
+4,1,4,assistant,보통 info → paths → components 순으로 읽어가면 이해가 더 쉽습니다.,in,openapi,2025-11-25T08:17:24.908583
+4,1,5,user,OpenAPI 스펙 JSON을 어떤 순서로 읽어야 할지 모르겠습니다.,in,openapi,2025-11-25T08:17:24.908592
+4,1,5,assistant,보통 info → paths → components 순으로 읽어가면 이해가 더 쉽습니다.,in,openapi,2025-11-25T08:17:24.908592
+4,1,6,user,공공데이터 API를 호출할 때 인증 오류가 발생합니다.,in,public_data,2025-11-25T08:17:24.908603
+4,1,6,assistant,요청 URL에 서비스키가 정확히 포함되어 있는지와 인코딩 여부를 먼저 확인해 보세요.,in,public_data,2025-11-25T08:17:24.908603
+4,1,7,user,PyCharm에서 디버깅 설정이 제대로 동작하지 않습니다.,out,ide_setting,2025-11-25T08:17:24.908621
+4,1,7,assistant,Run/Debug Configuration에서 Script path와 Python interpreter 설정을 다시 확인해 보세요.,out,ide_setting,2025-11-25T08:17:24.908621
+4,1,8,user,PyCharm에서 디버깅 설정이 제대로 동작하지 않습니다.,out,ide_setting,2025-11-25T08:17:24.908628
+4,1,8,assistant,Run/Debug Configuration에서 Script path와 Python interpreter 설정을 다시 확인해 보세요.,out,ide_setting,2025-11-25T08:17:24.908628
+4,1,9,user,데이터 직무 취업을 목표로 할 때 어떤 방향으로 준비를 시작해야 할까요?,out,career,2025-11-25T08:17:24.908634
+4,1,9,assistant,"관심 있는 직무(분석, 엔지니어 등)를 먼저 정하고, JD를 기준으로 필요한 역량을 역추적해 보세요.",out,career,2025-11-25T08:17:24.908634
+4,1,10,user,EDA를 할 때 어떤 순서로 데이터를 살펴보면 좋을까요?,in,eda,2025-11-25T08:17:24.908640
+4,1,10,assistant,결측치 확인 → 분포 파악 → 이상치 확인 → 변수 간 관계를 보는 순서를 추천합니다.,in,eda,2025-11-25T08:17:24.908640
+4,1,11,user,PyCharm에서 디버깅 설정이 제대로 동작하지 않습니다.,out,ide_setting,2025-11-25T08:17:24.908646
+4,1,11,assistant,Run/Debug Configuration에서 Script path와 Python interpreter 설정을 다시 확인해 보세요.,out,ide_setting,2025-11-25T08:17:24.908646
+4,1,12,user,PyCharm에서 디버깅 설정이 제대로 동작하지 않습니다.,out,ide_setting,2025-11-25T08:17:24.908652
+4,1,12,assistant,Run/Debug Configuration에서 Script path와 Python interpreter 설정을 다시 확인해 보세요.,out,ide_setting,2025-11-25T08:17:24.908652
+4,1,13,user,데이터 직무 취업을 목표로 할 때 어떤 방향으로 준비를 시작해야 할까요?,out,career,2025-11-25T08:17:24.908658
+4,1,13,assistant,"관심 있는 직무(분석, 엔지니어 등)를 먼저 정하고, JD를 기준으로 필요한 역량을 역추적해 보세요.",out,career,2025-11-25T08:17:24.908658
+4,1,14,user,matplotlib로 그래프 스타일을 변경하는 방법이 어렵습니다.,in,visualization,2025-11-25T08:17:24.908663
+4,1,14,assistant,plt.style.use()나 rcParams를 활용하면 전역 스타일을 쉽게 바꿀 수 있습니다.,in,visualization,2025-11-25T08:17:24.908663
+4,1,15,user,matplotlib로 그래프 스타일을 변경하는 방법이 어렵습니다.,in,visualization,2025-11-25T08:17:24.908669
+4,1,15,assistant,plt.style.use()나 rcParams를 활용하면 전역 스타일을 쉽게 바꿀 수 있습니다.,in,visualization,2025-11-25T08:17:24.908669
+4,1,16,user,PyCharm에서 디버깅 설정이 제대로 동작하지 않습니다.,out,ide_setting,2025-11-25T08:17:24.908684
+4,1,16,assistant,Run/Debug Configuration에서 Script path와 Python interpreter 설정을 다시 확인해 보세요.,out,ide_setting,2025-11-25T08:17:24.908684
+4,1,17,user,감성 분석에서 어떤 tokenizer를 선택해야 할지 모르겠습니다.,in,nlp_sentiment,2025-11-25T08:17:24.908690
+4,1,17,assistant,"국문 기준으로는 mecab, khaiii 등이 많이 사용되며 형태소 단위가 중요한 편입니다.",in,nlp_sentiment,2025-11-25T08:17:24.908690
+4,1,18,user,matplotlib로 그래프 스타일을 변경하는 방법이 어렵습니다.,in,visualization,2025-11-25T08:17:24.908696
+4,1,18,assistant,plt.style.use()나 rcParams를 활용하면 전역 스타일을 쉽게 바꿀 수 있습니다.,in,visualization,2025-11-25T08:17:24.908696
+4,1,19,user,EDA를 할 때 어떤 순서로 데이터를 살펴보면 좋을까요?,in,eda,2025-11-25T08:17:24.908702
+4,1,19,assistant,결측치 확인 → 분포 파악 → 이상치 확인 → 변수 간 관계를 보는 순서를 추천합니다.,in,eda,2025-11-25T08:17:24.908702
+4,1,20,user,공공데이터 API를 호출할 때 인증 오류가 발생합니다.,in,public_data,2025-11-25T08:17:24.908708
+4,1,20,assistant,요청 URL에 서비스키가 정확히 포함되어 있는지와 인코딩 여부를 먼저 확인해 보세요.,in,public_data,2025-11-25T08:17:24.908708
+4,2,21,user,OpenAPI 스펙 JSON을 어떤 순서로 읽어야 할지 모르겠습니다.,in,openapi,2025-11-25T08:17:24.908714
+4,2,21,assistant,보통 info → paths → components 순으로 읽어가면 이해가 더 쉽습니다.,in,openapi,2025-11-25T08:17:24.908714
+4,2,22,user,EDA를 할 때 어떤 순서로 데이터를 살펴보면 좋을까요?,in,eda,2025-11-25T08:17:24.908720
+4,2,22,assistant,결측치 확인 → 분포 파악 → 이상치 확인 → 변수 간 관계를 보는 순서를 추천합니다.,in,eda,2025-11-25T08:17:24.908720
+4,2,23,user,LDA 토픽 개수를 몇 개 정도로 설정하는 것이 좋을까요?,in,nlp_topic,2025-11-25T08:17:24.908726
+4,2,23,assistant,"일반적으로 5~15개 사이에서 여러 값을 시도해 보고, 해석이 잘 되는 개수를 선택합니다.",in,nlp_topic,2025-11-25T08:17:24.908726
+4,2,24,user,포트폴리오에서 프로젝트 설명을 어떻게 구조화하면 좋을까요?,out,portfolio,2025-11-25T08:17:24.908732
+4,2,24,assistant,문제 정의 → 접근 방법 → 해결 과정 → 결과/인사이트 순서로 정리하면 좋습니다.,out,portfolio,2025-11-25T08:17:24.908732
+4,2,25,user,LDA 토픽 개수를 몇 개 정도로 설정하는 것이 좋을까요?,in,nlp_topic,2025-11-25T08:17:24.908742
+4,2,25,assistant,"일반적으로 5~15개 사이에서 여러 값을 시도해 보고, 해석이 잘 되는 개수를 선택합니다.",in,nlp_topic,2025-11-25T08:17:24.908742
+4,2,26,user,장바구니 분석에서 support 지표 해석이 어렵습니다.,in,market_basket,2025-11-25T08:17:24.908748
+4,2,26,assistant,support는 전체 거래 중 특정 품목 조합이 포함된 비율을 의미합니다.,in,market_basket,2025-11-25T08:17:24.908748
+4,2,27,user,EDA를 할 때 어떤 순서로 데이터를 살펴보면 좋을까요?,in,eda,2025-11-25T08:17:24.908760
+4,2,27,assistant,결측치 확인 → 분포 파악 → 이상치 확인 → 변수 간 관계를 보는 순서를 추천합니다.,in,eda,2025-11-25T08:17:24.908760
+4,2,28,user,LDA 토픽 개수를 몇 개 정도로 설정하는 것이 좋을까요?,in,nlp_topic,2025-11-25T08:17:24.908766
+4,2,28,assistant,"일반적으로 5~15개 사이에서 여러 값을 시도해 보고, 해석이 잘 되는 개수를 선택합니다.",in,nlp_topic,2025-11-25T08:17:24.908766
+4,2,29,user,Selenium 실행 시 ChromeDriver 관련 에러가 발생합니다.,in,crawling_selenium,2025-11-25T08:17:24.908772
+4,2,29,assistant,Chrome과 ChromeDriver의 버전이 일치하는지와 드라이버 경로 설정을 먼저 확인해 보세요.,in,crawling_selenium,2025-11-25T08:17:24.908772
+4,2,30,user,포트폴리오에서 프로젝트 설명을 어떻게 구조화하면 좋을까요?,out,portfolio,2025-11-25T08:17:24.908778
+4,2,30,assistant,문제 정의 → 접근 방법 → 해결 과정 → 결과/인사이트 순서로 정리하면 좋습니다.,out,portfolio,2025-11-25T08:17:24.908778
+4,2,31,user,포트폴리오에서 프로젝트 설명을 어떻게 구조화하면 좋을까요?,out,portfolio,2025-11-25T08:17:24.908783
+4,2,31,assistant,문제 정의 → 접근 방법 → 해결 과정 → 결과/인사이트 순서로 정리하면 좋습니다.,out,portfolio,2025-11-25T08:17:24.908783
+4,2,32,user,BeautifulSoup의 select 사용법이 헷갈립니다.,in,crawling_bs4,2025-11-25T08:17:24.908789
+4,2,32,assistant,select('div.class명') 또는 select_one()을 활용해 CSS 선택자 기반으로 요소를 찾을 수 있습니다.,in,crawling_bs4,2025-11-25T08:17:24.908789
+4,2,33,user,연관어 네트워크에서 edge 가중치는 무엇을 의미하나요?,in,nlp_network,2025-11-25T08:17:24.908796
+4,2,33,assistant,두 단어가 함께 등장한 빈도를 edge weight로 두는 방식이 가장 많이 사용됩니다.,in,nlp_network,2025-11-25T08:17:24.908796
+4,2,34,user,numpy 배열에서 reshape 사용법이 잘 이해가 되지 않습니다.,in,numpy,2025-11-25T08:17:24.908806
+4,2,34,assistant,reshape는 전체 원소 개수가 변하지 않도록 행과 열을 재배치하는 기능입니다.,in,numpy,2025-11-25T08:17:24.908806
+4,2,35,user,OpenAPI 스펙 JSON을 어떤 순서로 읽어야 할지 모르겠습니다.,in,openapi,2025-11-25T08:17:24.908812
+4,2,35,assistant,보통 info → paths → components 순으로 읽어가면 이해가 더 쉽습니다.,in,openapi,2025-11-25T08:17:24.908812
+4,2,36,user,ChatGPT를 활용해 데이터 분석할 때 프롬프트를 어떻게 설계해야 할까요?,in,chatgpt_analysis,2025-11-25T08:17:24.908819
+4,2,36,assistant,"역할(Role)을 명시하고, 입력 예시와 원하는 출력 형태를 함께 제시하면 더 안정적인 답변을 얻을 수 있습니다.",in,chatgpt_analysis,2025-11-25T08:17:24.908819
+4,2,37,user,데이터 직무 취업을 목표로 할 때 어떤 방향으로 준비를 시작해야 할까요?,out,career,2025-11-25T08:17:24.908825
+4,2,37,assistant,"관심 있는 직무(분석, 엔지니어 등)를 먼저 정하고, JD를 기준으로 필요한 역량을 역추적해 보세요.",out,career,2025-11-25T08:17:24.908825
+4,2,38,user,파이썬 변수와 리스트 차이가 아직 헷갈립니다.,in,python_basic,2025-11-25T08:17:24.908831
+4,2,38,assistant,"변수는 하나의 값을, 리스트는 여러 값을 순서대로 담을 수 있는 자료형입니다.",in,python_basic,2025-11-25T08:17:24.908831
+4,2,39,user,연관어 네트워크에서 edge 가중치는 무엇을 의미하나요?,in,nlp_network,2025-11-25T08:17:24.908837
+4,2,39,assistant,두 단어가 함께 등장한 빈도를 edge weight로 두는 방식이 가장 많이 사용됩니다.,in,nlp_network,2025-11-25T08:17:24.908837
+4,2,40,user,데이터 직무 취업을 목표로 할 때 어떤 방향으로 준비를 시작해야 할까요?,out,career,2025-11-25T08:17:24.908843
+4,2,40,assistant,"관심 있는 직무(분석, 엔지니어 등)를 먼저 정하고, JD를 기준으로 필요한 역량을 역추적해 보세요.",out,career,2025-11-25T08:17:24.908843
+5,1,1,user,데이터 직무 취업을 목표로 할 때 어떤 방향으로 준비를 시작해야 할까요?,out,career,2025-11-25T08:17:24.908849
+5,1,1,assistant,"관심 있는 직무(분석, 엔지니어 등)를 먼저 정하고, JD를 기준으로 필요한 역량을 역추적해 보세요.",out,career,2025-11-25T08:17:24.908849
+5,1,2,user,ChatGPT를 활용해 데이터 분석할 때 프롬프트를 어떻게 설계해야 할까요?,in,chatgpt_analysis,2025-11-25T08:17:24.908855
+5,1,2,assistant,"역할(Role)을 명시하고, 입력 예시와 원하는 출력 형태를 함께 제시하면 더 안정적인 답변을 얻을 수 있습니다.",in,chatgpt_analysis,2025-11-25T08:17:24.908855
+5,1,3,user,EDA를 할 때 어떤 순서로 데이터를 살펴보면 좋을까요?,in,eda,2025-11-25T08:17:24.908865
+5,1,3,assistant,결측치 확인 → 분포 파악 → 이상치 확인 → 변수 간 관계를 보는 순서를 추천합니다.,in,eda,2025-11-25T08:17:24.908865
+5,1,4,user,데이터 직무 취업을 목표로 할 때 어떤 방향으로 준비를 시작해야 할까요?,out,career,2025-11-25T08:17:24.908871
+5,1,4,assistant,"관심 있는 직무(분석, 엔지니어 등)를 먼저 정하고, JD를 기준으로 필요한 역량을 역추적해 보세요.",out,career,2025-11-25T08:17:24.908871
+5,1,5,user,OpenAPI 스펙 JSON을 어떤 순서로 읽어야 할지 모르겠습니다.,in,openapi,2025-11-25T08:17:24.908877
+5,1,5,assistant,보통 info → paths → components 순으로 읽어가면 이해가 더 쉽습니다.,in,openapi,2025-11-25T08:17:24.908877
+5,1,6,user,OpenAPI 스펙 JSON을 어떤 순서로 읽어야 할지 모르겠습니다.,in,openapi,2025-11-25T08:17:24.908882
+5,1,6,assistant,보통 info → paths → components 순으로 읽어가면 이해가 더 쉽습니다.,in,openapi,2025-11-25T08:17:24.908882
+5,1,7,user,포트폴리오에서 프로젝트 설명을 어떻게 구조화하면 좋을까요?,out,portfolio,2025-11-25T08:17:24.908888
+5,1,7,assistant,문제 정의 → 접근 방법 → 해결 과정 → 결과/인사이트 순서로 정리하면 좋습니다.,out,portfolio,2025-11-25T08:17:24.908888
+5,1,8,user,EDA를 할 때 어떤 순서로 데이터를 살펴보면 좋을까요?,in,eda,2025-11-25T08:17:24.908894
+5,1,8,assistant,결측치 확인 → 분포 파악 → 이상치 확인 → 변수 간 관계를 보는 순서를 추천합니다.,in,eda,2025-11-25T08:17:24.908894
+5,1,9,user,pandas groupby 결과가 제가 예상한 것과 다르게 나옵니다.,in,pandas,2025-11-25T08:17:24.908899
+5,1,9,assistant,groupby 후에는 집계 함수를 적용해야 의도한 결과가 나오는 경우가 많습니다.,in,pandas,2025-11-25T08:17:24.908899
+5,1,10,user,pandas groupby 결과가 제가 예상한 것과 다르게 나옵니다.,in,pandas,2025-11-25T08:17:24.908905
+5,1,10,assistant,groupby 후에는 집계 함수를 적용해야 의도한 결과가 나오는 경우가 많습니다.,in,pandas,2025-11-25T08:17:24.908905
+5,1,11,user,포트폴리오에서 프로젝트 설명을 어떻게 구조화하면 좋을까요?,out,portfolio,2025-11-25T08:17:24.908911
+5,1,11,assistant,문제 정의 → 접근 방법 → 해결 과정 → 결과/인사이트 순서로 정리하면 좋습니다.,out,portfolio,2025-11-25T08:17:24.908911
+5,1,12,user,장바구니 분석에서 support 지표 해석이 어렵습니다.,in,market_basket,2025-11-25T08:17:24.908922
+5,1,12,assistant,support는 전체 거래 중 특정 품목 조합이 포함된 비율을 의미합니다.,in,market_basket,2025-11-25T08:17:24.908922
+5,1,13,user,Selenium 실행 시 ChromeDriver 관련 에러가 발생합니다.,in,crawling_selenium,2025-11-25T08:17:24.908931
+5,1,13,assistant,Chrome과 ChromeDriver의 버전이 일치하는지와 드라이버 경로 설정을 먼저 확인해 보세요.,in,crawling_selenium,2025-11-25T08:17:24.908931
+5,1,14,user,numpy 배열에서 reshape 사용법이 잘 이해가 되지 않습니다.,in,numpy,2025-11-25T08:17:24.908953
+5,1,14,assistant,reshape는 전체 원소 개수가 변하지 않도록 행과 열을 재배치하는 기능입니다.,in,numpy,2025-11-25T08:17:24.908953
+5,1,15,user,포트폴리오에서 프로젝트 설명을 어떻게 구조화하면 좋을까요?,out,portfolio,2025-11-25T08:17:24.908966
+5,1,15,assistant,문제 정의 → 접근 방법 → 해결 과정 → 결과/인사이트 순서로 정리하면 좋습니다.,out,portfolio,2025-11-25T08:17:24.908966
+5,1,16,user,ChatGPT를 활용해 데이터 분석할 때 프롬프트를 어떻게 설계해야 할까요?,in,chatgpt_analysis,2025-11-25T08:17:24.908977
+5,1,16,assistant,"역할(Role)을 명시하고, 입력 예시와 원하는 출력 형태를 함께 제시하면 더 안정적인 답변을 얻을 수 있습니다.",in,chatgpt_analysis,2025-11-25T08:17:24.908977
+5,1,17,user,Selenium 실행 시 ChromeDriver 관련 에러가 발생합니다.,in,crawling_selenium,2025-11-25T08:17:24.908990
+5,1,17,assistant,Chrome과 ChromeDriver의 버전이 일치하는지와 드라이버 경로 설정을 먼저 확인해 보세요.,in,crawling_selenium,2025-11-25T08:17:24.908990
+5,1,18,user,OpenAPI 스펙 JSON을 어떤 순서로 읽어야 할지 모르겠습니다.,in,openapi,2025-11-25T08:17:24.909007
+5,1,18,assistant,보통 info → paths → components 순으로 읽어가면 이해가 더 쉽습니다.,in,openapi,2025-11-25T08:17:24.909007
+5,1,19,user,Selenium 실행 시 ChromeDriver 관련 에러가 발생합니다.,in,crawling_selenium,2025-11-25T08:17:24.909014
+5,1,19,assistant,Chrome과 ChromeDriver의 버전이 일치하는지와 드라이버 경로 설정을 먼저 확인해 보세요.,in,crawling_selenium,2025-11-25T08:17:24.909014
+5,1,20,user,ChatGPT를 활용해 데이터 분석할 때 프롬프트를 어떻게 설계해야 할까요?,in,chatgpt_analysis,2025-11-25T08:17:24.909019
+5,1,20,assistant,"역할(Role)을 명시하고, 입력 예시와 원하는 출력 형태를 함께 제시하면 더 안정적인 답변을 얻을 수 있습니다.",in,chatgpt_analysis,2025-11-25T08:17:24.909019
+5,2,21,user,pandas groupby 결과가 제가 예상한 것과 다르게 나옵니다.,in,pandas,2025-11-25T08:17:24.909026
+5,2,21,assistant,groupby 후에는 집계 함수를 적용해야 의도한 결과가 나오는 경우가 많습니다.,in,pandas,2025-11-25T08:17:24.909026
+5,2,22,user,LDA 토픽 개수를 몇 개 정도로 설정하는 것이 좋을까요?,in,nlp_topic,2025-11-25T08:17:24.909045
+5,2,22,assistant,"일반적으로 5~15개 사이에서 여러 값을 시도해 보고, 해석이 잘 되는 개수를 선택합니다.",in,nlp_topic,2025-11-25T08:17:24.909045
+5,2,23,user,EDA를 할 때 어떤 순서로 데이터를 살펴보면 좋을까요?,in,eda,2025-11-25T08:17:24.909051
+5,2,23,assistant,결측치 확인 → 분포 파악 → 이상치 확인 → 변수 간 관계를 보는 순서를 추천합니다.,in,eda,2025-11-25T08:17:24.909051
+5,2,24,user,포트폴리오에서 프로젝트 설명을 어떻게 구조화하면 좋을까요?,out,portfolio,2025-11-25T08:17:24.909057
+5,2,24,assistant,문제 정의 → 접근 방법 → 해결 과정 → 결과/인사이트 순서로 정리하면 좋습니다.,out,portfolio,2025-11-25T08:17:24.909057
+5,2,25,user,PyCharm에서 디버깅 설정이 제대로 동작하지 않습니다.,out,ide_setting,2025-11-25T08:17:24.909064
+5,2,25,assistant,Run/Debug Configuration에서 Script path와 Python interpreter 설정을 다시 확인해 보세요.,out,ide_setting,2025-11-25T08:17:24.909064
+5,2,26,user,감성 분석에서 어떤 tokenizer를 선택해야 할지 모르겠습니다.,in,nlp_sentiment,2025-11-25T08:17:24.909072
+5,2,26,assistant,"국문 기준으로는 mecab, khaiii 등이 많이 사용되며 형태소 단위가 중요한 편입니다.",in,nlp_sentiment,2025-11-25T08:17:24.909072
+5,2,27,user,장바구니 분석에서 support 지표 해석이 어렵습니다.,in,market_basket,2025-11-25T08:17:24.909077
+5,2,27,assistant,support는 전체 거래 중 특정 품목 조합이 포함된 비율을 의미합니다.,in,market_basket,2025-11-25T08:17:24.909077
+5,2,28,user,장바구니 분석에서 support 지표 해석이 어렵습니다.,in,market_basket,2025-11-25T08:17:24.909083
+5,2,28,assistant,support는 전체 거래 중 특정 품목 조합이 포함된 비율을 의미합니다.,in,market_basket,2025-11-25T08:17:24.909083
+5,2,29,user,파이썬 변수와 리스트 차이가 아직 헷갈립니다.,in,python_basic,2025-11-25T08:17:24.909090
+5,2,29,assistant,"변수는 하나의 값을, 리스트는 여러 값을 순서대로 담을 수 있는 자료형입니다.",in,python_basic,2025-11-25T08:17:24.909090
+5,2,30,user,포트폴리오에서 프로젝트 설명을 어떻게 구조화하면 좋을까요?,out,portfolio,2025-11-25T08:17:24.909100
+5,2,30,assistant,문제 정의 → 접근 방법 → 해결 과정 → 결과/인사이트 순서로 정리하면 좋습니다.,out,portfolio,2025-11-25T08:17:24.909100
+5,2,31,user,정규분포와 표준편차 개념이 잘 와닿지 않습니다.,in,statistics_basic,2025-11-25T08:17:24.909118
+5,2,31,assistant,표준편차는 데이터가 평균을 기준으로 얼마나 퍼져 있는지 나타내는 지표입니다.,in,statistics_basic,2025-11-25T08:17:24.909118
+5,2,32,user,데이터 직무 취업을 목표로 할 때 어떤 방향으로 준비를 시작해야 할까요?,out,career,2025-11-25T08:17:24.909134
+5,2,32,assistant,"관심 있는 직무(분석, 엔지니어 등)를 먼저 정하고, JD를 기준으로 필요한 역량을 역추적해 보세요.",out,career,2025-11-25T08:17:24.909134
+5,2,33,user,정규분포와 표준편차 개념이 잘 와닿지 않습니다.,in,statistics_basic,2025-11-25T08:17:24.909140
+5,2,33,assistant,표준편차는 데이터가 평균을 기준으로 얼마나 퍼져 있는지 나타내는 지표입니다.,in,statistics_basic,2025-11-25T08:17:24.909140
+5,2,34,user,데이터 직무 취업을 목표로 할 때 어떤 방향으로 준비를 시작해야 할까요?,out,career,2025-11-25T08:17:24.909146
+5,2,34,assistant,"관심 있는 직무(분석, 엔지니어 등)를 먼저 정하고, JD를 기준으로 필요한 역량을 역추적해 보세요.",out,career,2025-11-25T08:17:24.909146
+5,2,35,user,pandas groupby 결과가 제가 예상한 것과 다르게 나옵니다.,in,pandas,2025-11-25T08:17:24.909151
+5,2,35,assistant,groupby 후에는 집계 함수를 적용해야 의도한 결과가 나오는 경우가 많습니다.,in,pandas,2025-11-25T08:17:24.909151
+5,2,36,user,ChatGPT를 활용해 데이터 분석할 때 프롬프트를 어떻게 설계해야 할까요?,in,chatgpt_analysis,2025-11-25T08:17:24.909157
+5,2,36,assistant,"역할(Role)을 명시하고, 입력 예시와 원하는 출력 형태를 함께 제시하면 더 안정적인 답변을 얻을 수 있습니다.",in,chatgpt_analysis,2025-11-25T08:17:24.909157
+5,2,37,user,PyCharm에서 디버깅 설정이 제대로 동작하지 않습니다.,out,ide_setting,2025-11-25T08:17:24.909164
+5,2,37,assistant,Run/Debug Configuration에서 Script path와 Python interpreter 설정을 다시 확인해 보세요.,out,ide_setting,2025-11-25T08:17:24.909164
+5,2,38,user,공공데이터 API를 호출할 때 인증 오류가 발생합니다.,in,public_data,2025-11-25T08:17:24.909169
+5,2,38,assistant,요청 URL에 서비스키가 정확히 포함되어 있는지와 인코딩 여부를 먼저 확인해 보세요.,in,public_data,2025-11-25T08:17:24.909169
+5,2,39,user,EDA를 할 때 어떤 순서로 데이터를 살펴보면 좋을까요?,in,eda,2025-11-25T08:17:24.909175
+5,2,39,assistant,결측치 확인 → 분포 파악 → 이상치 확인 → 변수 간 관계를 보는 순서를 추천합니다.,in,eda,2025-11-25T08:17:24.909175
+5,2,40,user,pandas groupby 결과가 제가 예상한 것과 다르게 나옵니다.,in,pandas,2025-11-25T08:17:24.909186
+5,2,40,assistant,groupby 후에는 집계 함수를 적용해야 의도한 결과가 나오는 경우가 많습니다.,in,pandas,2025-11-25T08:17:24.909186
+6,1,1,user,파이썬 변수와 리스트 차이가 아직 헷갈립니다.,in,python_basic,2025-11-25T08:17:24.909193
+6,1,1,assistant,"변수는 하나의 값을, 리스트는 여러 값을 순서대로 담을 수 있는 자료형입니다.",in,python_basic,2025-11-25T08:17:24.909193
+6,1,2,user,정규분포와 표준편차 개념이 잘 와닿지 않습니다.,in,statistics_basic,2025-11-25T08:17:24.909202
+6,1,2,assistant,표준편차는 데이터가 평균을 기준으로 얼마나 퍼져 있는지 나타내는 지표입니다.,in,statistics_basic,2025-11-25T08:17:24.909202
+6,1,3,user,데이터 직무 취업을 목표로 할 때 어떤 방향으로 준비를 시작해야 할까요?,out,career,2025-11-25T08:17:24.909208
+6,1,3,assistant,"관심 있는 직무(분석, 엔지니어 등)를 먼저 정하고, JD를 기준으로 필요한 역량을 역추적해 보세요.",out,career,2025-11-25T08:17:24.909208
+6,1,4,user,pandas groupby 결과가 제가 예상한 것과 다르게 나옵니다.,in,pandas,2025-11-25T08:17:24.909214
+6,1,4,assistant,groupby 후에는 집계 함수를 적용해야 의도한 결과가 나오는 경우가 많습니다.,in,pandas,2025-11-25T08:17:24.909214
+6,1,5,user,PyCharm에서 디버깅 설정이 제대로 동작하지 않습니다.,out,ide_setting,2025-11-25T08:17:24.909220
+6,1,5,assistant,Run/Debug Configuration에서 Script path와 Python interpreter 설정을 다시 확인해 보세요.,out,ide_setting,2025-11-25T08:17:24.909220
+6,1,6,user,Selenium 실행 시 ChromeDriver 관련 에러가 발생합니다.,in,crawling_selenium,2025-11-25T08:17:24.909225
+6,1,6,assistant,Chrome과 ChromeDriver의 버전이 일치하는지와 드라이버 경로 설정을 먼저 확인해 보세요.,in,crawling_selenium,2025-11-25T08:17:24.909225
+6,1,7,user,감성 분석에서 어떤 tokenizer를 선택해야 할지 모르겠습니다.,in,nlp_sentiment,2025-11-25T08:17:24.909231
+6,1,7,assistant,"국문 기준으로는 mecab, khaiii 등이 많이 사용되며 형태소 단위가 중요한 편입니다.",in,nlp_sentiment,2025-11-25T08:17:24.909231
+6,1,8,user,PyCharm에서 디버깅 설정이 제대로 동작하지 않습니다.,out,ide_setting,2025-11-25T08:17:24.909238
+6,1,8,assistant,Run/Debug Configuration에서 Script path와 Python interpreter 설정을 다시 확인해 보세요.,out,ide_setting,2025-11-25T08:17:24.909238
+6,1,9,user,EDA를 할 때 어떤 순서로 데이터를 살펴보면 좋을까요?,in,eda,2025-11-25T08:17:24.909249
+6,1,9,assistant,결측치 확인 → 분포 파악 → 이상치 확인 → 변수 간 관계를 보는 순서를 추천합니다.,in,eda,2025-11-25T08:17:24.909249
+6,1,10,user,pandas groupby 결과가 제가 예상한 것과 다르게 나옵니다.,in,pandas,2025-11-25T08:17:24.909255
+6,1,10,assistant,groupby 후에는 집계 함수를 적용해야 의도한 결과가 나오는 경우가 많습니다.,in,pandas,2025-11-25T08:17:24.909255
+6,1,11,user,데이터 직무 취업을 목표로 할 때 어떤 방향으로 준비를 시작해야 할까요?,out,career,2025-11-25T08:17:24.909260
+6,1,11,assistant,"관심 있는 직무(분석, 엔지니어 등)를 먼저 정하고, JD를 기준으로 필요한 역량을 역추적해 보세요.",out,career,2025-11-25T08:17:24.909260
+6,1,12,user,연관어 네트워크에서 edge 가중치는 무엇을 의미하나요?,in,nlp_network,2025-11-25T08:17:24.909266
+6,1,12,assistant,두 단어가 함께 등장한 빈도를 edge weight로 두는 방식이 가장 많이 사용됩니다.,in,nlp_network,2025-11-25T08:17:24.909266
+6,1,13,user,감성 분석에서 어떤 tokenizer를 선택해야 할지 모르겠습니다.,in,nlp_sentiment,2025-11-25T08:17:24.909272
+6,1,13,assistant,"국문 기준으로는 mecab, khaiii 등이 많이 사용되며 형태소 단위가 중요한 편입니다.",in,nlp_sentiment,2025-11-25T08:17:24.909272
+6,1,14,user,포트폴리오에서 프로젝트 설명을 어떻게 구조화하면 좋을까요?,out,portfolio,2025-11-25T08:17:24.909278
+6,1,14,assistant,문제 정의 → 접근 방법 → 해결 과정 → 결과/인사이트 순서로 정리하면 좋습니다.,out,portfolio,2025-11-25T08:17:24.909278
+6,1,15,user,데이터 직무 취업을 목표로 할 때 어떤 방향으로 준비를 시작해야 할까요?,out,career,2025-11-25T08:17:24.909284
+6,1,15,assistant,"관심 있는 직무(분석, 엔지니어 등)를 먼저 정하고, JD를 기준으로 필요한 역량을 역추적해 보세요.",out,career,2025-11-25T08:17:24.909284
+6,1,16,user,연관어 네트워크에서 edge 가중치는 무엇을 의미하나요?,in,nlp_network,2025-11-25T08:17:24.909289
+6,1,16,assistant,두 단어가 함께 등장한 빈도를 edge weight로 두는 방식이 가장 많이 사용됩니다.,in,nlp_network,2025-11-25T08:17:24.909289
+6,1,17,user,장바구니 분석에서 support 지표 해석이 어렵습니다.,in,market_basket,2025-11-25T08:17:24.909296
+6,1,17,assistant,support는 전체 거래 중 특정 품목 조합이 포함된 비율을 의미합니다.,in,market_basket,2025-11-25T08:17:24.909296
+6,1,18,user,PyCharm에서 디버깅 설정이 제대로 동작하지 않습니다.,out,ide_setting,2025-11-25T08:17:24.909306
+6,1,18,assistant,Run/Debug Configuration에서 Script path와 Python interpreter 설정을 다시 확인해 보세요.,out,ide_setting,2025-11-25T08:17:24.909306
+6,1,19,user,연관어 네트워크에서 edge 가중치는 무엇을 의미하나요?,in,nlp_network,2025-11-25T08:17:24.909312
+6,1,19,assistant,두 단어가 함께 등장한 빈도를 edge weight로 두는 방식이 가장 많이 사용됩니다.,in,nlp_network,2025-11-25T08:17:24.909312
+6,1,20,user,Selenium 실행 시 ChromeDriver 관련 에러가 발생합니다.,in,crawling_selenium,2025-11-25T08:17:24.909318
+6,1,20,assistant,Chrome과 ChromeDriver의 버전이 일치하는지와 드라이버 경로 설정을 먼저 확인해 보세요.,in,crawling_selenium,2025-11-25T08:17:24.909318
+6,2,21,user,pandas groupby 결과가 제가 예상한 것과 다르게 나옵니다.,in,pandas,2025-11-25T08:17:24.909324
+6,2,21,assistant,groupby 후에는 집계 함수를 적용해야 의도한 결과가 나오는 경우가 많습니다.,in,pandas,2025-11-25T08:17:24.909324
+6,2,22,user,matplotlib로 그래프 스타일을 변경하는 방법이 어렵습니다.,in,visualization,2025-11-25T08:17:24.909329
+6,2,22,assistant,plt.style.use()나 rcParams를 활용하면 전역 스타일을 쉽게 바꿀 수 있습니다.,in,visualization,2025-11-25T08:17:24.909329
+6,2,23,user,공공데이터 API를 호출할 때 인증 오류가 발생합니다.,in,public_data,2025-11-25T08:17:24.909335
+6,2,23,assistant,요청 URL에 서비스키가 정확히 포함되어 있는지와 인코딩 여부를 먼저 확인해 보세요.,in,public_data,2025-11-25T08:17:24.909335
+6,2,24,user,데이터 직무 취업을 목표로 할 때 어떤 방향으로 준비를 시작해야 할까요?,out,career,2025-11-25T08:17:24.909341
+6,2,24,assistant,"관심 있는 직무(분석, 엔지니어 등)를 먼저 정하고, JD를 기준으로 필요한 역량을 역추적해 보세요.",out,career,2025-11-25T08:17:24.909341
+6,2,25,user,Selenium 실행 시 ChromeDriver 관련 에러가 발생합니다.,in,crawling_selenium,2025-11-25T08:17:24.909346
+6,2,25,assistant,Chrome과 ChromeDriver의 버전이 일치하는지와 드라이버 경로 설정을 먼저 확인해 보세요.,in,crawling_selenium,2025-11-25T08:17:24.909346
+6,2,26,user,데이터 직무 취업을 목표로 할 때 어떤 방향으로 준비를 시작해야 할까요?,out,career,2025-11-25T08:17:24.909352
+6,2,26,assistant,"관심 있는 직무(분석, 엔지니어 등)를 먼저 정하고, JD를 기준으로 필요한 역량을 역추적해 보세요.",out,career,2025-11-25T08:17:24.909352
+6,2,27,user,matplotlib로 그래프 스타일을 변경하는 방법이 어렵습니다.,in,visualization,2025-11-25T08:17:24.909362
+6,2,27,assistant,plt.style.use()나 rcParams를 활용하면 전역 스타일을 쉽게 바꿀 수 있습니다.,in,visualization,2025-11-25T08:17:24.909362
+6,2,28,user,numpy 배열에서 reshape 사용법이 잘 이해가 되지 않습니다.,in,numpy,2025-11-25T08:17:24.909368
+6,2,28,assistant,reshape는 전체 원소 개수가 변하지 않도록 행과 열을 재배치하는 기능입니다.,in,numpy,2025-11-25T08:17:24.909368
+6,2,29,user,정규분포와 표준편차 개념이 잘 와닿지 않습니다.,in,statistics_basic,2025-11-25T08:17:24.909373
+6,2,29,assistant,표준편차는 데이터가 평균을 기준으로 얼마나 퍼져 있는지 나타내는 지표입니다.,in,statistics_basic,2025-11-25T08:17:24.909373
+6,2,30,user,정규분포와 표준편차 개념이 잘 와닿지 않습니다.,in,statistics_basic,2025-11-25T08:17:24.909380
+6,2,30,assistant,표준편차는 데이터가 평균을 기준으로 얼마나 퍼져 있는지 나타내는 지표입니다.,in,statistics_basic,2025-11-25T08:17:24.909380
+6,2,31,user,파이썬 변수와 리스트 차이가 아직 헷갈립니다.,in,python_basic,2025-11-25T08:17:24.909386
+6,2,31,assistant,"변수는 하나의 값을, 리스트는 여러 값을 순서대로 담을 수 있는 자료형입니다.",in,python_basic,2025-11-25T08:17:24.909386
+6,2,32,user,장바구니 분석에서 support 지표 해석이 어렵습니다.,in,market_basket,2025-11-25T08:17:24.909392
+6,2,32,assistant,support는 전체 거래 중 특정 품목 조합이 포함된 비율을 의미합니다.,in,market_basket,2025-11-25T08:17:24.909392
+6,2,33,user,연관어 네트워크에서 edge 가중치는 무엇을 의미하나요?,in,nlp_network,2025-11-25T08:17:24.909397
+6,2,33,assistant,두 단어가 함께 등장한 빈도를 edge weight로 두는 방식이 가장 많이 사용됩니다.,in,nlp_network,2025-11-25T08:17:24.909397
+6,2,34,user,파이썬 변수와 리스트 차이가 아직 헷갈립니다.,in,python_basic,2025-11-25T08:17:24.909403
+6,2,34,assistant,"변수는 하나의 값을, 리스트는 여러 값을 순서대로 담을 수 있는 자료형입니다.",in,python_basic,2025-11-25T08:17:24.909403
+6,2,35,user,공공데이터 API를 호출할 때 인증 오류가 발생합니다.,in,public_data,2025-11-25T08:17:24.909409
+6,2,35,assistant,요청 URL에 서비스키가 정확히 포함되어 있는지와 인코딩 여부를 먼저 확인해 보세요.,in,public_data,2025-11-25T08:17:24.909409
+6,2,36,user,공공데이터 API를 호출할 때 인증 오류가 발생합니다.,in,public_data,2025-11-25T08:17:24.909420
+6,2,36,assistant,요청 URL에 서비스키가 정확히 포함되어 있는지와 인코딩 여부를 먼저 확인해 보세요.,in,public_data,2025-11-25T08:17:24.909420
+6,2,37,user,파이썬 변수와 리스트 차이가 아직 헷갈립니다.,in,python_basic,2025-11-25T08:17:24.909426
+6,2,37,assistant,"변수는 하나의 값을, 리스트는 여러 값을 순서대로 담을 수 있는 자료형입니다.",in,python_basic,2025-11-25T08:17:24.909426
+6,2,38,user,감성 분석에서 어떤 tokenizer를 선택해야 할지 모르겠습니다.,in,nlp_sentiment,2025-11-25T08:17:24.909432
+6,2,38,assistant,"국문 기준으로는 mecab, khaiii 등이 많이 사용되며 형태소 단위가 중요한 편입니다.",in,nlp_sentiment,2025-11-25T08:17:24.909432
+6,2,39,user,LDA 토픽 개수를 몇 개 정도로 설정하는 것이 좋을까요?,in,nlp_topic,2025-11-25T08:17:24.909437
+6,2,39,assistant,"일반적으로 5~15개 사이에서 여러 값을 시도해 보고, 해석이 잘 되는 개수를 선택합니다.",in,nlp_topic,2025-11-25T08:17:24.909437
+6,2,40,user,감성 분석에서 어떤 tokenizer를 선택해야 할지 모르겠습니다.,in,nlp_sentiment,2025-11-25T08:17:24.909443
+6,2,40,assistant,"국문 기준으로는 mecab, khaiii 등이 많이 사용되며 형태소 단위가 중요한 편입니다.",in,nlp_sentiment,2025-11-25T08:17:24.909443

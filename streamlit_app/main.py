@@ -9,40 +9,6 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# pages = [
-#     st.Page(
-#         page="pages/example.py",
-#         title="example",
-#         icon="📃",
-#         default=True,
-#         url_path="example",
-#     ),
-#     st.Page(
-#         page="pages/overview.py",
-#         title="1_overview",
-#         icon="🖥️",
-#         default=False,
-#         url_path="overview",
-#     ),
-#     st.Page(
-#         page="pages/team_and_user.py",
-#         title="2_team_and_user",
-#         icon="👥",
-#         default=False,
-#         url_path="team_and_user",
-#     ),
-#     st.Page(
-#         page="pages/risk_and_community.py",
-#         title="3_risk_and_community",
-#         icon="🚨",
-#         default=False,
-#         url_path="risk_and_community",
-#     ),
-# ]
-
-# nav = st.navigation(pages)
-# nav.run()
-
 st.title("🔥 머물머물 운영 리포트 대시보드")
 st.markdown(
     """

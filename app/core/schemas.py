@@ -1,10 +1,4 @@
-"""
-머물머물 Camp / User / 성향 / 세션 / 회의 DB 초기화 스크립트
-
-requirements:
-    pip install sqlalchemy
-"""
-
+# app/core/schemas.py
 from datetime import datetime
 from sqlalchemy import (
     create_engine,
@@ -86,22 +80,6 @@ class TendencyProfile(Base):
 
     user = relationship("User", back_populates="tendency_profile")
 
-
-# ------------------------
-# session_activity_log
-# (접속/세션 상태 기록)
-# ------------------------
-class SessionActivityLog(Base):
-    __tablename__ = "session_activity_log"
-
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    user_id = Column(Integer, ForeignKey("user.user_id"), nullable=False)
-    join_at = Column(DateTime, nullable=True) 
-    leave_at = Column(DateTime, nullable=True) 
-
-    user = relationship("User")
-
-
 # ------------------------
 # Meetings DB
 # ------------------------
@@ -154,6 +132,20 @@ class MeetingParticipant(Base):
     created_at = Column(Text, nullable=True)      # 레코드 생성 시간
 
     meeting = relationship("Meeting", back_populates="participants")
+    user = relationship("User")
+
+# ------------------------
+# session_activity_log
+# (접속/세션 상태 기록)
+# ------------------------
+class SessionActivityLog(Base):
+    __tablename__ = "session_activity_log"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey("user.user_id"), nullable=False)
+    join_at = Column(DateTime, nullable=True) 
+    leave_at = Column(DateTime, nullable=True) 
+
     user = relationship("User")
 
 
