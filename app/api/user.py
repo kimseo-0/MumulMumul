@@ -10,7 +10,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-from app.core.schemas import User, TendencyProfile
+from app.core.schemas import User, TendencyProfile, UserType
 from app.core.db import get_db
 
 router = APIRouter()
@@ -28,6 +28,7 @@ class LoginResponse(BaseModel):
     userId: int
     name: str
     campId: Optional[int] = None
+    userType: str
     tendencyCompleted: bool
 
 
@@ -61,6 +62,7 @@ def login(payload: LoginRequest, db: Session = Depends(get_db)):
     """
     user: User | None = (
         db.query(User)
+        .join(UserType)
         .filter(User.login_id == payload.loginId)
         .first()
     )
@@ -77,6 +79,7 @@ def login(payload: LoginRequest, db: Session = Depends(get_db)):
     return LoginResponse(
         userId=user.user_id,
         name=user.name,
+        userType=user.user_type.type_name,
         campId=user.camp_id,
         tendencyCompleted=bool(user.tendency_completed),
     )

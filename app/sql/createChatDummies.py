@@ -117,6 +117,7 @@ def insert_dummy_chatlogs():
 
                 record = LearningChatLog(
                     user_id=int(row["user_id"]),
+                    session_id=int(row["user_id"]),
                     camp_id=camp_id,
                     role=row["role"],
                     content=row["content"],
