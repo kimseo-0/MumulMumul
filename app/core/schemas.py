@@ -9,6 +9,7 @@ from sqlalchemy import (
     DateTime,
     Boolean,
     ForeignKey,
+    Float
 )
 from sqlalchemy.orm import declarative_base, relationship, sessionmaker
 
@@ -147,6 +148,44 @@ class SessionActivityLog(Base):
 
     user = relationship("User")
 
+
+class STTSegment(Base):
+    """
+    STT 처리된 세그먼트 (겹침 처리 지원)
+    """
+    __tablename__ = "stt_segment"
+    
+    # PK
+    segment_id = Column(String(255), primary_key=True)
+    
+    # FK
+    meeting_id = Column(String(255), ForeignKey("meeting.meeting_id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("user.user_id"), nullable=False)
+    
+    # 청크 정보
+    chunk_index = Column(Integer, nullable=False)
+    
+    # STT 결과
+    text = Column(Text, nullable=False)
+    confidence = Column(Float, nullable=True, default=0.0)
+    
+    # 타이밍 정보
+    start_time_ms = Column(Integer, nullable=False)
+    end_time_ms = Column(Integer, nullable=False)
+    
+    # 겹침 처리 정보
+    source_chunks = Column(String(255), nullable=True)  # "0", "0,1", "1,2" 형태
+    is_overlapped = Column(Boolean, nullable=True, default=False)
+    
+    # 메타데이터
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+    
+    # 관계
+    meeting = relationship("Meeting")
+    user = relationship("User")
+    
+    def __repr__(self):
+        return f"<STTSegment {self.segment_id}: '{self.text[:50]}' overlap={self.is_overlapped}>"
 
 # =====================================
 # DB 초기화 함수
