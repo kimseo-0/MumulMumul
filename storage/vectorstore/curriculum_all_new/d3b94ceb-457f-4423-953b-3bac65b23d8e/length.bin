@@ -1,1 +1,1 @@
-invalid type: string "소켓 통신 가이드북\n7 / 15\n그러면 AI서버에서 토큰들을 계속해서 보내는 것을 볼 수 있다.\n왼쪽에 [WebSocket basics]>[Data formats]>[Send JSON] 을 눌러서 테스트한다.\n예제로 ws://localhost:8000/ws/image 으로 요청을 보내보자.\nURL을 작성하고 오른쪽에 보이는 \"Connect\" 버튼을 눌러보자.\nn\n, expected f64]
+invalid type: string "소켓 통신 가이드북\n14 / 15\n테스트를 위해 터미널의 socket_project>  경로에서 python ./models/chatgpt.py  를 실행해보자.\n오디오가 텍스트로 잘 변환되는 것을 확인할 수 있다.\n웹소켓 라우터 만들기\n그렇다면 이제 챗봇을 위한 웹소켓 라우터를 만들어보자.\n서도 \"WebSocket 연결됨\" 0002\n\nFace\n�
