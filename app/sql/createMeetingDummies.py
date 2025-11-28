@@ -10,11 +10,11 @@ sys.path.append(str(ROOT_DIR))
 
 from sqlalchemy.orm import sessionmaker
 from app.core.schemas import Meeting, init_db
-from app.config import DB_URL
+from app.config import SQLITE_URL
 
 
 def seed_dummy_meetings():
-    engine = init_db(DB_URL)
+    engine = init_db(SQLITE_URL)
     Session = sessionmaker(bind=engine, autoflush=False)
     session = Session()
 

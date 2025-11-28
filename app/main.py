@@ -7,7 +7,6 @@ from app.api.chatbot import router as chatbot_router
 from app.api.attendance import router as attendance_router
 from app.api.meeting import router as meeting_router
 from app.core.schemas import init_db
-from app.config import DB_URL
 from app.core.db import engine
 from app.core import schemas
 from app.services.meeting.audio_processor import AudioProcessor
