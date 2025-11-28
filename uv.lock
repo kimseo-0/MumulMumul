@@ -1,5 +1,5 @@
 version = 1
-revision = 3
+revision = 2
 requires-python = ">=3.11"
 resolution-markers = [
     "python_full_version >= '3.14'",
@@ -2351,12 +2351,14 @@ dependencies = [
     { name = "soundfile" },
     { name = "pdf2image" },
     { name = "pydantic" },
+    { name = "pydantic-settings" },
     { name = "pymongo" },
     { name = "pymupdf" },
     { name = "pypdf" },
     { name = "pytesseract" },
     { name = "python-multipart" },
     { name = "schema" },
+    { name = "soundfile" },
     { name = "sqlalchemy" },
     { name = "streamlit" },
     { name = "torch" },
@@ -2387,12 +2389,14 @@ requires-dist = [
     { name = "soundfile", specifier = ">=0.13.1" },
     { name = "pdf2image", specifier = ">=1.17.0" },
     { name = "pydantic", specifier = ">=2.12.4" },
+    { name = "pydantic-settings", specifier = ">=2.12.0" },
     { name = "pymongo", specifier = ">=4.15.4" },
     { name = "pymupdf", specifier = ">=1.26.6" },
     { name = "pypdf", specifier = ">=6.3.0" },
     { name = "pytesseract", specifier = ">=0.3.13" },
     { name = "python-multipart", specifier = ">=0.0.20" },
     { name = "schema", specifier = ">=0.7.8" },
+    { name = "soundfile", specifier = ">=0.13.1" },
     { name = "sqlalchemy", specifier = ">=2.0.44" },
     { name = "streamlit", specifier = ">=1.51.0" },
     { name = "torch", specifier = ">=2.9.1" },
