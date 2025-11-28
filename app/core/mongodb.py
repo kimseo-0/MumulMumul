@@ -100,10 +100,6 @@ register_mongo_model(
     LearningChatLog,
     collection_name="learning_chat_logs",
     indexes=[
-        ("user_id", 1),
-        ("camp_id", 1),
-        ("question_category", 1),
-        ("curriculum_scope", 1),
-        ("created_at", -1),
+        ("session_id", 1),
     ],
 )
