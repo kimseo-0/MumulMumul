@@ -1,5 +1,6 @@
 # chatbot_rag_optimized.py
 
+import time
 import os
 from dotenv import load_dotenv
 from langchain_openai import OpenAIEmbeddings, ChatOpenAI
@@ -80,14 +81,14 @@ GRADE_RULES = {
 - 필요 시 용어 사용 가능하나 불필요한 확장 금지
 - 왜 이런 개념이 필요한지 1번 설명
 - 실무에서 헷갈리는 포인트도 함께 제공
-- 출처를 함께 명시
+- 파일명, 페이지 출처를 반드시 함께 명시
 """,
     "고급": """
 - 내부 동작 원리 중심으로 설명
 - 구조, 메커니즘, 메모리·성능 등 심화 내용 포함 가능
 - 필요한 경우 수식·전문 용어 사용 가능
 - 다른 기술과 비교 설명 가능
-- 출처를 함께 명시
+- 파일명, 페이지 출처를 반드시 함께 명시
 """
 }
 
