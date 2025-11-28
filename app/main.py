@@ -11,21 +11,24 @@ from app.config import DB_URL
 from app.core.db import engine
 from app.core import schemas
 from app.services.meeting.audio_processor import AudioProcessor
+from app.api.curriculum import router as curriculum_router
+from app.api.user import router as user_router
+from app.api.learning_chatbot import router as learning_chatbot_router
+from app.core.mongodb import init_mongo, get_mongo_db
+from app.core.schemas import init_db
+from app.config import SQLITE_URL
+
 
 # ------------------------------
-# 1) DB 테이블 자동 생성 (개발용)
-# ------------------------------
-schemas.Base.metadata.create_all(bind=engine)
-
-# ------------------------------
-# 2) FastAPI 앱 생성
+# FastAPI 앱 생성
 # ------------------------------
 def create_app() -> FastAPI:
     @asynccontextmanager
     async def lifespan(app: FastAPI):
         try:
             print("DB 마이그레이션 적용")
-            init_db(DB_URL)
+            init_db(SQLITE_URL)
+            init_mongo(get_mongo_db())
         except Exception:
             print("DB 마이그레이션 실패")
 
@@ -43,9 +46,12 @@ def create_app() -> FastAPI:
 app = create_app()
 
 # ------------------------------
-# 3) 라우터 등록
+# 라우터 등록
 # ------------------------------
 app.include_router(connection_router, prefix="/connection")
 app.include_router(chatbot_router)
 app.include_router(attendance_router, prefix="/attendance")
 app.include_router(meeting_router, prefix="/meeting")
+app.include_router(curriculum_router, prefix="/curriculum")
+app.include_router(user_router, prefix="/user")
+app.include_router(learning_chatbot_router, prefix="/learning_chatbot")
