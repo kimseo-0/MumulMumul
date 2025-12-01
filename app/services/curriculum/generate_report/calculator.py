@@ -1,8 +1,9 @@
 from collections import Counter, defaultdict
 from datetime import datetime
+import math
 from typing import Any, Dict, List, Tuple
 
-from .schemas import (
+from ..schemas import (
     CurriculumScope,
     QuestionRow,
     TopQuestionCategory,
@@ -27,10 +28,7 @@ def _normalize_scope(scope_raw: Any) -> CurriculumScope:
     """
     return "in" if scope_raw == "in" else "out"
 
-
-def parse_weekly_logs(
-    weekly_logs: List[Dict[str, Any]],
-) -> tuple[
+def parse_weekly_logs(weekly_logs: List[Dict[str, Any]]) -> tuple[
     List[QuestionRow],
     int,  # total_questions
     int,  # in_count
@@ -38,6 +36,7 @@ def parse_weekly_logs(
     Counter[Tuple[str, CurriculumScope]],  # by_category_scope
     Dict[str, Counter],  # category_scope_counts
     Dict[str, List[str]],  # example_questions_per_category
+    Dict[Tuple[str, CurriculumScope], set],  # users_per_category_scope
 ]:
     """
     raw weekly_logs(list[dict]) 를 파싱해서
@@ -53,30 +52,54 @@ def parse_weekly_logs(
     questions_per_category: Dict[str, List[str]] = defaultdict(list)
     question_rows: List[QuestionRow] = []
 
+    #  (category, scope)별 unique user 집계
+    users_per_category_scope: Dict[Tuple[str, CurriculumScope], set] = defaultdict(set)
+
+    pattern_tags_per_category: Dict[str, Counter] = defaultdict(Counter)
+    pattern_tags_overall: Counter[str] = Counter()
+
     for log in weekly_logs:
-        # 1) scope 정규화
-        scope_raw = log.get("curriculum_scope") or "in"
+
+        enriched = log.get("curriculum_judge") or {}
+
+        # 1) scope
+        scope_raw = enriched.get("scope") or "in"
         scope: CurriculumScope = _normalize_scope(scope_raw)
 
-        # 2) 카테고리 / 내용
-        category = (log.get("question_category") or "기타").strip() or "기타"
+        # 2) category/topic
+        category = enriched.get("topic") or "기타"
+        category = category.strip() or "기타"
+
+        # 3) content
         content = log.get("content") or ""
 
-        # 3) in/out 카운트
+        # 4) in/out count
         if scope == "in":
             in_count += 1
         else:
             out_count += 1
 
-        # 4) (category, scope) 단위 카운트
-        by_category_scope[(category, scope)] += 1
+        # 5) category scope count
+        key = (category, scope)
+        by_category_scope[key] += 1
         category_scope_counts[category][scope] += 1
 
-        # 5) LLM용 예시 질문 (카테고리별 최대 5개)
+        # 6) example questions 저장
         if len(questions_per_category[category]) < 5 and content:
             questions_per_category[category].append(content)
 
-        # 6) created_at 파싱
+        # 7) unique user count
+        user_id = log.get("user_id")
+        if user_id:
+            users_per_category_scope[key].add(user_id)
+
+        # 8) pattern_tags 집계
+        tags = enriched.get("pattern_tags") or []
+        for tag in tags:
+            pattern_tags_per_category[category][tag] += 1
+            pattern_tags_overall[tag] += 1
+            
+        # 9) created_at 파싱
         created_at_val = log.get("created_at")
         created_at_dt: datetime | None = None
         if isinstance(created_at_val, datetime):
@@ -87,14 +110,10 @@ def parse_weekly_logs(
             except Exception:
                 created_at_dt = None
 
-        # 7) question_id (Mongo ObjectId 등)
-        raw_id = log.get("_id") or log.get("id")
-        question_id = str(raw_id) if raw_id is not None else None
-
-        # 8) QuestionRow 생성
+        # QuestionRow 생성
         question_rows.append(
             QuestionRow(
-                question_id=question_id,
+                question_id=str(log.get("_id")),
                 user_id=log.get("user_id"),
                 camp_id=log.get("camp_id"),
                 scope=scope,
@@ -113,6 +132,9 @@ def parse_weekly_logs(
         by_category_scope,
         category_scope_counts,
         questions_per_category,
+        users_per_category_scope,
+        pattern_tags_per_category,
+        pattern_tags_overall,
     )
 
 
@@ -128,6 +150,18 @@ def _get_main_scope_for_category(
     in_cnt = counts.get("in", 0)
     out_cnt = counts.get("out", 0)
     return "in" if in_cnt >= out_cnt else "out"
+
+def classify_difficulty(score: float) -> str:
+    """
+    difficulty_score를 high / medium / low로 나누는 헬퍼.
+    구간은 이후 운영진 의견에 따라 조정 가능.
+    """
+    if score >= 5.0:
+        return "high"
+    elif score >= 3.0:
+        return "medium"
+    else:
+        return "low"
 
 
 def build_summary_cards(
@@ -200,7 +234,6 @@ def build_summary_cards(
         top_questions=top_questions,
     )
 
-
 def build_charts(
     by_category_scope: Counter[Tuple[str, CurriculumScope]],
     in_count: int,
@@ -230,7 +263,6 @@ def build_charts(
         questions_by_category=questions_by_category_chart,
         curriculum_scope_ratio=scope_ratio_chart,
     )
-
 
 def build_tables(
     question_rows: List[QuestionRow],
@@ -272,6 +304,9 @@ def build_raw_stats(
     out_count: int,
     by_category_scope: Counter[Tuple[str, CurriculumScope]],
     questions_per_category: Dict[str, List[str]],
+    users_per_category_scope: Dict[Tuple[str, CurriculumScope], set],
+    pattern_tags_per_category: Dict[str, Counter],
+    pattern_tags_overall: Counter[str],
 ) -> Dict[str, Any]:
     """
     LLM 인사이트 생성을 위해 사용하는 raw_stats dict 를 만든다.
@@ -279,46 +314,84 @@ def build_raw_stats(
     - 각 카테고리별 예시 질문을 함께 전달
     """
 
-    # 1) 커리큘럼 내/외 카테고리별 집계
+    # 1) 커리큘럼 내/외 카테고리별 집계 + unique user 집계
     in_categories: Dict[str, int] = {}
     out_categories: Dict[str, int] = {}
+    in_unique_users: Dict[str, int] = {}
+    out_unique_users: Dict[str, int] = {}
 
     for (cat, scope), cnt in by_category_scope.items():
+        users = users_per_category_scope.get((cat, scope), set())
+        u_cnt = len(users)
+
         if scope == "in":
             in_categories[cat] = in_categories.get(cat, 0) + cnt
+            in_unique_users[cat] = in_unique_users.get(cat, 0) + u_cnt
         else:
             out_categories[cat] = out_categories.get(cat, 0) + cnt
+            out_unique_users[cat] = out_unique_users.get(cat, 0) + u_cnt
 
-    # 2) 정렬된 리스트 형태 (빈도 내림차순) + 비율/예시 질문 포함
-    in_category_stats = [
-        {
-            "category": cat,
-            "count": cnt,
-            "ratio": cnt / in_count if in_count > 0 else 0.0,
-            "example_questions": questions_per_category.get(cat, []),
-        }
-        for cat, cnt in sorted(
-            in_categories.items(),
-            key=lambda x: x[1],
-            reverse=True,
+    # in/out 합계가 0일 때 0으로 나누기 방지용
+    in_total = in_count if in_count > 0 else 1
+    out_total = out_count if out_count > 0 else 1
+
+    # 2) 정렬된 리스트 형태 (빈도 내림차순) + 비율/예시 질문 + 난이도 점수 포함
+    in_category_stats = []
+    for cat, cnt in sorted(in_categories.items(), key=lambda x: x[1], reverse=True):
+        unique_users = in_unique_users.get(cat, 0)
+        ratio = cnt / in_total if in_total > 0 else 0.0
+        difficulty_score = math.log(1 + cnt) + 1.5 * unique_users
+        difficulty_level = classify_difficulty(difficulty_score)
+
+        pattern_counts = dict(pattern_tags_per_category.get(cat, {}))
+
+        in_category_stats.append(
+            {
+                "category": cat,
+                "count": cnt,
+                "unique_users": unique_users,
+                "ratio": ratio,
+                "difficulty_score": difficulty_score,
+                "difficulty_level": difficulty_level,
+                "pattern_counts": pattern_counts,
+                "example_questions": questions_per_category.get(cat, []),
+            }
         )
+
+    out_category_stats = []
+    for cat, cnt in sorted(out_categories.items(), key=lambda x: x[1], reverse=True):
+        unique_users = out_unique_users.get(cat, 0)
+        ratio = cnt / out_total if out_total > 0 else 0.0
+        difficulty_score = math.log(1 + cnt) + 1.5 * unique_users
+        difficulty_level = classify_difficulty(difficulty_score)
+        pattern_counts = dict(pattern_tags_per_category.get(cat, {}))
+
+        out_category_stats.append(
+            {
+                "category": cat,
+                "count": cnt,
+                "unique_users": unique_users,
+                "ratio": ratio,
+                "difficulty_score": difficulty_score,
+                "difficulty_level": difficulty_level,
+                "pattern_counts": pattern_counts,
+                "example_questions": questions_per_category.get(cat, []),
+            }
+        )
+    
+    # 3) 전체 pattern_tags 통계
+    total_pattern_count = sum(pattern_tags_overall.values()) or 1
+
+    pattern_stats_overall = [
+        {
+            "tag": tag,
+            "count": cnt,
+            "ratio": cnt / total_pattern_count,
+        }
+        for tag, cnt in pattern_tags_overall.most_common()
     ]
 
-    out_category_stats = [
-        {
-            "category": cat,
-            "count": cnt,
-            "ratio": cnt / out_count if out_count > 0 else 0.0,
-            "example_questions": questions_per_category.get(cat, []),
-        }
-        for cat, cnt in sorted(
-            out_categories.items(),
-            key=lambda x: x[1],
-            reverse=True,
-        )
-    ]
-
-    # 3) 기존 구조 유지 + 확장 필드 추가
+    # 4) 기존 구조 유지 + 확장 필드 추가
     return {
         "total_questions": total_questions,
         "in_count": in_count,
@@ -332,16 +405,16 @@ def build_raw_stats(
             for (cat, scope), cnt in by_category_scope.most_common()
         ],
         "example_questions_per_category": dict(questions_per_category),
-        # 새로 추가된 구조
         "in_category_stats": in_category_stats,
         "out_category_stats": out_category_stats,
+        "pattern_stats_overall": pattern_stats_overall
     }
+
 
 
 # -----------------------------
 # 3. 로그 집계 → summary / charts / tables / raw_stats
 # -----------------------------
-
 
 def aggregate_curriculum_stats(
     weekly_logs: List[Dict[str, Any]]
@@ -366,6 +439,9 @@ def aggregate_curriculum_stats(
         by_category_scope,
         category_scope_counts,
         questions_per_category,
+        users_per_category_scope,
+        pattern_tags_per_category,
+        pattern_tags_overall,
     ) = parse_weekly_logs(weekly_logs)
 
     summary_cards = build_summary_cards(
@@ -391,6 +467,7 @@ def aggregate_curriculum_stats(
         out_count=out_count,
         by_category_scope=by_category_scope,
         questions_per_category=questions_per_category,
+        users_per_category_scope=users_per_category_scope,
     )
 
     return {

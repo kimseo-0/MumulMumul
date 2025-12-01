@@ -77,8 +77,6 @@ class LearningChatLog(BaseModel):
     - camp_id: SQL(Camp.camp_id)와 연결 (옵션)
     - role: 'user' or 'assistant'
     - content: 실제 채팅 내용
-    - curriculum_scope: 커리큘럼 내/외 ("in" / "out")
-    - question_category: numpy / pandas / portfolio 등 분류 태그
     - created_at: 생성 시각
     """
     user_id: int
@@ -86,8 +84,8 @@ class LearningChatLog(BaseModel):
     role: Literal["user", "assistant"]
     content: str
 
-    curriculum_scope: Optional[Literal["in", "out"]] = None
-    question_category: Optional[str] = None
+    # curriculum_scope: Optional[Literal["in", "out"]] = None
+    # question_category: Optional[str] = None
 
     created_at: datetime = datetime.utcnow()
 
@@ -99,8 +97,6 @@ register_mongo_model(
     indexes=[
         ("user_id", 1),
         ("camp_id", 1),
-        ("question_category", 1),
-        ("curriculum_scope", 1),
         ("created_at", -1),
     ],
 )

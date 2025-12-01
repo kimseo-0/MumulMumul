@@ -1,56 +1,43 @@
 # app/services/curriculum/agent.py
 
+from datetime import datetime, timedelta
 from typing import Any, Dict, List
 
 from sqlalchemy.orm import Session
 from pymongo.database import Database
 
+from app.core.mongodb import get_mongo_db
+from app.services.curriculum.judge_learning_chat.judge_runner import judge_weekly_logs
 from app.services.db_service.camp import get_camp_by_id
 
 from .schemas import CurriculumReportPayload, CurriculumAIInsights
-from .repository import (
-    get_weekly_curriculum_logs,
-)
-from .calculator import aggregate_curriculum_stats
-from .llm import generate_curriculum_ai_insights
+from .generate_report.calculator import aggregate_curriculum_stats
+from .generate_report.llm import generate_curriculum_ai_insights
 
 
-def generate_ai_insights(
-    db: Session,
-    mongo_db: Database,
-    camp_id: int,
-    week_index: int,
-) -> CurriculumReportPayload:
-    # 1) Mongo + SQL → N주차 user 질문 로그
-    weekly_logs: List[Dict[str, Any]] = get_weekly_curriculum_logs(
-        db=db,
-        mongo_db=mongo_db,
-        camp_id=camp_id,
-        week_index=week_index,
-    )
+def generate_curriculum_report(weekly_logs) -> Dict[str, Any]:
+    """
+    전체 리포트 생성 파이프라인
+    1) 해당 주차 로그 LLM enrichment (없으면)
+    2) 주차 로그 조회
+    3) 집계
+    4) AI 인사이트 생성
+    5) 최종 payload 반환
+    """
+    # 집계
+    agg_result = aggregate_curriculum_stats(weekly_logs)
+    summary_cards = agg_result["summary_cards"]
+    charts = agg_result["charts"]
+    tables = agg_result["tables"]
+    raw_stats = agg_result["raw_stats"]
 
-    camp = get_camp_by_id(db, camp_id)
+    #  AI 인사이트 생성
+    ai_insights = generate_curriculum_ai_insights(raw_stats)
 
-    # 2) 집계
-    stats: Dict[str, Any] = aggregate_curriculum_stats(weekly_logs)
-
-    # 3) LLM 인사이트
-    ai_insights: CurriculumAIInsights = generate_curriculum_ai_insights(
-        stats.get("raw_stats", stats)
-    )
-
-    # 4) 최종 payload
-    payload = CurriculumReportPayload(
-        camp_id=camp_id,
-        camp_name=camp.name if camp else "Unknown Camp",
-        week_index=week_index,
-        week_label=f"{week_index}주차",
-        week_start= camp.start_date,
-        week_end= camp.end_date,
-
-        summary_cards=stats["summary_cards"],
-        charts=stats["charts"],
-        tables=stats["tables"],
-        ai_insights=ai_insights,
-    )
-    return payload
+    return {
+        "summary_cards": summary_cards,
+        "charts": charts,
+        "tables": tables,
+        "ai_insights": ai_insights,
+        "raw_stats": raw_stats,
+    }
