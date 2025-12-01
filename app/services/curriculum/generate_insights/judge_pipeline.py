@@ -14,7 +14,7 @@ from .llm import enrich_logs_with_llm
 mongo_db: Database = get_mongo_db()
 chat_col = mongo_db["learning_chat_logs"]
 
-def judge_weekly_logs(
+def compute_curriculum_insights_for_week(
     camp_id: int,
     week_start: datetime,
     week_end: datetime,
@@ -38,13 +38,13 @@ def judge_weekly_logs(
     for doc in cursor:
         batch.append(doc)
         if len(batch) >= batch_size:
-            judge_and_update_batch(batch)
+            compute_curriculum_insights_batch(batch)
             batch = []
 
     if batch:
-        judge_and_update_batch(batch)
+        compute_curriculum_insights_batch(batch)
 
-def judge_and_update_batch(batch_docs: List[Dict[str, Any]]) -> None:
+def compute_curriculum_insights_batch(batch_docs: List[Dict[str, Any]]) -> None:
     if not batch_docs:
         return
 

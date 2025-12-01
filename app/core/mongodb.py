@@ -3,7 +3,7 @@
 from datetime import datetime
 from typing import Literal, Optional, List, Tuple, Type, Dict, Any
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from pymongo import MongoClient
 from app.config import MONGO_URL, MONGO_DB_NAME
 
@@ -69,28 +69,37 @@ def init_mongo(db):
 # 3. 도메인 모델 정의
 # =====================================
 
+# 학습 챗봇과의 채팅 로그 모델
+class CurriculumInsights(BaseModel):
+    """
+    LLM judge가 생성한 질문 분석 정보.
+    질문이 어떤 토픽(topic)을 다루는지,
+    커리큘럼 내/외 범위(scope),
+    질문 패턴(pattern_tags),
+    질문 의도(intent)을 담음.
+    """
+    topic: Optional[str] = Field(None, description="커리큘럼 토픽 키 (예: pandas, visualization, career 등)")
+    scope: Optional[Literal["in", "out"]] = Field(None, description="'in'=커리큘럼 내 / 'out'=커리큘럼 외")
+    pattern_tags: List[str] = Field(default_factory=list, description="질문 패턴 태그 리스트")
+    intent: Optional[str] = Field(None, description="질문 의도 한 줄 요약")
+
+
 class LearningChatLog(BaseModel):
     """
-    학습 챗봇과의 채팅 로그
+    학습 챗봇 채팅 로그 저장 모델 (MongoDB)
 
-    - user_id: SQL(User.user_id)와 연결
-    - camp_id: SQL(Camp.camp_id)와 연결 (옵션)
-    - role: 'user' or 'assistant'
-    - content: 실제 채팅 내용
-    - created_at: 생성 시각
+    curriculum_insights: judge LLM이 채워주는 질문 분석 정보
     """
     user_id: int
     camp_id: Optional[int] = None
     role: Literal["user", "assistant"]
     content: str
 
-    # curriculum_scope: Optional[Literal["in", "out"]] = None
-    # question_category: Optional[str] = None
+    curriculum_insights: Optional[CurriculumInsights] = None
 
-    created_at: datetime = datetime.utcnow()
+    created_at: datetime = Field(default_factory=datetime.utcnow)
 
 
-# 이 모델을 Mongo 레지스트리에 등록
 register_mongo_model(
     LearningChatLog,
     collection_name="learning_chat_logs",
@@ -98,5 +107,44 @@ register_mongo_model(
         ("user_id", 1),
         ("camp_id", 1),
         ("created_at", -1),
+    ],
+)
+
+# 캠프별 커리큘럼 구조 모델
+class CurriculumWeek(BaseModel):
+    """
+    한 주차에 대한 커리큘럼 정보.
+    - week_index: 1, 2, 3 ...
+    - week_label: "1주차", "Week 1" 등 표시용
+    - topics: 해당 주차에 다루는 토픽 키 리스트 (예: ["python_basics", "pandas"])
+    """
+    week_index: int = Field(..., ge=1)
+    week_label: str = Field(..., description="표시용 라벨 (예: '1주차')")
+    topics: List[str] = Field(default_factory=list, description="토픽 키 리스트")
+
+
+class CurriculumConfig(BaseModel):
+    """
+    캠프별 커리큘럼 구조 설정 (MongoDB에 1캠프당 1문서 저장)
+
+    - camp_id: SQL Camp.camp_id 와 연결
+    - weeks: 주차별 토픽 구조
+    """
+    camp_id: int = Field(..., description="캠프 ID (SQL Camp.camp_id)")
+    weeks: List[CurriculumWeek] = Field(
+        default_factory=list,
+        description="주차별 커리큘럼 구조",
+    )
+
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+# Mongo 레지스트리에 등록
+register_mongo_model(
+    CurriculumConfig,
+    collection_name="curriculum_configs",
+    indexes=[
+        ("camp_id", 1),
     ],
 )

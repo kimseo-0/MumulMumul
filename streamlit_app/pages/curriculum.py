@@ -5,6 +5,8 @@ import altair as alt
 from streamlit_app.api.curriculum import (
     fetch_camps,
     fetch_curriculum_report,
+    fetch_curriculum_config,
+    save_curriculum_config,
 )
 
 st.set_page_config(layout="wide")
@@ -78,6 +80,62 @@ camp_id = camp_name_to_id[camp_name]
 weeks = ["Week 1", "Week 2", "Week 3", "Week 4", "Week 5", "Week 6"]
 selected_week_label = st.sidebar.selectbox("주차 선택", weeks)
 week_index = int(selected_week_label.split()[1])  # "Week 3" -> 3
+
+# ----------------------------
+# 커리큘럼 
+# ----------------------------
+with st.sidebar.expander("📚 커리큘럼", expanded=False):
+    # 1) 서버에서 기존 설정 불러오기
+    config = fetch_curriculum_config(camp_id=camp_id)  # 없으면 None 또는 {}
+    existing_weeks = (config or {}).get("weeks", [])
+
+    # 기본 주차 수는 기존 설정 or 6주
+    default_week_count = max([w["week_index"] for w in existing_weeks], default=6) if existing_weeks else 6
+
+    week_count = st.number_input(
+        "주차 수",
+        min_value=1,
+        max_value=30,
+        value=default_week_count,
+        step=1,
+        key="curriculum_week_count",
+    )
+
+    new_weeks = []
+
+    for i in range(1, week_count + 1):
+        # 기존 값 있으면 가져오기
+        existing = next((w for w in existing_weeks if w["week_index"] == i), None)
+        default_label = existing["week_label"] if existing else f"{i}주차"
+        default_topics = ",".join(existing.get("topics", [])) if existing else ""
+
+        with st.expander(f"{i}주차 설정", expanded=(i == 1)):
+            week_label = st.text_input(
+                f"{i}주차 라벨",
+                value=default_label,
+                key=f"week_label_{i}",
+            )
+            topic_raw = st.text_input(
+                f"{i}주차 토픽 키 (쉼표 구분, 예: python_basics,pandas)",
+                value=default_topics,
+                key=f"week_topics_{i}",
+            )
+            topics = [t.strip() for t in topic_raw.split(",") if t.strip()]
+
+            new_weeks.append(
+                {
+                    "week_index": i,
+                    "week_label": week_label,
+                    "topics": topics,
+                }
+            )
+
+    if st.button("💾 커리큘럼 저장", use_container_width=True):
+        save_curriculum_config(
+            camp_id=camp_id,
+            weeks=new_weeks,
+        )
+        st.success("커리큘럼 구조를 저장했어요.")
 
 # --------------------------------
 # 1-1) 리포트 생성 버튼 + 세션 캐싱

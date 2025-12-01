@@ -30,3 +30,18 @@ def fetch_curriculum_report(camp_id: int, week_index: str):
     params = {"camp_id": camp_id, "week_index": week_index}
     resp = requests.get(url, params=params)
     return resp.json()
+
+
+def fetch_curriculum_config(camp_id: int):
+    resp = requests.get(f"{BACKEND_BASE_URL}/curriculum/config/{camp_id}")
+    if resp.status_code == 404:
+        return None
+    resp.raise_for_status()
+    return resp.json()
+
+
+def save_curriculum_config(camp_id: int, weeks: list[dict]):
+    payload = {"weeks": weeks}
+    resp = requests.post(f"{BACKEND_BASE_URL}/curriculum/config/{camp_id}", json=payload)
+    resp.raise_for_status()
+    return resp.json()
