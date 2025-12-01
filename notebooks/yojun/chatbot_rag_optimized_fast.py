@@ -1,8 +1,9 @@
 # chatbot_rag_optimized.py
-# metadata 패킹 + 구조화 템플릿 + 최적화된 RAG 버전
+# Hybrid Cache + Metadata Packing + Structured Templates + 최적화된 RAG 버전
 
 import os
 import time
+import numpy as np
 from dotenv import load_dotenv
 from operator import itemgetter
 
@@ -14,26 +15,91 @@ from langchain_core.runnables import RunnableLambda
 
 load_dotenv()
 
-# ==============================================================
-# 기본 설정
-# ==============================================================
+# ==============================================================  
+# 기본 설정  
+# ==============================================================  
 
 DB_PATH = r"C:\POTENUP\MumulMumul\storage\vectorstore\curriculum_all_new"
 COLLECTION = "curriculum_all_new"
 
-LLM_MODEL = "gpt-4o-mini"           # 속도+정확도 균형
-EMBEDDING_MODEL = "text-embedding-3-large"  # 기존 DB와 차원 맞춤
+LLM_MODEL = "gpt-4o-mini"
+EMBEDDING_MODEL = "text-embedding-3-large"
 
-SEARCH_K = 3       # 최적화된 검색 개수
-FETCH_K = 8        # 후보 개수
+SEARCH_K = 3
+FETCH_K = 8
 
-RAG_CHAIN = None   # 전역 캐싱용
+RAG_CHAIN = None
 
 
 # ==============================================================
-# 구조화 템플릿 (초급 / 중급 / 고급)
+# Hybrid Cache (Exact + Semantic)
 # ==============================================================
 
+embedder_for_cache = OpenAIEmbeddings(model=EMBEDDING_MODEL)
+
+CACHE = {
+    "초급": {"exact": {}, "semantic": []},
+    "중급": {"exact": {}, "semantic": []},
+    "고급": {"exact": {}, "semantic": []},
+}
+
+def cosine_similarity(a, b):
+    a = np.array(a)
+    b = np.array(b)
+    return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
+
+
+def search_cache(question: str, grade: str):
+    """
+    1) Exact cache
+    2) Semantic cache
+    """
+    # Exact match
+    if question in CACHE[grade]["exact"]:
+        print("[CACHE HIT] Exact match")
+        return CACHE[grade]["exact"][question]
+
+    # Semantic match
+    print("[CACHE CHECK] Semantic similarity...")
+    q_vec = embedder_for_cache.embed_query(question)
+
+    best_score = 0
+    best_answer = None
+
+    for entry in CACHE[grade]["semantic"]:
+        score = cosine_similarity(q_vec, entry["vector"])
+        if score > best_score:
+            best_score = score
+            best_answer = entry["answer"]
+
+    if best_score >= 0.80:
+        print(f"[CACHE HIT] Semantic score={best_score:.3f}")
+        return best_answer
+
+    return None  # 캐시 MISS
+
+
+def save_to_cache(question: str, grade: str, answer: str):
+    """
+    최종 답변 전체(answer) + 출처 포함 그대로 저장
+    """
+    CACHE[grade]["exact"][question] = answer
+
+    vec = embedder_for_cache.embed_query(question)
+    CACHE[grade]["semantic"].append({
+        "question": question,
+        "vector": vec,
+        "answer": answer
+    })
+
+    print("[CACHE SAVE] 저장 완료 (exact + semantic)")
+
+
+# ==============================================================  
+# 구조화 템플릿 (초급 / 중급 / 고급)  
+# ==============================================================  
+
+# 여기는 캐시 코드/포맷 코드 위에 있을 수도 있고 아래에 있을 수도 있음
 GRADE_RULES = {
     "초급": """
 [질문 이해]
@@ -117,57 +183,31 @@ GRADE_RULES = {
 }
 
 
-# ==============================================================
-# metadata → 텍스트로 패킹하는 유틸 함수
-# ==============================================================
+
+# ==============================================================  
+# metadata → 텍스트로 패킹  
+# ==============================================================  
 
 def format_docs_with_metadata(docs):
-    """
-    retriever가 반환한 Document 리스트를
-    [출처 정보 + 내용] 형태의 긴 문자열로 변환한다.
-
-    각 문서는 대략 이런 형식으로 변환됨:
-
-    [1] 출처: 03 데이터 분석 기초 - 판다스.pdf / p.5
-    문서 내용...
-
-    [2] 출처: 01 파이썬 기초 문법 I.pdf / p.3
-    문서 내용...
-    """
     parts = []
-
     for idx, doc in enumerate(docs, start=1):
         meta = doc.metadata or {}
 
-        # 파일명 후보 키들
-        file_name = (
-            meta.get("file_name")
-            or meta.get("source")
-            or meta.get("filename")
-            or "알 수 없는 파일"
-        )
+        file_name = meta.get("file_name") or meta.get("source") or "알 수 없는 파일"
+        page = meta.get("page") or meta.get("page_number") or meta.get("page_index")
 
-        # 페이지 번호 후보 키들
-        page = (
-            meta.get("page")
-            or meta.get("page_number")
-            or meta.get("page_index")
-        )
-
-        if page is not None:
+        if page:
             header = f"[{idx}] 출처: {file_name} / p.{page}"
         else:
             header = f"[{idx}] 출처: {file_name}"
 
-        body = doc.page_content or ""
-        parts.append(f"{header}\n{body}")
-
+        parts.append(f"{header}\n{doc.page_content}")
     return "\n\n".join(parts)
 
 
-# ==============================================================
-# RAG 체인 초기화 + 캐싱
-# ==============================================================
+# ==============================================================  
+# RAG 체인 초기화  
+# ==============================================================  
 
 def initialize_rag_chain():
     print("[LOG] RAG 체인 초기화 시작")
@@ -186,12 +226,10 @@ def initialize_rag_chain():
         search_kwargs={"k": SEARCH_K, "fetch_k": FETCH_K}
     )
 
-    # 시스템 프롬프트
     template = """
 당신은 부트캠프 학생을 위한 학습 도우미 RAG 챗봇입니다.
-답변은 반드시 아래 [Context] 안의 정보만 사용해야 합니다.
-문서에 없는 내용은 절대 생성하지 마세요.
-답변 마지막에는 반드시 출처(파일명, 페이지)를 명시하세요.
+반드시 [Context] 안의 정보만 사용하여 답변하고,
+출처(파일명, 페이지)를 답변 끝에 표시해야 합니다.
 
 [이전 대화]
 {history}
@@ -209,15 +247,11 @@ def initialize_rag_chain():
 [Question]
 {question}
 -------------------------
-위 구조와 규칙을 따라 답변하세요.
 """
 
     prompt = ChatPromptTemplate.from_template(template)
     model = ChatOpenAI(model=LLM_MODEL, temperature=0.2)
 
-    # 1) question → retriever → docs
-    # 2) docs를 사람이 읽기 좋은 문자열(context)로 변환
-    # 3) prompt에 전달
     chain = (
         {
             "docs": itemgetter("question") | retriever,
@@ -226,12 +260,7 @@ def initialize_rag_chain():
             "grade_rules": itemgetter("grade_rules"),
             "history": itemgetter("history"),
         }
-        | RunnableLambda(
-            lambda x: {
-                **x,
-                "context": format_docs_with_metadata(x["docs"])
-            }
-        )
+        | RunnableLambda(lambda x: {**x, "context": format_docs_with_metadata(x["docs"])})
         | prompt
         | model
         | StrOutputParser()
@@ -248,85 +277,65 @@ def get_rag_chain():
     return RAG_CHAIN
 
 
-# ==============================================================
-# HISTORY (멀티턴)
-# ==============================================================
+# ==============================================================  
+# HISTORY (멀티턴)  
+# ==============================================================  
 
 def build_history_text(history, max_turns=2):
-    """
-    최근 max_turns 개의 질문/답변만 사용해 LLM에 전달.
-    """
     if not history:
         return ""
     recent = history[-max_turns:]
-    return "\n".join(
-        [f"학생: {h['question']}\nAI: {h['answer']}\n" for h in recent]
-    )
+    return "\n".join([f"학생: {h['question']}\nAI: {h['answer']}\n" for h in recent])
 
 
-# ==============================================================
-# 질문 분리 (여러 요청이 섞여 있을 때)
-# ==============================================================
+# ==============================================================  
+# 질문 분리  
+# ==============================================================  
 
 def split_questions(user_message: str):
-    """
-    "리스트 설명해주고, 함수 예제도 보여줘" 같은 입력을
-    1. 리스트 설명해줘
-    2. 함수 예제도 보여줘
-    이런 식으로 분리.
-    """
     splitter = ChatOpenAI(model="gpt-4o-mini", temperature=0)
 
-    prompt = ChatPromptTemplate.from_template(
-        """
-사용자의 입력에서 서로 다른 질문을 아래 형식으로 분리하세요.
+    prompt = ChatPromptTemplate.from_template("""
+    사용자의 입력을 의미 단위로 분리하세요.
 
-1. 질문1
-2. 질문2
+    1. 질문1
+    2. 질문2
 
-너무 잘게 쪼개지 말고, 의미 단위로 자연스럽게 나누세요.
+    예를들어 한 질문에 리스트와 rag에 대한 여러가지 질문이 나왔을 때 두가지를 나눠서 설명하라는 것
+    단어별로 쪼개지말것
+                                              
 
-사용자 입력:
-{message}
-"""
-    )
+    너무 잘게 쪼개지 말고, 의미 단위로 자연스럽게 나누세요.
 
-    chain = prompt | splitter | StrOutputParser()
-    raw = chain.invoke({"message": user_message})
+    사용자 입력:
+    {message}
+    """)
 
+    raw = (prompt | splitter | StrOutputParser()).invoke({"message": user_message})
     questions = []
 
     for line in raw.splitlines():
         line = line.strip()
         if line and line[0].isdigit() and "." in line:
-            try:
-                _, q = line.split(".", 1)
-                q = q.strip()
-                if q:
-                    questions.append(q)
-            except ValueError:
-                continue
+            _, q = line.split(".", 1)
+            questions.append(q.strip())
 
-    if not questions:
-        return [user_message.strip()]
-
-    return questions
+    return questions or [user_message]
 
 
-# ==============================================================
-# 단일 질문 처리
-# ==============================================================
+# ==============================================================  
+# 단일 질문 처리 (캐시 적용됨)  
+# ==============================================================  
 
 def answer_single(question: str, grade: str, history: list):
-    """
-    하나의 질문에 대해:
-    - history 반영
-    - RAG 검색 + LLM 답변
-    - 답변을 history에 저장
-    """
-    if grade not in GRADE_RULES:
-        raise ValueError("grade는 '초급', '중급', '고급' 중 하나여야 합니다.")
 
+    # 1) 캐시 먼저 확인
+    cached = search_cache(question, grade)
+    if cached:
+        print("[INFO] 캐시에서 즉시 반환")
+        return cached
+
+    # 2) RAG 실행
     rag = get_rag_chain()
     history_text = build_history_text(history)
 
@@ -339,67 +348,52 @@ def answer_single(question: str, grade: str, history: list):
     })
     print(f"[Time] LLM 답변 생성: {time.time() - start:.3f}초")
 
+    # 3) 캐시에 저장
+    save_to_cache(question, grade, answer)
+
+    # 4) history 저장
     history.append({"question": question, "answer": answer})
+
     return answer
 
 
-# ==============================================================
-# 여러 질문 처리
-# ==============================================================
+# ==============================================================  
+# 여러 질문 처리  
+# ==============================================================  
 
 def multi_answer(user_message: str, grade: str, history: list):
-    """
-    여러 질문이 섞인 경우:
-    1) split_questions로 나누고
-    2) 각 질문마다 answer_single 호출
-    3) 보기 좋게 묶어서 반환
-    """
     questions = split_questions(user_message)
 
-    # 질문이 하나면 단일 처리
     if len(questions) == 1:
         return answer_single(questions[0], grade, history)
 
     blocks = []
     for idx, q in enumerate(questions, start=1):
         ans = answer_single(q, grade, history)
-        block = f"""### 질문 {idx}
-> {q}
-
-{ans}
-
----
-"""
-        blocks.append(block)
+        blocks.append(f"### 질문 {idx}\n> {q}\n\n{ans}\n---\n")
 
     return "\n".join(blocks)
 
 
-# ==============================================================
-# CLI 테스트용 main
-# ==============================================================
+# ==============================================================  
+# CLI 테스트  
+# ==============================================================  
 
 if __name__ == "__main__":
-    print("\n=== metadata 패킹 + 구조화 템플릿 RAG 챗봇 ===\n")
-    print("여러 질문을 한 번에 써도 되고, 하나씩 물어봐도 됩니다.")
-    print("종료하려면 'exit'를 입력하세요.\n")
+    print("\n=== Hybrid Cache + Metadata + Template RAG 챗봇 ===")
 
     history = []
 
     while True:
         msg = input("\n📌 질문 입력: ").strip()
         if msg.lower() == "exit":
-            print("👋 챗봇을 종료합니다.")
             break
 
         grade = input("💡 난이도 선택 (초급/중급/고급): ").strip()
-        if grade.lower() == "exit":
-            print("👋 챗봇을 종료합니다.")
-            break
 
         print("\n⏳ 답변 생성 중...\n")
         result = multi_answer(msg, grade, history)
 
         print("\n🧠 학습 도우미 답변:\n")
         print(result)
-        print("\n============================================")
+        print("\n============================================\n")
