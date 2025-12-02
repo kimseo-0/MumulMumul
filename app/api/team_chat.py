@@ -58,7 +58,7 @@ class TeamChatRoomCreatedResponse(BaseModel):
 router = APIRouter()
 
 # ==========================================================
-# 1) 채팅방 리스트 요청 : GET /chat/rooms  (SQLite)
+# 1) 채팅방 리스트 요청 : GET /chat/rooms
 # ==========================================================
 
 @router.get("/rooms", response_model=List[TeamChatRoomResponse])
@@ -119,7 +119,7 @@ def get_team_chat_rooms(userId: int, db: Session = Depends(get_db)):
 
 
 # ==========================================================
-# 2) 채팅방 채팅 기록 조회 : GET /chat/rooms/{teamChatId}/messages (Mongo)
+# 2) 채팅방 채팅 기록 조회 : GET /chat/rooms/{teamChatId}/messages
 # ==========================================================
 
 @router.get(
@@ -180,7 +180,7 @@ def get_team_chat_messages(
 
 
 # ==========================================================
-# 3) 채팅 메시지 전송(저장) : POST /chat/rooms/{teamChatId}/messages (Mongo)
+# 3) 채팅 메시지 전송(저장) : POST /chat/rooms/{teamChatId}/messages
 # ==========================================================
 
 @router.post(
@@ -238,7 +238,7 @@ def post_team_chat_message(
 
 
 # ==========================================================
-# 4) 팀 채팅방 생성 : POST /chat/rooms  (SQLite)
+# 4) 팀 채팅방 생성 : POST /chat/rooms
 # ==========================================================
 
 @router.post(
