@@ -3,7 +3,6 @@ from __future__ import annotations
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
 from app.api.connection import router as connection_router
-from app.api.chatbot import router as chatbot_router
 from app.api.attendance import router as attendance_router
 from app.api.meeting import router as meeting_router
 from app.core.schemas import init_db
@@ -48,7 +47,6 @@ app = create_app()
 # 라우터 등록
 # ------------------------------
 app.include_router(connection_router, prefix="/connection")
-app.include_router(chatbot_router)
 app.include_router(attendance_router, prefix="/attendance")
 app.include_router(meeting_router, prefix="/meeting")
 app.include_router(curriculum_router, prefix="/curriculum")
