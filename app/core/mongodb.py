@@ -68,10 +68,13 @@ def init_mongo(db):
 # =====================================
 # 3. 도메인 모델 정의
 # =====================================
-
+# =====================================
+# 3-1. Learning Chat Log 모델 정의
+# =====================================
 # 학습 챗봇과의 채팅 로그 모델
 class CurriculumInsights(BaseModel):
     """
+    curriculum_insights: judge LLM이 채워주는 질문 분석 정보
     LLM judge가 생성한 질문 분석 정보.
     질문이 어떤 토픽(topic)을 다루는지,
     커리큘럼 내/외 범위(scope),
@@ -88,10 +91,19 @@ class LearningChatLog(BaseModel):
     """
     학습 챗봇 채팅 로그 저장 모델 (MongoDB)
 
-    curriculum_insights: judge LLM이 채워주는 질문 분석 정보
+    - user_id: SQL(User.user_id)와 연결
+    - session_id: 세션 식별자 (옵션)
+    - camp_id: SQL(Camp.camp_id)와 연결 (옵션)
+    - role: 'user' or 'assistant'
+    - content: 실제 채팅 내용
+    - curriculum_scope: 커리큘럼 내/외 ("in" / "out")
+    - question_category: numpy / pandas / portfolio 등 분류 태그
+    - created_at: 생성 시각
     """
     user_id: int
+    session_id: Optional[int] = None
     camp_id: Optional[int] = None
+
     role: Literal["user", "assistant"]
     content: str
 
@@ -110,7 +122,43 @@ register_mongo_model(
     ],
 )
 
-# 캠프별 커리큘럼 구조 모델
+
+
+# =====================================
+# 3-2. Team Chat Message 모델 정의
+# =====================================
+class TeamChatMessage(BaseModel):
+    """
+    팀 채팅방 메시지 로그
+
+    - room_id: 채팅방 ID (SQL ChatRoom.id 와 연결)
+    - user_id: SQL(User.user_id)와 연결
+    - user_name: 메시지 보낸 유저 이름 (조회 편의용, 캐시 개념)
+    - message: 실제 채팅 내용
+    - created_at: 메시지 생성 시각
+    """
+    room_id: str
+    user_id: int
+    user_name: str
+    message: str
+    created_at: datetime = datetime.utcnow()
+
+
+# TeamChatMessage 모델을 Mongo 레지스트리에 등록
+register_mongo_model(
+    TeamChatMessage,
+    collection_name="team_chat_messages",
+    indexes=[
+        ("room_id", 1),
+        ("user_id", 1),
+        ("created_at", -1),
+    ]
+)
+
+
+# =====================================
+# 3-3. Curriculum Config 모델 정의
+# =====================================
 class CurriculumWeek(BaseModel):
     """
     한 주차에 대한 커리큘럼 정보.

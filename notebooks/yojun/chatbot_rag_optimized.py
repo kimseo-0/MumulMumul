@@ -31,10 +31,44 @@ FETCH_K = 20
 
 GRADE_RULES = {
     "초급": """
-- 어려운 단어 사용 금지
-- 전문 용어 등장 시 반드시 쉬운 말로 풀어서 먼저 설명
-- 비유·예시 중심으로 설명
-- 너무 긴 문장은 금지 (짧게 끊어서 설명)
+당신은 프로그래밍/데이터 분야를 처음 배우는 초급자를 돕는 학습 도우미입니다.
+설명은 반드시 쉬운 한국어로, 짧은 문장 위주로 작성해야 합니다.
+
+아래 6단계 형식을 그대로 따라 답변하세요.
+
+-------------------------------------
+
+1) [질문 이해]
+- 사용자가 알고 싶어하는 내용을 한 줄로 다시 정리합니다.
+- 전문용어 없이, 쉬운 한국어로 표현합니다.
+
+2) [핵심 한 줄 요약]
+- 결론을 가장 쉬운 표현으로 한 문장에 요약합니다.
+- 초급자가 바로 이해할 수 있는 단어만 사용합니다.
+
+3) [쉬운 설명]
+- 어려운 용어, 영어, 축약어는 최대한 사용하지 않습니다.
+- 부득이하게 전문용어가 등장하면:
+  → 즉시 괄호 안에 쉬운 뜻을 적습니다.
+  예: “라이브러리(미리 만들어둔 기능 묶음)”
+
+4) [비유 / 예시]
+- 현실 비유 1개 이상을 제공합니다.
+- 예시 코드 1개를 제공하되, 너무 길게 쓰지 않습니다.
+
+5) [추가로 알면 좋은 것]
+- 초급자가 부담 없이 받아들일 수 있을 정도로 1~2줄만 확장 설명합니다.
+
+6) [출처]
+- 아래 형식으로 정확하게 표기합니다.
+  파일명.pdf / p.숫자 또는 p.숫자–숫자
+
+-------------------------------------
+
+[특별 주의 사항]
+- 문장은 짧고 명확하게 작성합니다.
+- 초급자가 모를 만한 개념은 반드시 풀어서 설명합니다.
+- context(강의자료)에 없는 내용은 생성하지 않습니다.
 """,
     "중급": """
 - 개념의 핵심 정의를 정확하게 제공
@@ -116,20 +150,82 @@ def initialize_rag_chain():
     return rag_chain
 
 # ==============================================================
-# 챗봇 호출 함수
+# History 기반 멀티턴 지원 함수 추가
 # ==============================================================
 
-def answer(question, grade):
-    if grade not in GRADE_RULES:
-        raise ValueError("grade는 '초급', '중급', '고급' 중 하나여야 합니다.")
+def build_history_text(history, max_turns=3):
+    """
+    최근 max_turns개의 대화 기록을 문자열로 합쳐 반환.
+    GPT가 이전 맥락을 이해하도록 도와준다.
+    """
+    if not history:
+        return ""
 
-    rag = initialize_rag_chain()
+    recent = history[-max_turns:]
 
-    return rag.invoke({
-        "question": question,
+    hist_text = ""
+    for turn in recent:
+        hist_text += f"학생: {turn['question']}\n"
+        hist_text += f"AI: {turn['answer']}\n\n"
+
+    return hist_text
+
+
+def answer_with_history(question, grade, history):
+    """
+    멀티턴 질문을 처리하는 함수:
+    - 최근 history를 시스템 prompt에 추가하여 모델이 맥락을 이해하게 만듦
+    - 새 답변은 history에 저장
+    """
+
+    rag_chain = initialize_rag_chain()
+
+    # 최근 대화 기록을 prompt의 'question' 부분 앞에 붙임
+    history_text = build_history_text(history)
+
+    # 최종적으로 모델에게 전달할 question 형식
+    full_question = f"""
+(이전 대화 맥락)
+{history_text}
+
+(현재 질문)
+{question}
+"""
+
+    # 답변 생성
+    answer_text = rag_chain.invoke({
+        "question": full_question,
         "grade": grade,
         "grade_rules": GRADE_RULES[grade]
     })
+
+    # history 저장
+    history.append({
+        "question": question,
+        "answer": answer_text
+    })
+
+    return answer_text
+
+
+if __name__ == "__main__":
+    history = []   # 멀티턴 대화 기록 저장
+
+    while True:
+        q = input("\n질문 입력(exit 종료): ")
+        if q.lower() == "exit":
+            break
+
+        grade = input("난이도(초급/중급/고급): ").strip()
+
+        # 멀티턴 적용된 답변 실행
+        result = answer_with_history(q, grade, history)
+        print("\n🧠 답변:\n", result)
+
+        print("\n📜 현재 History 턴 수:", len(history))
+
+
+
 
 # ==============================================================
 # ★★★ 메인 실행 함수 ★★★
@@ -172,34 +268,53 @@ def answer(question, grade):
 
 # ==============================================================
 
-#CSV 파일 경로
-CSV_PATH = r"C:\POTENUP\MumulMumul\storage\rag_question_set.csv"
+# # CSV 파일 경로
+# CSV_PATH = r"C:\POTENUP\MumulMumul\notebooks\yojun\test_csv\rag_question_set.csv"
 
-if __name__ == "__main__":
-    rag_chain = answer()
+# if __name__ == "__main__":
 
-    # 1) CSV 파일 불러오기
-    df = pd.read_csv(CSV_PATH, encoding="utf-8-sig")
+#     # 1) CSV 파일 불러오기
+#     df = pd.read_csv(CSV_PATH, encoding="utf-8-sig")
 
-    # 2) answer 컬럼 없으면 만들기
-    if "answer" not in df.columns:
-        df["answer"] = ""
+#     # 2) answer 컬럼 없으면 생성
+#     if "answer" not in df.columns:
+#         df["answer"] = ""
 
-    # 3) 각 질문 처리
-    for idx, row in df.iterrows():
-        question = str(row["질문"]).strip()
-        if not question:
-            df.loc[idx, "answer"] = ""
-            continue
-        
-        print(f"\n[{idx+1}] 질문: {question}")
-        answer = rag_chain.invoke(question)
-        df.loc[idx, "answer"] = answer
-        print(f"➡ 답변 저장 완료")
+#     print("\n📌 CSV 예상 질문 자동 평가 시작\n")
 
-    # 4) CSV 다시 저장
-    df.to_csv(CSV_PATH, index=False, encoding="utf-8-sig")
-    print("\n🎉 CSV 답변 생성 완료!")
+#     save_interval = 5   # 5개마다 저장
+
+#     # 3) 각 row 처리
+#     for idx, row in df.iterrows():
+#         question = str(row["question"]).strip()
+#         grade = str(row["grade"]).strip()
+
+#         # 비어 있으면 skip
+#         if not question:
+#             df.loc[idx, "answer"] = ""
+#             continue
+
+#         print(f"\n[{idx+1}] 질문: {question}")
+#         print(f"📘 난이도: {grade}")
+
+#         try:
+#             result = answer(question, grade)
+#         except Exception as e:
+#             result = f"ERROR: {e}"
+
+#         df.loc[idx, "answer"] = result
+#         print("➡ 답변 저장 완료")
+
+#         # ---- 5개마다 자동 저장 추가됨 ----
+#         if (idx + 1) % save_interval == 0:
+#             df.to_csv(CSV_PATH, index=False, encoding="utf-8-sig")
+#             print(f"💾 {idx+1}개 처리 완료 → 중간 저장됨")
+
+#     # 4) 전체 처리 후 최종 저장
+#     df.to_csv(CSV_PATH, index=False, encoding="utf-8-sig")
+
+#     print("\n🎉 모든 예상 질문 답변 생성 완료!")
+#     print(f"📄 최종 파일 저장됨 → {CSV_PATH}")
 
 # ==============================================================
 
