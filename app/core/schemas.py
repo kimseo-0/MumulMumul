@@ -187,6 +187,33 @@ class STTSegment(Base):
     def __repr__(self):
         return f"<STTSegment {self.segment_id}: '{self.text[:50]}' overlap={self.is_overlapped}>"
 
+# ------------------------
+# Team Chat Room DB
+# ------------------------
+class ChatRoom(Base):
+    __tablename__ = "chat_room"
+
+    id = Column(String(255), primary_key=True)  # teamChatId (예: "team_001")
+    name = Column(String(255), nullable=False)
+
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+
+    members = relationship("ChatRoomUser", back_populates="room")
+
+
+class ChatRoomUser(Base):
+    __tablename__ = "chat_room_user"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    chat_room_id = Column(String(255), ForeignKey("chat_room.id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("user.user_id"), nullable=False)
+
+    # 역할 같은 메타정보 필요하면 여기에 추가 가능 (예: is_admin 등)
+
+    room = relationship("ChatRoom", back_populates="members")
+    user = relationship("User")
+
+
 # =====================================
 # DB 초기화 함수
 # =====================================

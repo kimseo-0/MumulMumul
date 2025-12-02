@@ -69,6 +69,9 @@ def init_mongo(db):
 # 3. 도메인 모델 정의
 # =====================================
 
+# =====================================
+# 3-1. Learning Chat Log 모델 정의
+# =====================================
 class LearningChatLog(BaseModel):
     """
     학습 챗봇과의 채팅 로그
@@ -104,6 +107,37 @@ register_mongo_model(
         ("camp_id", 1),
         ("question_category", 1),
         ("curriculum_scope", 1),
+        ("created_at", -1),
+    ],
+)
+
+# =====================================
+# 3-2. Team Chat Message 모델 정의
+# =====================================
+class TeamChatMessage(BaseModel):
+    """
+    팀 채팅방 메시지 로그
+
+    - room_id: 채팅방 ID (SQL ChatRoom.id 와 연결)
+    - user_id: SQL(User.user_id)와 연결
+    - user_name: 메시지 보낸 유저 이름 (조회 편의용, 캐시 개념)
+    - message: 실제 채팅 내용
+    - created_at: 메시지 생성 시각
+    """
+    room_id: str
+    user_id: int
+    user_name: str
+    message: str
+    created_at: datetime = datetime.utcnow()
+
+
+# TeamChatMessage 모델을 Mongo 레지스트리에 등록
+register_mongo_model(
+    TeamChatMessage,
+    collection_name="team_chat_messages",
+    indexes=[
+        ("room_id", 1),
+        ("user_id", 1),
         ("created_at", -1),
     ],
 )

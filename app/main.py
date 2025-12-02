@@ -5,6 +5,7 @@ from contextlib import asynccontextmanager
 from app.api.connection import router as connection_router
 from app.api.attendance import router as attendance_router
 from app.api.meeting import router as meeting_router
+from app.api.team_chat import router as team_chat_router
 from app.core.schemas import init_db
 from app.core.db import engine
 from app.core import schemas
@@ -52,3 +53,4 @@ app.include_router(meeting_router, prefix="/meeting")
 app.include_router(curriculum_router, prefix="/curriculum")
 app.include_router(user_router, prefix="/user")
 app.include_router(learning_chatbot_router, prefix="/learning_chatbot")
+app.include_router(team_chat_router, prefix="/chat")
