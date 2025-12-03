@@ -1,12 +1,12 @@
 # app/core/mongodb.py
 
-from datetime import datetime
+from datetime import date, datetime
 from typing import Literal, Optional, List, Tuple, Type, Dict, Any
 
 from pydantic import BaseModel, Field
 from pymongo import MongoClient
 from app.config import MONGO_URL, MONGO_DB_NAME
-from app.services.curriculum.schemas import CurriculumReportPayload
+from app.services.curriculum.schemas import CurriculumAIInsights, CurriculumCharts, CurriculumSummaryCards, CurriculumTables
 
 
 # =====================================
@@ -201,9 +201,29 @@ register_mongo_model(
 # =====================================
 # 3-4. Curriculum Report 모델 정의
 # =====================================
+
+class CurriculumReport(BaseModel):
+    """
+    커리큘럼 리포트 서비스의 최종 출력 구조.
+    Streamlit 화면은 이 Payload 하나를 받아서 그대로 렌더링하면 됨.
+    """
+
+    camp_id: int = Field(..., description="캠프 ID")
+    camp_name: str = Field(..., description="캠프 이름 (예: '백엔드 캠프 1기')")
+    week_index: int = Field(..., description="N주차 숫자 (1부터 시작)")
+    week_label: str = Field(..., description="예: '1주차', '3주차'")
+    week_start: date = Field(..., description="리포트 기준 주차 시작일")
+    week_end: date = Field(..., description="리포트 기준 주차 종료일")
+    raw_stats: Optional[Dict[str, Any]] = None
+
+    summary_cards: CurriculumSummaryCards
+    charts: CurriculumCharts
+    tables: CurriculumTables
+    ai_insights: CurriculumAIInsights
+
 # Mongo 레지스트리에 등록
 register_mongo_model(
-    CurriculumReportPayload,
+    CurriculumReport,
     collection_name="curriculum_reports",
     indexes=[
         ("camp_id", 1),

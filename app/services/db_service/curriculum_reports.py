@@ -3,17 +3,17 @@ from typing import Dict, Any, Mapping, Union
 
 from pydantic import BaseModel
 from app.core.mongodb import get_mongo_db
-from app.services.curriculum.schemas import CurriculumReportPayload
+from app.core.mongodb import CurriculumReport
 
 from pymongo.database import Database
 
 mongo_db: Database = get_mongo_db()
 report_col = mongo_db["curriculum_reports"]
 
-def get_curriculum_report(
+def fetch_curriculum_report(
     camp_id: int,
     week_index: int,
-) -> CurriculumReportPayload | None:
+) -> CurriculumReport | None:
     """
     MongoDB에서 기존 커리큘럼 리포트를 조회한다.
     없으면 None 반환.
@@ -26,7 +26,7 @@ def get_curriculum_report(
 def upsert_curriculum_report(
     camp_id: int,
     week_index: int,
-    report_data: Union["CurriculumReportPayload", Mapping[str, Any]],
+    report_data: Union["CurriculumReport", Mapping[str, Any]],
 ) -> None:
     """
     MongoDB에 커리큘럼 리포트를 upsert 한다.

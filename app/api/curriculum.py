@@ -8,11 +8,12 @@ from sqlalchemy.orm import Session
 from pymongo.database import Database
 
 from app.core.db import get_db
-from app.core.mongodb import CurriculumWeek, CurriculumConfig, get_mongo_db
+from app.core.mongodb import CurriculumReport, CurriculumWeek, CurriculumConfig, get_mongo_db
 from app.core.schemas import Camp
-from app.services.curriculum.service import create_curriculum_report
-from app.services.curriculum.schemas import CurriculumReportPayload
+from app.services.curriculum.service import create_curriculum_report, get_curriculum_report
+from app.services.db_service.camp import get_camp_by_id
 from app.services.db_service.curriculum_config import get_curriculum_config_for_camp, upsert_curriculum_config
+from app.services.db_service.learning_chat_log import get_week_range_by_index
 
 router = APIRouter()
 
@@ -31,17 +32,16 @@ def list_camps(db: Session = Depends(get_db)):
         for camp in camps
     ]
 
-
 @router.get(
-    "/report",
-    response_model=CurriculumReportPayload,
+    "/newReport",
+    response_model=CurriculumReport,
 )
-def get_curriculum_report(
+def create_curriculum_newReport(
     camp_id: int,
     week_index: int,  # "Week 1" / "Week 2" ...
     db: Session = Depends(get_db),
     mongo_db: Database = Depends(get_mongo_db),
-) -> CurriculumReportPayload:
+) -> CurriculumReport:
     """
     특정 캠프 + 특정 주차의 커리큘럼 리포트 전체 Payload 반환 API
     (summary_cards, charts, tables, ai_insights 모두 포함)
@@ -53,6 +53,31 @@ def get_curriculum_report(
         week_index=week_index,
     )
     return payload
+
+@router.get(
+    "/report",
+    response_model=CurriculumReport,
+)
+def fetch_curriculum_report(
+    camp_id: int,
+    week_index: int,  # "Week 1" / "Week 2" ...
+    db: Session = Depends(get_db),
+    mongo_db: Database = Depends(get_mongo_db),
+) -> CurriculumReport:
+    """
+    특정 캠프 + 특정 주차의 커리큘럼 리포트 전체 Payload 반환 API
+    (summary_cards, charts, tables, ai_insights 모두 포함)
+    """
+    camp = get_camp_by_id(db, camp_id)
+    week_start, week_end = get_week_range_by_index(db, camp_id, week_index)
+
+    # 1) 기존 리포트 조회
+    report = get_curriculum_report(camp_id, camp.name, week_index, week_start, week_end)
+
+    if not report:
+        raise HTTPException(status_code=404, detail="Curriculum report not found")
+    
+    return report
 
 mongo_db: Database = get_mongo_db()
 curriculum_col = mongo_db["curriculum_configs"]

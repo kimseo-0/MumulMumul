@@ -98,6 +98,8 @@ def parse_weekly_logs(weekly_logs: List[Dict[str, Any]]) -> tuple[
         for tag in tags:
             pattern_tags_per_category[category][tag] += 1
             pattern_tags_overall[tag] += 1
+        
+        intent = insights.get("intent")
             
         # 9) created_at 파싱
         created_at_val = log.get("created_at")
@@ -121,6 +123,8 @@ def parse_weekly_logs(weekly_logs: List[Dict[str, Any]]) -> tuple[
                 question_text=content,
                 answer_summary=log.get("answer_summary"),
                 created_at=created_at_dt,
+                pattern_tags=tags,
+                intent=intent,
             )
         )
 
@@ -307,6 +311,7 @@ def build_raw_stats(
     users_per_category_scope: Dict[Tuple[str, CurriculumScope], set],
     pattern_tags_per_category: Dict[str, Counter],
     pattern_tags_overall: Counter[str],
+    question_rows: List[QuestionRow]
 ) -> Dict[str, Any]:
     """
     LLM 인사이트 생성을 위해 사용하는 raw_stats dict 를 만든다.
@@ -382,16 +387,59 @@ def build_raw_stats(
     # 3) 전체 pattern_tags 통계
     total_pattern_count = sum(pattern_tags_overall.values()) or 1
 
-    pattern_stats_overall = [
-        {
-            "tag": tag,
-            "count": cnt,
-            "ratio": cnt / total_pattern_count,
-        }
-        for tag, cnt in pattern_tags_overall.most_common()
-    ]
+    pattern_counter: Counter[str] = Counter()
+    category_pattern_counter: Dict[str, Counter] = defaultdict(Counter)
+    
+    for row in question_rows:
+        for tag in row.pattern_tags:
+            pattern_counter[tag] += 1
+            category_pattern_counter[row.category][tag] += 1
+    
+    pattern_stats = []
+    for tag, cnt in pattern_counter.most_common():
+        ratio = cnt / total_questions if total_questions > 0 else 0.0
+        pattern_stats.append(
+            {
+                "tag": tag,
+                "count": cnt,
+                "ratio": ratio,
+            }
+        )
+        
+    category_pattern_summary = []
+    for category, counter in category_pattern_counter.items():
+        top_patterns = counter.most_common(3)
+        pattern_str = ", ".join(f"{t}({c})" for t, c in top_patterns)
+        category_pattern_summary.append(
+            {
+                "category": category,
+                "patterns": [
+                    {"tag": t, "count": c}
+                    for t, c in top_patterns
+                ],
+            }
+        )
+    
+    # difficulty_score 기준 정렬 후 Top 3 추출
+    sorted_stats = sorted(
+        in_category_stats,
+        key=lambda x: x.get("difficulty_score", 0.0),
+        reverse=True,
+    )
 
-    # 4) 기존 구조 유지 + 확장 필드 추가
+    priority_rows = []
+    for rank, row in enumerate(sorted_stats[:3], start=1):
+        level = classify_difficulty(row["difficulty_score"])  # high/medium/low
+        priority_rows.append(
+            {
+                "rank": rank,
+                "category": row["category"],
+                "difficulty_level": level.capitalize(),
+                "main_patterns": [],  # 나중에 패턴 기반으로 채워도 됨
+                "action_hint": "",    # LLM이 생성한 문구를 넣어도 되고
+            }
+        )
+
     return {
         "total_questions": total_questions,
         "in_count": in_count,
@@ -407,9 +455,10 @@ def build_raw_stats(
         "example_questions_per_category": dict(questions_per_category),
         "in_category_stats": in_category_stats,
         "out_category_stats": out_category_stats,
-        "pattern_stats_overall": pattern_stats_overall
+        "pattern_stats": pattern_stats,
+        "category_pattern_summary": category_pattern_summary,
+        "priority": priority_rows
     }
-
 
 
 # -----------------------------
@@ -470,6 +519,7 @@ def aggregate_curriculum_stats(
         users_per_category_scope=users_per_category_scope,
         pattern_tags_per_category=pattern_tags_per_category,
         pattern_tags_overall=pattern_tags_overall,
+        question_rows=question_rows,
     )
 
     return {

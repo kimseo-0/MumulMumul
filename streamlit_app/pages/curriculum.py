@@ -3,6 +3,7 @@ import pandas as pd
 import altair as alt
 
 from streamlit_app.api.curriculum import (
+    create_curriculum_report,
     fetch_camps,
     fetch_curriculum_report,
     fetch_curriculum_config,
@@ -11,6 +12,7 @@ from streamlit_app.api.curriculum import (
 
 st.set_page_config(layout="wide")
 st.title("📚 커리큘럼 난이도 & 추가 학습 요구 분석")
+
 
 # 리포트 가이드
 def render_curriculum_analysis_rules():
@@ -21,11 +23,11 @@ def render_curriculum_analysis_rules():
     **1️⃣ '어려운 파트'(커리큘럼 내) 선정 기준**
 
     - 질문 비율 기준  
-    - 해당 카테고리가 **커리큘럼 내(in) 질문의 20% 이상**이면 High-Friction Topic으로 간주함.
+      - 해당 카테고리가 **커리큘럼 내(in) 질문의 20% 이상**이면 High-Friction Topic으로 간주함.
     - 질문 수 기준  
-    - 질문 수 **상위 Top 3 카테고리**는 모두 어려운 파트 후보로 포함함.
+      - 질문 수 **상위 Top 3 카테고리**는 모두 어려운 파트 후보로 포함함.
     - 질문 패턴 기준  
-    - "왜 이런 결과가 나오나요?", "A와 B 차이가 뭐죠?"처럼  
+      - "왜 이런 결과가 나오나요?", "A와 B 차이가 뭐죠?"처럼  
         **개념 혼란/이해도 부족**을 드러내는 질문이 많은 카테고리는 난이도가 높은 파트로 판단함.
 
     ---
@@ -33,11 +35,11 @@ def render_curriculum_analysis_rules():
     **2️⃣ '커리큘럼 외 추가 요구' 선정 기준**
 
     - 최소 언급 수  
-    - 동일 주제에 대한 질문이 **2건 이상**이면 우연이 아닌 반복 요구로 판단함.
+      - 동일 주제에 대한 질문이 **2건 이상**이면 우연이 아닌 반복 요구로 판단함.
     - 비율 기준  
-    - 커리큘럼 외(out) 질문의 **15% 이상**을 차지하면 주요 요구 토픽으로 간주함.
+      - 커리큘럼 외(out) 질문의 **15% 이상**을 차지하면 주요 요구 토픽으로 간주함.
     - 주제 성격  
-    - 포트폴리오, 커리어/면접, IDE·환경 설정, 협업(Git)처럼  
+      - 포트폴리오, 커리어/면접, IDE·환경 설정, 협업(Git)처럼  
         **학습 성과와 직접 연결되는 주제**는 중요도 높게 다룸.
 
     ---
@@ -45,11 +47,11 @@ def render_curriculum_analysis_rules():
     **3️⃣ '즉시 보완 vs 다음 기수 개선' 기준**
 
     - **즉시 보완**
-    - Week 1–2의 기초 파트이고, in 질문 비율이 **25% 이상**이거나 Top 3에 해당함.
-    - 해당 파트에서 개념 혼란성 질문이 많이 발생함.
+      - Week 1–2의 기초 파트이고, in 질문 비율이 **25% 이상**이거나 Top 3에 해당함.
+      - 해당 파트에서 개념 혼란성 질문이 많이 발생함.
     - **다음 기수 개선**
-    - Week 3–5의 심화 개념으로, 난이도는 높지만 상대적으로 질문 비율이 낮음.
-    - 커리어/포트폴리오/환경 설정 등 **구조적 개선**이 필요한 영역임.
+      - Week 3–5의 심화 개념으로, 난이도는 높지만 상대적으로 질문 비율이 낮음.
+      - 커리어/포트폴리오/환경 설정 등 **구조적 개선**이 필요한 영역임.
 
     ---
 
@@ -67,20 +69,20 @@ def render_curriculum_analysis_rules():
 
 
 # --------------------------------
-# 0) 세션 기반 데이터 캐시 설정  🔥 (캠프 + 커리큘럼 config)
+# 0) 세션 기반 데이터 캐시 설정  🔥
 # --------------------------------
-if "curriculum_session" not in st.session_state:  # NEW: 한 번만 초기화
+if "curriculum_session" not in st.session_state:  # 한 번만 초기화
     st.session_state["curriculum_session"] = {
         "camps": None,                       # fetch_camps() 결과
         "camp_name_to_id": None,            # {name: id}
         "curriculum_config_by_camp": {},    # {camp_id: config}
-        "curriculum_reports": {},           # 기존 리포트 캐시 (camp_id_weekIndex)
+        "curriculum_reports": {},           # {f"{camp_id}_{week_index}": payload}
     }
 
 session_cache = st.session_state["curriculum_session"]
 
 # --- 캠프 목록은 세션에 한 번만 저장 ---
-if session_cache["camps"] is None:  # NEW
+if session_cache["camps"] is None:
     camps = fetch_camps()  # [{camp_id, name, ...}, ...] 가정
     camp_name_to_id = {c["name"]: c["camp_id"] for c in camps}
     session_cache["camps"] = camps
@@ -105,10 +107,10 @@ week_index = int(selected_week_label.split()[1])  # "Week 3" -> 3
 # 커리큘럼 설정 (세션 캐싱)
 # ----------------------------
 with st.sidebar.expander("📚 커리큘럼", expanded=False):
-    # 1) 서버에서 기존 설정 불러오기 (캠프별 1회만)
-    config_cache = session_cache["curriculum_config_by_camp"]  # NEW
+    config_cache = session_cache["curriculum_config_by_camp"]
 
-    if camp_id not in config_cache:  # NEW: 해당 캠프 config 처음 요청 시에만 백엔드 호출
+    # 1) 서버에서 기존 설정 불러오기 (캠프별 1회만)
+    if camp_id not in config_cache:
         config = fetch_curriculum_config(camp_id=camp_id) or {}
         config_cache[camp_id] = config
     else:
@@ -135,13 +137,12 @@ with st.sidebar.expander("📚 커리큘럼", expanded=False):
     new_weeks = []
 
     for i in range(1, week_count + 1):
-        # 기존 값 있으면 가져오기
         existing = next((w for w in existing_weeks if w["week_index"] == i), None)
         default_label = existing["week_label"] if existing else f"{i}주차"
         default_topics = ",".join(existing.get("topics", [])) if existing else ""
 
         with st.expander(f"{i}주차 설정", expanded=(i == 1)):
-            week_label = st.text_input(
+            week_label_input = st.text_input(
                 f"{i}주차 라벨",
                 value=default_label,
                 key=f"week_label_{i}",
@@ -156,7 +157,7 @@ with st.sidebar.expander("📚 커리큘럼", expanded=False):
             new_weeks.append(
                 {
                     "week_index": i,
-                    "week_label": week_label,
+                    "week_label": week_label_input,
                     "topics": topics,
                 }
             )
@@ -166,25 +167,30 @@ with st.sidebar.expander("📚 커리큘럼", expanded=False):
             camp_id=camp_id,
             weeks=new_weeks,
         )
-        # NEW: 백엔드 저장 후 세션 캐시도 함께 갱신
-        config_cache[camp_id] = {
-            "weeks": new_weeks,
-        }
+        config_cache[camp_id] = {"weeks": new_weeks}
         st.success("커리큘럼 구조를 저장했어요.")
 
 
 # --------------------------------
 # 1-1) 리포트 생성 버튼 + 세션 캐싱
 # --------------------------------
-# 👉 기존에는 st.session_state["curriculum_reports"] 를 따로 썼는데
-#    위에서 session_cache 안에 합쳤으니 그대로 사용
 report_key = f"{camp_id}_{week_index}"
+reports_cache = session_cache["curriculum_reports"]
+
+# 1) 세션에서 먼저 찾기
+payload = reports_cache.get(report_key)
+
+# 2) 세션에 없으면 → 백엔드(DB)에서 한 번 조회해서 있으면 캐시
+if payload is None:
+    db_report = fetch_curriculum_report(camp_id=camp_id, week_index=week_index)
+    if db_report is not None:
+        payload = db_report
+        reports_cache[report_key] = payload
 
 generate_clicked = st.sidebar.button("리포트 생성하기")
-
 if generate_clicked:
     with st.spinner("리포트 생성 중입니다..."):
-        payload = fetch_curriculum_report(
+        payload = create_curriculum_report(
             camp_id=camp_id,
             week_index=week_index,
         )
@@ -195,20 +201,22 @@ payload = session_cache["curriculum_reports"].get(report_key)
 
 # 아직 생성된 리포트가 없다면 안내만 띄우고 종료
 if payload is None:
-    week_label = f"{week_index}주차"
+    week_label_fallback = f"{week_index}주차"
     st.info(
-        f"현재 **{camp_name} / {week_label}** 리포트가 없습니다.\n\n"
-        "좌측 사이드바에서 **'해당 Week 리포트 생성하기'** 버튼을 눌러 리포트를 생성해 주세요."
+        f"현재 **{camp_name} / {week_label_fallback}** 리포트가 없습니다.\n\n"
+        "좌측 사이드바에서 **'리포트 생성하기'** 버튼을 눌러 리포트를 생성해 주세요."
     )
     st.stop()
 
 # --------------------------------
-# 2) (기존) 리포트 payload 사용
+# 2) 리포트 payload 사용
 # --------------------------------
 summary = payload["summary_cards"]
 charts = payload["charts"]
 tables = payload["tables"]
 ai_insights = payload["ai_insights"]
+
+week_label = payload.get("week_label", f"{week_index}주차")
 
 # ================================
 # DataFrame 변환 유틸
@@ -221,22 +229,26 @@ if not df_cat_raw.empty:
     df_categories = (
         df_cat_raw.groupby("category", as_index=False)["question_count"]
         .sum()
-        .rename(columns={"question_count": "질문 수"})
-        .sort_values("질문 수", ascending=False)
+        .rename(columns={"question_count": "question_count"})
+        .sort_values("question_count", ascending=False)
     )
 else:
-    df_categories = pd.DataFrame(columns=["category", "질문 수"])
+    df_categories = pd.DataFrame(columns=["category", "question_count"])
 
-# 2) 분류별 질문 리스트
+# 2) 분류별 질문 리스트 (pattern_tags, intent는 지금은 없음 → TODO)
 question_rows = []
 for block in tables.get("questions_grouped_by_category", []):
+    category = block.get("category")
+    scope = block.get("scope")
     for q in block.get("questions", []):
         question_rows.append(
             {
-                "category": q.get("category"),
-                "scope": q.get("scope"),
+                "category": category,
+                "scope": scope,
                 "question_text": q.get("question_text"),
                 "created_at": q.get("created_at"),
+                "pattern_tags": q.get("pattern_tags") or [],
+                "intent": q.get("intent"),
             }
         )
 
@@ -254,6 +266,36 @@ df_outer = pd.DataFrame(
     ]
 )
 
+# 4) 패턴 전체 분포
+raw_stats = payload.get("raw_stats", {})
+pattern_stats = raw_stats.get("pattern_stats", [])
+
+df_pattern_overall = pd.DataFrame(pattern_stats)
+
+# 5) 카테고리별 주요 패턴
+cat_pattern_raw = raw_stats.get("category_pattern_summary", [])
+category_pattern_summary = []
+for row in cat_pattern_raw:
+    if row.get("patterns"):
+        pattern_str = ", ".join(
+            f"{p['tag']}({p['count']})" for p in row["patterns"]
+        )
+    else:
+        pattern_str = ""
+    category_pattern_summary.append(
+        {
+            "category": row["category"],
+            "patterns": pattern_str,
+            "summary": "",  # 나중에 LLM이 한 줄 요약 채워주게 해도 됨
+        }
+    )
+
+# 6) 커리큘럼 강화 우선순위
+raw_stats = payload.get("raw_stats", {})
+priority_rows = raw_stats.get("priority", [])
+
+df_priority = pd.DataFrame(priority_rows)
+
 # ================================
 # 탭 구성
 # ================================
@@ -263,7 +305,6 @@ tab_summary, tab_ai = st.tabs(["요약", "AI 심층 분석"])
 # (1) 요약 탭
 # =========================================================
 with tab_summary:
-    week_label = payload.get("week_label", f"{week_index}주차")
     st.subheader(f"📌 {week_label} 요약 ({camp_name})")
 
     total_questions = summary.get("total_questions", 0)
@@ -272,90 +313,192 @@ with tab_summary:
     out_q = summary.get("curriculum_out_questions", 0)
     num_categories = df_categories["category"].nunique() if not df_categories.empty else 0
 
+    # 1. 상단 Summary Cards
+    st.markdown("### 🔢 핵심 지표")
+
     col1, col2, col3 = st.columns(3)
     col1.metric("전체 질문 수", f"{total_questions}건")
     col2.metric("커리큘럼 외 비율", f"{out_ratio:.1f}%")
     col3.metric("질문 분류 수", f"{num_categories}개")
 
-    st.markdown("### 🔥 이번 주 상위 질문 분류")
+    # 2. 상위 질문 분류 Top 3
+    st.markdown("### 🔥 상위 질문 분류 Top 3")
 
-    top_cats = summary.get("top_question_categories", [])  # [TopQuestionCategory... dict]
-    top_cats = top_cats[:3]
+    top_cats = summary.get("top_question_categories", [])[:3]
 
     colA, colB, colC = st.columns(3)
     cols = [colA, colB, colC]
 
     for col, cat in zip(cols, top_cats):
+        scope_label = "커리큘럼 내" if cat["scope"] == "in" else "커리큘럼 외"
         col.info(
-            f"""
-### {cat['category']}
-**{int(cat['question_count'])}건**  
-*(scope: { '커리큘럼 내' if cat['scope']=='in' else '커리큘럼 외' })*
-"""
+            f"**{cat['category']}**  \n"
+            f"{int(cat['question_count'])}건  \n"
+            f"*{scope_label}*"
         )
-
+    
     st.markdown("---")
-    st.markdown("### 📊 질문 분류별 질문 수")
 
-    if not df_categories.empty:
-        chart = (
-            alt.Chart(df_categories)
+    # 3. 질문 패턴 분포 (전체)
+    st.markdown("### 🧩 이번 주 질문 패턴 분포")
+
+    if not df_pattern_overall.empty:
+        chart_pattern = (
+            alt.Chart(df_pattern_overall)
             .mark_bar()
             .encode(
-                x="질문 수:Q",
-                y=alt.Y("category:N", sort="-x", title="질문 분류"),
-                color="category:N",
+                x=alt.X("count:Q", title="질문 수"),
+                y=alt.Y("tag:N", sort="-x", title="패턴 태그"),
+                tooltip=[
+                    "tag",
+                    "count",
+                    alt.Tooltip("ratio:Q", format=".0%"),
+                ],
             )
-            .properties(height=250)
+            .properties(height=220)
         )
-        st.altair_chart(chart, use_container_width=True)
-    else:
-        st.write("질문 데이터가 없습니다.")
+        st.altair_chart(chart_pattern, use_container_width=True)
 
-    st.markdown("#### 📋 분류별 질문 리스트")
-
-    if not df_categories.empty and not df_questions.empty:
-        selected_cat = st.selectbox(
-            "분류 선택",
-            df_categories["category"].tolist(),
+        top_tag_row = df_pattern_overall.sort_values("count", ascending=False).iloc[0]
+        st.caption(
+            f"→ 이번 주에는 **{top_tag_row['tag']}** 패턴의 질문이 가장 많이 관찰되었음."
         )
-        for q in df_questions[df_questions["category"] == selected_cat]["question_text"]:
-            st.markdown(f"- {q}")
     else:
-        st.write("표시할 질문이 없습니다.")
+        st.write("패턴 통계 데이터가 없습니다.")
 
     st.markdown("---")
-    st.markdown("### 🥤 커리큘럼 내/외 질문 비율")
 
-    scope_ratio = charts.get("curriculum_scope_ratio", [])
-    if scope_ratio:
-        df_ratio = pd.DataFrame(
-            [
-                {
-                    "type": "커리큘럼 내" if r["scope"] == "in" else "커리큘럼 외",
-                    "count": r["question_count"],
-                }
-                for r in scope_ratio
-            ]
+    # 4. 커리큘럼 강화 우선순위 Top 3
+    st.markdown("### 🧱 커리큘럼 강화 우선순위 Top 3")
+
+    if not df_priority.empty:
+        st.dataframe(
+            df_priority[
+                ["rank", "category", "difficulty_level", "main_patterns", "action_hint"]
+            ],
+            hide_index=True,
         )
-
-        pie = (
-            alt.Chart(df_ratio)
-            .mark_arc(innerRadius=40)
-            .encode(theta="count:Q", color="type:N")
-            .properties(height=260)
-        )
-        st.altair_chart(pie, use_container_width=True)
     else:
-        st.write("커리큘럼 내/외 데이터가 없습니다.")
+        st.write("강화 우선순위 데이터가 없습니다.")
+    
+    st.markdown("---")
 
-    st.markdown("#### 커리큘럼 외 질문 리스트")
+    # 5. 커리큘럼 외 주요 토픽 Top 3
+    st.markdown("### 🧭 커리큘럼 외 주요 토픽 Top 3")
 
-    if not df_outer.empty:
-        for q in df_outer["question_text"]:
-            st.markdown(f"- {q}")
+    extra_topics = ai_insights.get("extra_topics_detail", [])
+    if extra_topics:
+        top_extra = extra_topics[:3]
+        for t in top_extra:
+            with st.container(border=True):
+                st.markdown(f"#### {t['topic_label']} ({t['question_count']}건)")
+                if t.get("example_questions"):
+                    st.markdown(f"- 대표 질문: {t['example_questions'][0]}")
+                if t.get("suggested_session_idea"):
+                    st.markdown(f"- 제안: {t['suggested_session_idea']}")
+                st.markdown("")
     else:
-        st.write("커리큘럼 외 질문이 없습니다.")
+        st.write("커리큘럼 외 주요 토픽 데이터가 없습니다.")
+
+    st.markdown("---")
+
+    # 6. 카테고리별 주요 어려움 패턴
+    st.markdown("### 🧠 카테고리별 주요 어려움 패턴")
+
+    if category_pattern_summary:
+        for row in category_pattern_summary:
+            with st.container(border=True):
+                st.markdown(f"#### {row['category']}")
+                st.markdown(f"- 주요 패턴: {row['patterns']}")
+                st.markdown(f"- 요약: {row['summary']}")
+                st.markdown("")
+    else:
+        st.write("카테고리별 패턴 요약 데이터가 없습니다.")
+
+    st.markdown("---")
+
+    # 7. 상세 데이터 (expander)
+    with st.expander("📎 상세 데이터 더 보기"):
+        # 7-1. 카테고리별 질문 수 차트
+        st.markdown("#### 📊 카테고리별 질문 수")
+
+        if not df_categories.empty:
+            chart_cat = (
+                alt.Chart(df_categories)
+                .mark_bar()
+                .encode(
+                    x=alt.X("question_count:Q", title="질문 수"),
+                    y=alt.Y("category:N", sort="-x", title="질문 분류"),
+                    tooltip=["category", "question_count"],
+                )
+                .properties(height=260)
+            )
+            st.altair_chart(chart_cat, use_container_width=True)
+        else:
+            st.write("질문 데이터가 없습니다.")
+
+        st.markdown("---")
+
+        # 7-2. 분류별 질문 리스트 (pattern + intent 포함)
+        st.markdown("#### 📋 분류별 질문 리스트")
+
+        if not df_categories.empty and not df_questions.empty:
+            selected_cat = st.selectbox(
+                "분류 선택",
+                df_categories["category"].tolist(),
+                key="category_select_detail",
+            )
+
+            df_q_cat = df_questions[df_questions["category"] == selected_cat]
+
+            for _, row in df_q_cat.iterrows():
+                st.markdown(f"- **{row['question_text']}**")
+                st.markdown(
+                    f"  - intent: {row['intent']}  \n"
+                    f"  - tags: {', '.join(row['pattern_tags'])}"
+                )
+        else:
+            st.write("표시할 질문이 없습니다.")
+
+        st.markdown("---")
+
+        # 7-3. 커리큘럼 내/외 비율 파이
+        st.markdown("#### 🥤 커리큘럼 내/외 질문 비율")
+
+        scope_ratio = charts.get("curriculum_scope_ratio", [])
+        if scope_ratio:
+            df_ratio = pd.DataFrame(
+                [
+                    {
+                        "type": "커리큘럼 내" if r["scope"] == "in" else "커리큘럼 외",
+                        "count": r["question_count"],
+                    }
+                    for r in scope_ratio
+                ]
+            )
+
+            pie = (
+                alt.Chart(df_ratio)
+                .mark_arc(innerRadius=40)
+                .encode(
+                    theta="count:Q",
+                    color="type:N",
+                    tooltip=["type", "count"],
+                )
+                .properties(height=260)
+            )
+            st.altair_chart(pie, use_container_width=True)
+        else:
+            st.write("커리큘럼 내/외 데이터가 없습니다.")
+
+        st.markdown("#### 커리큘럼 외 질문 전체 리스트")
+
+        if not df_outer.empty:
+            for q in df_outer["question_text"]:
+                st.markdown(f"- {q}")
+        else:
+            st.write("커리큘럼 외 질문이 없습니다.")
+
 
 # =========================================================
 # (2) AI 심층 분석 탭

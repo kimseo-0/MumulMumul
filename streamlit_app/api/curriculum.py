@@ -24,9 +24,17 @@ def fetch_camps():
 def fetch_curriculum_report(camp_id: int, week_index: str):
     """
     백엔드 /curriculum/report 에 리포트 요청
-    return 값은 CurriculumReportPayload 를 dict 로 받은 것과 동일
     """
     url = f"{BACKEND_BASE_URL}/curriculum/report"
+    params = {"camp_id": camp_id, "week_index": week_index}
+    resp = requests.get(url, params=params)
+    return resp.json()
+
+def create_curriculum_report(camp_id: int, week_index: str):
+    """
+    백엔드 /curriculum/newReport 에 리포트 요청
+    """
+    url = f"{BACKEND_BASE_URL}/curriculum/newReport"
     params = {"camp_id": camp_id, "week_index": week_index}
     resp = requests.get(url, params=params)
     return resp.json()

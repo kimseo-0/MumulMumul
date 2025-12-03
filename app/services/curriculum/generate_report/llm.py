@@ -217,7 +217,8 @@ def generate_curriculum_ai_insights(stats: Dict[str, Any]) -> CurriculumAIInsigh
 
       3) 커리큘럼 외(out) 질문:
       - out_category_stats를 기반으로
-        - 커리어, 포트폴리오, IDE 설정 등 추가 세션이 필요한 토픽을 정리할 것.
+        - 커리어, 포트폴리오, IDE 설정 등 커리큘럼 외 추가 세션이 필요한 토픽을 정리할 것.
+        - out_category_stats이 없을 경우 반드시 빈 값을 반환할 것.
 
       4) 표현 방식:
       - 전체적으로 보고서 말투, "~임, ~함" 체를 사용할 것.
