@@ -6,6 +6,7 @@ from typing import Literal, Optional, List, Tuple, Type, Dict, Any
 from pydantic import BaseModel, Field
 from pymongo import MongoClient
 from app.config import MONGO_URL, MONGO_DB_NAME
+from app.services.curriculum.schemas import CurriculumReportPayload
 
 
 # =====================================
@@ -74,13 +75,13 @@ def init_mongo(db):
 # 학습 챗봇과의 채팅 로그 모델
 class CurriculumInsights(BaseModel):
     """
-    curriculum_insights: judge LLM이 채워주는 질문 분석 정보
-    LLM judge가 생성한 질문 분석 정보.
+    curriculum_insights: 질문 분석 정보
     질문이 어떤 토픽(topic)을 다루는지,
     커리큘럼 내/외 범위(scope),
     질문 패턴(pattern_tags),
     질문 의도(intent)을 담음.
     """
+    id: str = Field(..., description="로그 문서의 고유 ID")
     topic: Optional[str] = Field(None, description="커리큘럼 토픽 키 (예: pandas, visualization, career 등)")
     scope: Optional[Literal["in", "out"]] = Field(None, description="'in'=커리큘럼 내 / 'out'=커리큘럼 외")
     pattern_tags: List[str] = Field(default_factory=list, description="질문 패턴 태그 리스트")
@@ -194,5 +195,19 @@ register_mongo_model(
     collection_name="curriculum_configs",
     indexes=[
         ("camp_id", 1),
+    ],
+)
+
+# =====================================
+# 3-4. Curriculum Report 모델 정의
+# =====================================
+# Mongo 레지스트리에 등록
+register_mongo_model(
+    CurriculumReportPayload,
+    collection_name="curriculum_reports",
+    indexes=[
+        ("camp_id", 1),
+        ("week_index", 1),
+        ("created_at", -1)
     ],
 )

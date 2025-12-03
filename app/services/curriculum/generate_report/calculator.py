@@ -60,14 +60,14 @@ def parse_weekly_logs(weekly_logs: List[Dict[str, Any]]) -> tuple[
 
     for log in weekly_logs:
 
-        enriched = log.get("curriculum_judge") or {}
+        insights = log.get("curriculum_insights") or {}
 
         # 1) scope
-        scope_raw = enriched.get("scope") or "in"
+        scope_raw = insights.get("scope") or "in"
         scope: CurriculumScope = _normalize_scope(scope_raw)
 
         # 2) category/topic
-        category = enriched.get("topic") or "기타"
+        category = insights.get("topic") or "기타"
         category = category.strip() or "기타"
 
         # 3) content
@@ -94,7 +94,7 @@ def parse_weekly_logs(weekly_logs: List[Dict[str, Any]]) -> tuple[
             users_per_category_scope[key].add(user_id)
 
         # 8) pattern_tags 집계
-        tags = enriched.get("pattern_tags") or []
+        tags = insights.get("pattern_tags") or []
         for tag in tags:
             pattern_tags_per_category[category][tag] += 1
             pattern_tags_overall[tag] += 1
@@ -468,6 +468,8 @@ def aggregate_curriculum_stats(
         by_category_scope=by_category_scope,
         questions_per_category=questions_per_category,
         users_per_category_scope=users_per_category_scope,
+        pattern_tags_per_category=pattern_tags_per_category,
+        pattern_tags_overall=pattern_tags_overall,
     )
 
     return {

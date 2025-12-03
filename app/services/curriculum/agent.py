@@ -10,11 +10,10 @@ from .generate_report.llm import generate_curriculum_ai_insights
 def generate_curriculum_report(camp_id, weekly_logs) -> Dict[str, Any]:
     """
     전체 리포트 생성 파이프라인
-    1) 해당 주차 로그 LLM enrichment (없으면)
-    2) 주차 로그 조회
-    3) 집계
-    4) AI 인사이트 생성
-    5) 최종 payload 반환
+    1) 주차 로그 조회
+    2) 집계
+    3) AI 인사이트 생성
+    4) 최종 payload 반환
     """
     # 집계
     agg_result = aggregate_curriculum_stats(weekly_logs)

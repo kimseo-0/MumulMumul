@@ -26,7 +26,7 @@ from typing import Dict, Any
 from langchain_openai import ChatOpenAI
 from langchain_core.output_parsers import PydanticOutputParser
 
-from .schemas import CurriculumAIInsights
+from ..schemas import CurriculumAIInsights
 
 
 llm = ChatOpenAI(
@@ -158,7 +158,7 @@ def generate_curriculum_ai_insights(stats: Dict[str, Any]) -> CurriculumAIInsigh
     """
 
     context_block = build_llm_context_block(stats)
-    stats_json = json.dumps(stats, ensure_ascii=False, indent=2)
+    stats_json = json.dumps(stats, ensure_ascii=False, indent=2, default=str)
 
     prompt = f"""
       너는 온라인 부트캠프의 **커리큘럼 난이도 & 추가 학습 요구**를 분석해서

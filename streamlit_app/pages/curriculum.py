@@ -67,11 +67,31 @@ def render_curriculum_analysis_rules():
 
 
 # --------------------------------
+# 0) 세션 기반 데이터 캐시 설정  🔥 (캠프 + 커리큘럼 config)
+# --------------------------------
+if "curriculum_session" not in st.session_state:  # NEW: 한 번만 초기화
+    st.session_state["curriculum_session"] = {
+        "camps": None,                       # fetch_camps() 결과
+        "camp_name_to_id": None,            # {name: id}
+        "curriculum_config_by_camp": {},    # {camp_id: config}
+        "curriculum_reports": {},           # 기존 리포트 캐시 (camp_id_weekIndex)
+    }
+
+session_cache = st.session_state["curriculum_session"]
+
+# --- 캠프 목록은 세션에 한 번만 저장 ---
+if session_cache["camps"] is None:  # NEW
+    camps = fetch_camps()  # [{camp_id, name, ...}, ...] 가정
+    camp_name_to_id = {c["name"]: c["camp_id"] for c in camps}
+    session_cache["camps"] = camps
+    session_cache["camp_name_to_id"] = camp_name_to_id
+else:
+    camps = session_cache["camps"]
+    camp_name_to_id = session_cache["camp_name_to_id"]
+
+# --------------------------------
 # 1) 캠프 목록 / 주차 선택
 # --------------------------------
-camps = fetch_camps()  # [{camp_id, name, ...}, ...] 형태라고 가정
-camp_name_to_id = {c["name"]: c["camp_id"] for c in camps}
-
 st.sidebar.header("필터 설정")
 
 camp_name = st.sidebar.selectbox("반 선택", list(camp_name_to_id.keys()))
@@ -82,15 +102,26 @@ selected_week_label = st.sidebar.selectbox("주차 선택", weeks)
 week_index = int(selected_week_label.split()[1])  # "Week 3" -> 3
 
 # ----------------------------
-# 커리큘럼 
+# 커리큘럼 설정 (세션 캐싱)
 # ----------------------------
 with st.sidebar.expander("📚 커리큘럼", expanded=False):
-    # 1) 서버에서 기존 설정 불러오기
-    config = fetch_curriculum_config(camp_id=camp_id)  # 없으면 None 또는 {}
-    existing_weeks = (config or {}).get("weeks", [])
+    # 1) 서버에서 기존 설정 불러오기 (캠프별 1회만)
+    config_cache = session_cache["curriculum_config_by_camp"]  # NEW
+
+    if camp_id not in config_cache:  # NEW: 해당 캠프 config 처음 요청 시에만 백엔드 호출
+        config = fetch_curriculum_config(camp_id=camp_id) or {}
+        config_cache[camp_id] = config
+    else:
+        config = config_cache[camp_id]
+
+    existing_weeks = config.get("weeks", [])
 
     # 기본 주차 수는 기존 설정 or 6주
-    default_week_count = max([w["week_index"] for w in existing_weeks], default=6) if existing_weeks else 6
+    default_week_count = (
+        max([w["week_index"] for w in existing_weeks], default=6)
+        if existing_weeks
+        else 6
+    )
 
     week_count = st.number_input(
         "주차 수",
@@ -135,28 +166,32 @@ with st.sidebar.expander("📚 커리큘럼", expanded=False):
             camp_id=camp_id,
             weeks=new_weeks,
         )
+        # NEW: 백엔드 저장 후 세션 캐시도 함께 갱신
+        config_cache[camp_id] = {
+            "weeks": new_weeks,
+        }
         st.success("커리큘럼 구조를 저장했어요.")
+
 
 # --------------------------------
 # 1-1) 리포트 생성 버튼 + 세션 캐싱
 # --------------------------------
-if "curriculum_reports" not in st.session_state:
-    st.session_state["curriculum_reports"] = {} 
-
+# 👉 기존에는 st.session_state["curriculum_reports"] 를 따로 썼는데
+#    위에서 session_cache 안에 합쳤으니 그대로 사용
 report_key = f"{camp_id}_{week_index}"
 
-generate_clicked = st.sidebar.button("리포트 생성하기") 
+generate_clicked = st.sidebar.button("리포트 생성하기")
 
 if generate_clicked:
-    with st.spinner("리포트 생성 중입니다..."): 
+    with st.spinner("리포트 생성 중입니다..."):
         payload = fetch_curriculum_report(
             camp_id=camp_id,
             week_index=week_index,
         )
-        st.session_state["curriculum_reports"][report_key] = payload
+        session_cache["curriculum_reports"][report_key] = payload
 
 # 세션에서 현재 선택된 캠프/주차의 리포트 가져오기
-payload = st.session_state["curriculum_reports"].get(report_key)
+payload = session_cache["curriculum_reports"].get(report_key)
 
 # 아직 생성된 리포트가 없다면 안내만 띄우고 종료
 if payload is None:
@@ -169,7 +204,6 @@ if payload is None:
 
 # --------------------------------
 # 2) (기존) 리포트 payload 사용
-#    - 여기부터는 기존 코드 그대로 사용 가능
 # --------------------------------
 summary = payload["summary_cards"]
 charts = payload["charts"]
@@ -179,7 +213,7 @@ ai_insights = payload["ai_insights"]
 # ================================
 # DataFrame 변환 유틸
 # ================================
-# 1) 카테고리별 질문 수 (차트용) : charts["questions_by_category"]
+# 1) 카테고리별 질문 수 (차트용)
 df_cat_raw = pd.DataFrame(charts.get("questions_by_category", []))  # [{category, scope, question_count}, ...]
 
 if not df_cat_raw.empty:
@@ -193,10 +227,9 @@ if not df_cat_raw.empty:
 else:
     df_categories = pd.DataFrame(columns=["category", "질문 수"])
 
-# 2) 분류별 질문 리스트 (tables["questions_grouped_by_category"])
+# 2) 분류별 질문 리스트
 question_rows = []
 for block in tables.get("questions_grouped_by_category", []):
-    # block: {category, scope, questions: [QuestionRow...]}
     for q in block.get("questions", []):
         question_rows.append(
             {
@@ -230,7 +263,6 @@ tab_summary, tab_ai = st.tabs(["요약", "AI 심층 분석"])
 # (1) 요약 탭
 # =========================================================
 with tab_summary:
-    # 주차 라벨은 payload 기준으로 표시
     week_label = payload.get("week_label", f"{week_index}주차")
     st.subheader(f"📌 {week_label} 요약 ({camp_name})")
 
@@ -245,13 +277,9 @@ with tab_summary:
     col2.metric("커리큘럼 외 비율", f"{out_ratio:.1f}%")
     col3.metric("질문 분류 수", f"{num_categories}개")
 
-    # ---------------------------
-    # 상위 질문 분류 Top 3
-    # ---------------------------
     st.markdown("### 🔥 이번 주 상위 질문 분류")
 
     top_cats = summary.get("top_question_categories", [])  # [TopQuestionCategory... dict]
-    # 최대 3개만 사용
     top_cats = top_cats[:3]
 
     colA, colB, colC = st.columns(3)
@@ -284,9 +312,6 @@ with tab_summary:
     else:
         st.write("질문 데이터가 없습니다.")
 
-    # ---------------------------
-    # 분류별 질문 리스트
-    # ---------------------------
     st.markdown("#### 📋 분류별 질문 리스트")
 
     if not df_categories.empty and not df_questions.empty:
@@ -299,9 +324,6 @@ with tab_summary:
     else:
         st.write("표시할 질문이 없습니다.")
 
-    # ---------------------------
-    # 커리큘럼 내/외 비율 (파이)
-    # ---------------------------
     st.markdown("---")
     st.markdown("### 🥤 커리큘럼 내/외 질문 비율")
 
@@ -341,18 +363,12 @@ with tab_summary:
 with tab_ai:
     st.subheader(f"🤖 AI 심층 분석 — {week_label} ({camp_name})")
 
-    # ---------------------------
-    # 분석 기준 토글 / 팝업 블록
-    # ---------------------------
     with st.container():
         with st.expander("🔎 AI 분석 기준 보기", expanded=False):
             render_curriculum_analysis_rules()
 
     st.markdown("---")
 
-    # ---------------------------
-    # 상단 요약 블록
-    # ---------------------------
     colA, colB, colC = st.columns(3)
 
     with colA:
@@ -366,15 +382,9 @@ with tab_ai:
     with colC:
         st.markdown("#### 🛠 개선 방향 요약")
         st.success(ai_insights.get("improvement_summary", "개선 방향 요약 없음"))
-    # colA.info(ai_insights.get("hardest_part_summary", "가장 어려운 파트 요약 없음"))
-    # colB.warning(ai_insights.get("curriculum_out_summary", "커리큘럼 외 질문 요약 없음"))
-    # colC.success(ai_insights.get("improvement_summary", "개선 방향 요약 없음"))
 
     st.markdown("---")
 
-    # -------------------
-    # 상세 보고서
-    # -------------------
     st.markdown("## 📄 AI 인사이트 상세 보고서")
 
     # 1) 이번 주 가장 어려워한 파트
@@ -385,9 +395,7 @@ with tab_ai:
         for block in hardest_parts:
             st.markdown(f"#### • {block['part_label']}")
             if block.get("main_categories"):
-                st.markdown(
-                    "- 주요 분류: " + ", ".join(block["main_categories"])
-                )
+                st.markdown("- 주요 분류: " + ", ".join(block["main_categories"]))
             if block.get("example_questions"):
                 st.markdown("**예시 질문**")
                 for q in block["example_questions"]:
