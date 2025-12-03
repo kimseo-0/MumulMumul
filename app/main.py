@@ -9,7 +9,9 @@ from app.api.team_chat import router as team_chat_router
 from app.core.schemas import init_db
 from app.core.db import engine
 from app.core import schemas
+from app.config import settings
 from app.services.meeting.audio_processor import AudioProcessor
+from app.services.meeting.embedding_service import EmbeddingService
 from app.api.curriculum import router as curriculum_router
 from app.api.user import router as user_router
 from app.api.learning_chatbot import router as learning_chatbot_router
@@ -33,10 +35,20 @@ def create_app() -> FastAPI:
 
         # whisper 모델 : 앱 시작시 1회 로드
         print("Initializing Whisper model...")
-        AudioProcessor.initialize_whisper("large")
+        AudioProcessor.initialize_whisper(
+            max_workers = settings.MAX_WORKERS,
+            model_size = settings.WHISPER_MODEL
+        )
         print("Whisper model ready!")
+
+        # Embedding 모델 초기화
+        EmbeddingService.get_instance()
+        print("All services initialized")
         
-        yield   
+        yield
+
+        AudioProcessor.shutdown()
+        print("Application Shutdown Complete")
 
     app = FastAPI(title="Mumul Mumul Api", version="0.1.0", lifespan=lifespan)
 
