@@ -9,6 +9,7 @@ from sqlalchemy import (
     DateTime,
     Boolean,
     ForeignKey,
+    Float
 )
 from sqlalchemy.orm import declarative_base, relationship, sessionmaker
 
@@ -145,6 +146,71 @@ class SessionActivityLog(Base):
     join_at = Column(DateTime, nullable=True) 
     leave_at = Column(DateTime, nullable=True) 
 
+    user = relationship("User")
+
+
+class STTSegment(Base):
+    """
+    STT 처리된 세그먼트 (겹침 처리 지원)
+    """
+    __tablename__ = "stt_segment"
+    
+    # PK
+    segment_id = Column(String(255), primary_key=True)
+    
+    # FK
+    meeting_id = Column(String(255), ForeignKey("meeting.meeting_id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("user.user_id"), nullable=False)
+    
+    # 청크 정보
+    chunk_index = Column(Integer, nullable=False)
+    
+    # STT 결과
+    text = Column(Text, nullable=False)
+    confidence = Column(Float, nullable=True, default=0.0)
+    
+    # 타이밍 정보
+    start_time_ms = Column(Integer, nullable=False)
+    end_time_ms = Column(Integer, nullable=False)
+    
+    # 겹침 처리 정보
+    source_chunks = Column(String(255), nullable=True)  # "0", "0,1", "1,2" 형태
+    is_overlapped = Column(Boolean, nullable=True, default=False)
+    
+    # 메타데이터
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+    
+    # 관계
+    meeting = relationship("Meeting")
+    user = relationship("User")
+    
+    def __repr__(self):
+        return f"<STTSegment {self.segment_id}: '{self.text[:50]}' overlap={self.is_overlapped}>"
+
+# ------------------------
+# Team Chat Room DB
+# ------------------------
+class ChatRoom(Base):
+    __tablename__ = "chat_room"
+
+    id = Column(String(255), primary_key=True)  # teamChatId (예: "team_001")
+    name = Column(String(255), nullable=False)
+
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+
+    members = relationship("ChatRoomUser", back_populates="room")
+
+
+class ChatRoomUser(Base):
+    __tablename__ = "chat_room_user"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    chat_room_id = Column(String(255), ForeignKey("chat_room.id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("user.user_id"), nullable=False)
+
+    # 역할 같은 메타정보 필요하면 여기에 추가 가능 (예: is_admin 등)
+
+    room = relationship("ChatRoom", back_populates="members")
     user = relationship("User")
 
 
