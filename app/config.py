@@ -1,5 +1,6 @@
 # config.py
 import os
+import pytz
 from dotenv import load_dotenv
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pathlib import Path
@@ -38,10 +39,18 @@ class Settings(BaseSettings):
     # 파일 저장소 (로컬)
     DATA_DIR: Path = Path("storage")
     MEETINGS_DIR: Path = DATA_DIR / "meetings"
+    VECTORSTORE_DIR: Path = DATA_DIR / "vectorstore"
     
     # Whisper 설정
-    WHISPER_DEVICE: str = "cuda"
-    WHISPER_MODEL: str = "large"
+    WHISPER_MODEL: str = "large-v3"
+    EMBEDDING_MODEL: str = "jhgan/ko-sroberta-multitask"
+    LLM_MODEL: str = "gpt-4-turbo-preview"
+
+    # 프로세스 풀
+    MAX_WORKERS: int = 2
+
+    # Timezone
+    TIMEZONE: pytz.BaseTzInfo = pytz.timezone("Asia/Seoul")
     
     # class Config:
     #     env_file = ".env"
@@ -50,7 +59,7 @@ class Settings(BaseSettings):
     def __init__(self, **data):
         super().__init__(**data)
         # 디렉토리 자동 생성
-        for path in [self.DATA_DIR, self.MEETINGS_DIR]:
+        for path in [self.DATA_DIR, self.MEETINGS_DIR, self.VECTORSTORE_DIR]:
             path.mkdir(parents=True, exist_ok=True)
 
 settings = Settings()
