@@ -6,6 +6,7 @@ from app.services.meeting.schemas import AudioChunkUploadResponse, StartMeetingR
 from app.services.meeting.audio_processor import AudioProcessor
 from app.services.meeting.meeting_service import MeetingService
 from app.services.meeting.audio_service import AudioService
+from app.services.meeting.timeline_service import TimelineService
 
 logger = setup_logger(__name__)
 router = APIRouter()
@@ -14,6 +15,7 @@ router = APIRouter()
 meeting_service = MeetingService()
 audio_service = AudioService()
 audio_processor = AudioProcessor()
+timeline_service = TimelineService()
 
 
 # 회의 시작
@@ -95,6 +97,12 @@ async def end_meeting(
         #     pipeline_service.run_rag_pipeline,
         #     meeting_id=meeting_id
         # )
+
+        background_tasks.add_task(
+            timeline_service.merge_timeline,
+            db=db,
+            meeting_id=meeting_id
+        )
 
         return result
 
