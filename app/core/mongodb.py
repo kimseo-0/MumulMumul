@@ -1,11 +1,12 @@
 # app/core/mongodb.py
 
-from datetime import datetime
+from datetime import date, datetime
 from typing import Literal, Optional, List, Tuple, Type, Dict, Any
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from pymongo import MongoClient
 from app.config import MONGO_URL, MONGO_DB_NAME
+from app.services.curriculum.schemas import CurriculumAIInsights, CurriculumCharts, CurriculumSummaryCards, CurriculumTables
 
 
 # =====================================
@@ -68,13 +69,28 @@ def init_mongo(db):
 # =====================================
 # 3. 도메인 모델 정의
 # =====================================
-
 # =====================================
 # 3-1. Learning Chat Log 모델 정의
 # =====================================
+# 학습 챗봇과의 채팅 로그 모델
+class CurriculumInsights(BaseModel):
+    """
+    curriculum_insights: 질문 분석 정보
+    질문이 어떤 토픽(topic)을 다루는지,
+    커리큘럼 내/외 범위(scope),
+    질문 패턴(pattern_tags),
+    질문 의도(intent)을 담음.
+    """
+    id: str = Field(..., description="로그 문서의 고유 ID")
+    topic: Optional[str] = Field(None, description="커리큘럼 토픽 키 (예: pandas, visualization, career 등)")
+    scope: Optional[Literal["in", "out"]] = Field(None, description="'in'=커리큘럼 내 / 'out'=커리큘럼 외")
+    pattern_tags: List[str] = Field(default_factory=list, description="질문 패턴 태그 리스트")
+    intent: Optional[str] = Field(None, description="질문 의도 한 줄 요약")
+
+
 class LearningChatLog(BaseModel):
     """
-    학습 챗봇과의 채팅 로그
+    학습 챗봇 채팅 로그 저장 모델 (MongoDB)
 
     - user_id: SQL(User.user_id)와 연결
     - session_id: 세션 식별자 (옵션)
@@ -92,20 +108,22 @@ class LearningChatLog(BaseModel):
     role: Literal["user", "assistant"]
     content: str
 
-    curriculum_scope: Optional[Literal["in", "out"]] = None
-    question_category: Optional[str] = None
+    curriculum_insights: Optional[CurriculumInsights] = None
 
-    created_at: datetime = datetime.utcnow()
+    created_at: datetime = Field(default_factory=datetime.utcnow)
 
 
-# 이 모델을 Mongo 레지스트리에 등록
 register_mongo_model(
     LearningChatLog,
     collection_name="learning_chat_logs",
     indexes=[
         ("session_id", 1),
+        ("user_id", 1),
+        ("created_at", -1),
     ],
 )
+
+
 
 # =====================================
 # 3-2. Team Chat Message 모델 정의
@@ -135,5 +153,81 @@ register_mongo_model(
         ("room_id", 1),
         ("user_id", 1),
         ("created_at", -1),
+    ]
+)
+
+
+# =====================================
+# 3-3. Curriculum Config 모델 정의
+# =====================================
+class CurriculumWeek(BaseModel):
+    """
+    한 주차에 대한 커리큘럼 정보.
+    - week_index: 1, 2, 3 ...
+    - week_label: "1주차", "Week 1" 등 표시용
+    - topics: 해당 주차에 다루는 토픽 키 리스트 (예: ["python_basics", "pandas"])
+    """
+    week_index: int = Field(..., ge=1)
+    week_label: str = Field(..., description="표시용 라벨 (예: '1주차')")
+    topics: List[str] = Field(default_factory=list, description="토픽 키 리스트")
+
+
+class CurriculumConfig(BaseModel):
+    """
+    캠프별 커리큘럼 구조 설정 (MongoDB에 1캠프당 1문서 저장)
+
+    - camp_id: SQL Camp.camp_id 와 연결
+    - weeks: 주차별 토픽 구조
+    """
+    camp_id: int = Field(..., description="캠프 ID (SQL Camp.camp_id)")
+    weeks: List[CurriculumWeek] = Field(
+        default_factory=list,
+        description="주차별 커리큘럼 구조",
+    )
+
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+# Mongo 레지스트리에 등록
+register_mongo_model(
+    CurriculumConfig,
+    collection_name="curriculum_configs",
+    indexes=[
+        ("camp_id", 1),
+    ],
+)
+
+# =====================================
+# 3-4. Curriculum Report 모델 정의
+# =====================================
+
+class CurriculumReport(BaseModel):
+    """
+    커리큘럼 리포트 서비스의 최종 출력 구조.
+    Streamlit 화면은 이 Payload 하나를 받아서 그대로 렌더링하면 됨.
+    """
+
+    camp_id: int = Field(..., description="캠프 ID")
+    camp_name: str = Field(..., description="캠프 이름 (예: '백엔드 캠프 1기')")
+    week_index: int = Field(..., description="N주차 숫자 (1부터 시작)")
+    week_label: str = Field(..., description="예: '1주차', '3주차'")
+    week_start: date = Field(..., description="리포트 기준 주차 시작일")
+    week_end: date = Field(..., description="리포트 기준 주차 종료일")
+    raw_stats: Optional[Dict[str, Any]] = None
+
+    summary_cards: CurriculumSummaryCards
+    charts: CurriculumCharts
+    tables: CurriculumTables
+    ai_insights: CurriculumAIInsights
+
+# Mongo 레지스트리에 등록
+register_mongo_model(
+    CurriculumReport,
+    collection_name="curriculum_reports",
+    indexes=[
+        ("camp_id", 1),
+        ("week_index", 1),
+        ("created_at", -1)
     ],
 )

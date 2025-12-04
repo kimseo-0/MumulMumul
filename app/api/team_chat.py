@@ -148,15 +148,6 @@ def get_team_chat_messages(
             },
         )
 
-    # Mongo 에 저장된 형식 가정:
-    # {
-    #   _id: ObjectId,
-    #   roomId: "team_001",
-    #   userId: 1,
-    #   userName: "홍길동",
-    #   message: "안녕하세요",
-    #   createdAt: "2025-11-27T10:30:00Z"
-    # }
     cursor = (
         collection.find({"roomId": teamChatId})
         .sort("createdAt", 1)

@@ -170,10 +170,10 @@ BAD_CAMP_PATTERNS = {
 
 
 def choose_pattern_for_student(camp_name: str) -> str:
-    if "프론트" in camp_name:
+    if "언리얼" in camp_name:
         patterns = list(GOOD_CAMP_PATTERNS.keys())
         weights = list(GOOD_CAMP_PATTERNS.values())
-    elif "백엔드" in camp_name:
+    elif "AI" in camp_name:
         patterns = list(BAD_CAMP_PATTERNS.keys())
         weights = list(BAD_CAMP_PATTERNS.values())
     else:
