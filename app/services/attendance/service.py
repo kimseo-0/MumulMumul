@@ -37,7 +37,9 @@ def create_attendance_report(
     )
 
     # 3) agent 호출 → ai_insights 삽입
-    struct_with_ai = attach_ai_insights(struct)
+    ai_insight = attach_ai_insights(struct)
+
+    struct['ai_insights'] = ai_insight
 
     # 4) 최종 Payload 생성
-    return AttendanceReportPayload(**struct_with_ai)
+    return AttendanceReportPayload(**struct)

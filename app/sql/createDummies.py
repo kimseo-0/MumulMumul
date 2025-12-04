@@ -27,8 +27,8 @@ def seed_dummy_data():
     session.commit()
 
     # 2. camp
-    backend_camp = Camp(name="백엔드캠프", start_date=datetime(2025, 11, 3), end_date=datetime(2025, 11, 3) + timedelta(weeks=6))
-    frontend_camp = Camp(name="프론트캠프", start_date=datetime(2025, 11, 3), end_date=datetime(2025, 11, 3) + timedelta(weeks=6))
+    backend_camp = Camp(name="AI 캠프", start_date=datetime(2025, 11, 3), end_date=datetime(2025, 11, 3) + timedelta(weeks=6))
+    frontend_camp = Camp(name="언리얼 캠프", start_date=datetime(2025, 11, 3), end_date=datetime(2025, 11, 3) + timedelta(weeks=6))
 
     session.add_all([backend_camp, frontend_camp])
     session.commit()
@@ -64,7 +64,7 @@ def seed_dummy_data():
             User(
                 login_id=login_id,
                 password_hash=login_id,
-                name=f"백엔드강사{i}",
+                name=f"AI강사{i}",
                 email=f"{login_id}@mumul.com",
                 user_type_id=instructor_type.type_id,
                 camp_id=backend_camp.camp_id,
@@ -78,7 +78,7 @@ def seed_dummy_data():
             User(
                 login_id=login_id,
                 password_hash=login_id,
-                name=f"프론트강사{i}",
+                name=f"언리얼강사{i}",
                 email=f"{login_id}@mumul.com",
                 user_type_id=instructor_type.type_id,
                 camp_id=frontend_camp.camp_id,
@@ -93,14 +93,14 @@ def seed_dummy_data():
     # -----------------------------
     students = []
 
-    # 백엔드 캠프 학생
-    for i in range(1, 21):
+    # 캠프 학생
+    for i in range(1, 100):
         login_id = f"be_student{i}"
         students.append(
             User(
                 login_id=login_id,
                 password_hash=login_id,
-                name=f"백엔드학생{i}",
+                name=f"AI학생{i}",
                 email=f"{login_id}@mumul.com",
                 user_type_id=student_type.type_id,
                 camp_id=backend_camp.camp_id,
@@ -108,13 +108,13 @@ def seed_dummy_data():
         )
 
     # 프론트 캠프 학생
-    for i in range(1, 21):
+    for i in range(1, 100):
         login_id = f"fe_student{i}"
         students.append(
             User(
                 login_id=login_id,
                 password_hash=login_id,
-                name=f"프론트학생{i}",
+                name=f"언리얼학생{i}",
                 email=f"{login_id}@mumul.com",
                 user_type_id=student_type.type_id,
                 camp_id=frontend_camp.camp_id,

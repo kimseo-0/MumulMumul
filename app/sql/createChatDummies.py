@@ -24,7 +24,7 @@ CSV_PATH = r"C:\Potenup\MumulMumul\app\sql\learning_chat_logs_dummy.csv"   # CSV
 
 # ---------- 주차 기반 random datetime 생성 유틸 ----------
 
-def random_datetime_in_week(camp, week_label: str) -> datetime:
+def random_datetime_in_week(camp, week_index: int) -> datetime:
     """
     camp.start_date / camp.end_date 와 CSV의 week 값("Week 1" 형태)을 활용해서
     해당 주차 내의 평일 중 랜덤한 날짜 + 시간 생성
@@ -33,20 +33,13 @@ def random_datetime_in_week(camp, week_label: str) -> datetime:
         # 캠프 기간 정보가 없으면 그냥 지금 시간 반환 (혹은 raise 해도 됨)
         return datetime.utcnow()
 
-    # "Week 1" / "week 3" 같은 문자열에서 숫자만 추출
-    # 예외 케이스 신경 안 쓰고 단순 split 사용
-    try:
-        week_num = int(str(week_label).split()[-1])   # "Week 1" → 1
-    except Exception:
-        week_num = 1
-
     camp_start = camp.start_date.date()
     camp_end = camp.end_date.date()
 
     # 해당 주차의 이론상 범위
     # 1주차: start ~ start+6
     # 2주차: start+7 ~ start+13 ...
-    week_start_date = camp_start + timedelta(days=(week_num - 1) * 7)
+    week_start_date = camp_start + timedelta(days=(week_index - 1) * 7)
     week_end_date = week_start_date + timedelta(days=6)
 
     # 캠프 전체 기간 안으로 클램프
@@ -100,29 +93,21 @@ def insert_dummy_chatlogs():
 
         for row in reader:
             try:
-                camp_id = int(row["camp_id"]) if row.get("camp_id") else None
+                camp_id = 1 # int(row["camp_id"]) if row.get("camp_id") else None
                 camp = camps.get(camp_id) if camp_id else None
 
                 # CSV의 week 컬럼 사용 (없으면 "Week 1"로 간주)
-                week_label = row.get("week") or "Week 1"
+                week_index = row.get("curriculum_week") or 1
 
-                if camp:
-                    created_at = random_datetime_in_week(camp, week_label)
-                else:
-                    # camp 정보가 없으면 그냥 CSV에 있던 created_at 쓰거나, 없으면 now
-                    if row.get("created_at"):
-                        created_at = datetime.fromisoformat(row["created_at"])
-                    else:
-                        created_at = datetime.utcnow()
+                created_at = random_datetime_in_week(camp, int(week_index))
+                id = int(row["user_id"].split("_")[-1]) + 7
 
                 record = LearningChatLog(
-                    user_id=int(row["user_id"]),
-                    session_id=int(row["user_id"]),
+                    user_id=id,
+                    session_id=id,
                     camp_id=camp_id,
-                    role=row["role"],
-                    content=row["content"],
-                    curriculum_scope=row.get("curriculum_scope") or None,
-                    question_category=row.get("question_category") or None,
+                    role="user",#row["role"],
+                    content=row["question"],
                     created_at=created_at,
                 ).model_dump()
 
