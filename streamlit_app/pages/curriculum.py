@@ -288,7 +288,7 @@ with tab_curriculum:
 
     st.markdown("---")
 
-    st.markdown("주차별 커리큘럼 직접 수정")
+    st.markdown("#### 주차별 커리큘럼 직접 수정")
 
     # 최신 existing_weeks 기준으로 폼 구성
     existing_weeks = config_cache.get(camp_id, {}).get("weeks", [])
@@ -468,7 +468,7 @@ with tab_summary:
             with st.container(border=True):
                 st.markdown(f"#### {row['category']}")
                 st.markdown(f"- 주요 패턴: {row['patterns']}")
-                st.markdown(f"- 요약: {row['summary']}")
+                # st.markdown(f"- 요약: {row['summary']}")
                 st.markdown("")
     else:
         st.write("카테고리별 패턴 요약 데이터가 없습니다.")
@@ -510,7 +510,7 @@ with tab_summary:
             df_q_cat = df_questions[df_questions["category"] == selected_cat]
 
             for _, row in df_q_cat.iterrows():
-                st.markdown(f"- **{row['question_text']}**")
+                st.markdown(f"**{row['question_text']}**")
                 st.markdown(
                     f"  - intent: {row['intent']}  \n"
                     f"  - tags: {', '.join(row['pattern_tags'])}"
@@ -521,7 +521,7 @@ with tab_summary:
         st.markdown("---")
 
         # 7-3. 커리큘럼 내/외 비율 파이
-        st.markdown("#### 🥤 커리큘럼 내/외 질문 비율")
+        st.markdown("#### 📉 커리큘럼 내/외 질문 비율")
 
         scope_ratio = charts.get("curriculum_scope_ratio", [])
         if scope_ratio:
