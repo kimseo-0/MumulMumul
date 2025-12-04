@@ -53,3 +53,9 @@ def save_curriculum_config(camp_id: int, weeks: list[dict]):
     resp = requests.post(f"{BACKEND_BASE_URL}/curriculum/config/{camp_id}", json=payload)
     resp.raise_for_status()
     return resp.json()
+
+def analyze_curriculum_text(camp_id: int, raw_text: str):
+    payload = {"raw_text": raw_text}
+    resp = requests.post(f"{BACKEND_BASE_URL}/curriculum/analyze/{camp_id}", json=payload)
+    resp.raise_for_status()
+    return resp.json()

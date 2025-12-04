@@ -3,6 +3,7 @@ import pandas as pd
 import altair as alt
 
 from streamlit_app.api.curriculum import (
+    analyze_curriculum_text,
     create_curriculum_report,
     fetch_camps,
     fetch_curriculum_report,
@@ -102,74 +103,6 @@ camp_id = camp_name_to_id[camp_name]
 weeks = ["Week 1", "Week 2", "Week 3", "Week 4", "Week 5", "Week 6"]
 selected_week_label = st.sidebar.selectbox("주차 선택", weeks)
 week_index = int(selected_week_label.split()[1])  # "Week 3" -> 3
-
-# ----------------------------
-# 커리큘럼 설정 (세션 캐싱)
-# ----------------------------
-with st.sidebar.expander("📚 커리큘럼", expanded=False):
-    config_cache = session_cache["curriculum_config_by_camp"]
-
-    # 1) 서버에서 기존 설정 불러오기 (캠프별 1회만)
-    if camp_id not in config_cache:
-        config = fetch_curriculum_config(camp_id=camp_id) or {}
-        config_cache[camp_id] = config
-    else:
-        config = config_cache[camp_id]
-
-    existing_weeks = config.get("weeks", [])
-
-    # 기본 주차 수는 기존 설정 or 6주
-    default_week_count = (
-        max([w["week_index"] for w in existing_weeks], default=6)
-        if existing_weeks
-        else 6
-    )
-
-    week_count = st.number_input(
-        "주차 수",
-        min_value=1,
-        max_value=30,
-        value=default_week_count,
-        step=1,
-        key="curriculum_week_count",
-    )
-
-    new_weeks = []
-
-    for i in range(1, week_count + 1):
-        existing = next((w for w in existing_weeks if w["week_index"] == i), None)
-        default_label = existing["week_label"] if existing else f"{i}주차"
-        default_topics = ",".join(existing.get("topics", [])) if existing else ""
-
-        with st.expander(f"{i}주차 설정", expanded=(i == 1)):
-            week_label_input = st.text_input(
-                f"{i}주차 라벨",
-                value=default_label,
-                key=f"week_label_{i}",
-            )
-            topic_raw = st.text_input(
-                f"{i}주차 토픽 키 (쉼표 구분, 예: python_basics,pandas)",
-                value=default_topics,
-                key=f"week_topics_{i}",
-            )
-            topics = [t.strip() for t in topic_raw.split(",") if t.strip()]
-
-            new_weeks.append(
-                {
-                    "week_index": i,
-                    "week_label": week_label_input,
-                    "topics": topics,
-                }
-            )
-
-    if st.button("💾 커리큘럼 저장", use_container_width=True):
-        save_curriculum_config(
-            camp_id=camp_id,
-            weeks=new_weeks,
-        )
-        config_cache[camp_id] = {"weeks": new_weeks}
-        st.success("커리큘럼 구조를 저장했어요.")
-
 
 # --------------------------------
 # 1-1) 리포트 생성 버튼 + 세션 캐싱
@@ -299,7 +232,132 @@ df_priority = pd.DataFrame(priority_rows)
 # ================================
 # 탭 구성
 # ================================
-tab_summary, tab_ai = st.tabs(["요약", "AI 심층 분석"])
+tab_curriculum, tab_summary, tab_ai = st.tabs(
+    ["📚 커리큘럼 설정·분석", "요약", "AI 심층 분석"]
+)
+
+# =========================================================
+# (탭 1) 📚 커리큘럼 설정·분석 탭
+# =========================================================
+with tab_curriculum:
+    st.subheader(f"📚 커리큘럼 설정·분석 — {camp_name}")
+
+    config_cache = session_cache["curriculum_config_by_camp"]
+
+    preview_container = st.container()
+
+    # 1) 현재 저장된 커리큘럼 불러오기 (캠프별 1회)
+    config = config_cache.get(camp_id)
+    if config is None:
+        config = fetch_curriculum_config(camp_id=camp_id) or {}
+        config_cache[camp_id] = config
+
+    existing_weeks = config.get("weeks", [])
+
+    st.markdown("####  커리큘럼 텍스트 자동 분석")
+
+    raw_text = st.text_area(
+        "커리큘럼 전체 설명을 붙여넣어 주세요. (1주차 ~ N주차)",
+        height=180,
+        key="curriculum_raw_text",
+        placeholder=(
+            "예시)\n"
+            "1주차: 파이썬 기초, 자료형, 조건문, 반복문\n"
+            "2주차: Numpy / Pandas 데이터 처리\n"
+            "3주차: 시각화, Matplotlib, EDA 프로젝트\n"
+            "4주차: NLP 네트워크, 연관어 분석 ..."
+        ),
+    )
+
+    col_auto_1, col_auto_2 = st.columns([2, 3])
+    with col_auto_1:
+        if st.button("🧠 텍스트로 자동 세팅", use_container_width=True):
+            config_cache[camp_id] = {}
+            if raw_text.strip():
+                with st.spinner("LLM으로 커리큘럼 구조 분석 중..."):
+                    auto_config = analyze_curriculum_text(
+                        camp_id=camp_id,
+                        raw_text=raw_text,
+                    )
+                    
+                    config_cache[camp_id] = auto_config
+                    existing_weeks = auto_config.get("weeks", [])
+                    st.success("커리큘럼 텍스트를 기반으로 주차별 구조를 자동 완성했어요.")
+            else:
+                st.warning("커리큘럼 텍스트를 먼저 입력해 주세요.")
+
+    st.markdown("---")
+
+    st.markdown("주차별 커리큘럼 직접 수정")
+
+    # 최신 existing_weeks 기준으로 폼 구성
+    existing_weeks = config_cache.get(camp_id, {}).get("weeks", [])
+
+    # 기본 주차 수는 기존 설정 or 6주
+    if existing_weeks:
+        default_week_count = max([w.get("week_index", 0) for w in existing_weeks] + [1])
+    else:
+        default_week_count = 6
+
+    week_count = st.number_input(
+        "주차 수",
+        min_value=1,
+        max_value=30,
+        value=default_week_count,
+        step=1,
+        key="curriculum_week_count",
+    )
+
+    new_weeks = []
+
+    for i in range(1, week_count + 1):
+        existing = next((w for w in existing_weeks if w.get("week_index") == i), None)
+        default_label = existing.get("week_label") if existing else f"{i}주차"
+        default_topics = ",".join(existing.get("topics", [])) if existing else ""
+
+        with st.expander(f"{i}주차 설정", expanded=(i == 1)):
+            week_label_input = st.text_input(
+                f"{i}주차 라벨",
+                value=default_label,
+                key=f"week_label_{camp_id}_{i}",
+            )
+            topic_raw = st.text_input(
+                f"{i}주차 토픽 키 (쉼표 구분, 예: python_basics,pandas)",
+                value=default_topics,
+                key=f"week_topics_{camp_id}_{i}",
+            )
+            topics = [t.strip() for t in topic_raw.split(",") if t.strip()]
+
+            new_weeks.append(
+                {
+                    "week_index": i,
+                    "week_label": week_label_input,
+                    "topics": topics,
+                }
+            )
+
+    if st.button("💾 커리큘럼 저장", use_container_width=True, key="save_curriculum_btn"):
+        config_cache[camp_id] = {}
+        save_curriculum_config(
+            camp_id=camp_id,
+            weeks=new_weeks,
+        )
+        config_cache[camp_id] = {
+            "weeks": new_weeks,
+        }
+        st.success("커리큘럼 구조를 저장했어요.")
+
+    with preview_container:
+        st.markdown("#### 현재 커리큘럼 구조 미리보기")
+
+        latest_config = config_cache.get(camp_id, {})
+        existing_weeks = latest_config.get("weeks", [])
+
+        if existing_weeks:
+            df_weeks = pd.DataFrame(existing_weeks)
+            st.dataframe(df_weeks, hide_index=True, use_container_width=True)
+        else:
+            st.info("아직 저장된 커리큘럼 구조가 없습니다. 자동 세팅이나 직접 입력 후 저장해 주세요.")
 
 # =========================================================
 # (1) 요약 탭

@@ -10,6 +10,7 @@ from pymongo.database import Database
 from app.core.db import get_db
 from app.core.mongodb import CurriculumReport, CurriculumWeek, CurriculumConfig, get_mongo_db
 from app.core.schemas import Camp
+from app.services.curriculum.analyze_curriculum.llm import parse_curriculum_text
 from app.services.curriculum.service import create_curriculum_report, get_curriculum_report
 from app.services.db_service.camp import get_camp_by_id
 from app.services.db_service.curriculum_config import get_curriculum_config_for_camp, upsert_curriculum_config
@@ -124,3 +125,29 @@ def update_curriculum_config(
         raise HTTPException(status_code=500, detail="Failed to upsert curriculum config")
 
     return doc
+
+
+class CurriculumParseRequest(BaseModel):
+    raw_text: str
+
+@router.post("/analyze/{camp_id}", response_model=CurriculumConfig)
+def analyze_curriculum_text(
+    camp_id: int,
+    payload: CurriculumParseRequest,
+) -> CurriculumConfig:
+    
+    config: CurriculumConfig = parse_curriculum_text(camp_id=camp_id, raw_text=payload.raw_text)
+
+    now = datetime.utcnow()
+
+    update_doc = {
+            "camp_id": camp_id,
+            "weeks": [week.model_dump() for week in config.weeks],
+            "updated_at": now,
+    }
+    upsert_curriculum_config(
+        camp_id=camp_id,
+        update_doc=update_doc,
+    )
+
+    return config
