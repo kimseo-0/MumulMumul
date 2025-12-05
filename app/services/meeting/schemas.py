@@ -66,3 +66,5 @@ class EndMeetingResponse(BaseModel):
     duration_ms: int
     participant_count: int
     total_segments: int
+    # waited_for_processing: bool = False
+    # wait_time_ms: int = 0

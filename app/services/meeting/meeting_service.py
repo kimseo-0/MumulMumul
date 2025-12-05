@@ -210,7 +210,7 @@ class MeetingService:
     
     # 회의 종료
     @staticmethod
-    def end_meeting(
+    async def end_meeting(
         meeting_id: str,
         db: Session
     ) -> EndMeetingResponse:
@@ -275,6 +275,8 @@ class MeetingService:
                 duration_ms = duration_ms,
                 participant_count = meeting.participant_count,
                 total_segments = total_segments
+                # waited_for_processing = wait_result["waited_for_processing"],
+                # wait_time_ms = wait_result["wait_time_ms"]
             )
         
         except Exception as e:

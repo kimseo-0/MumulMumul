@@ -43,8 +43,8 @@ class Settings(BaseSettings):
     
     # Whisper 설정
     WHISPER_MODEL: str = "large-v3"
-    EMBEDDING_MODEL: str = "jhgan/ko-sroberta-multitask"
-    LLM_MODEL: str = "gpt-4-turbo-preview"
+    EMBEDDING_MODEL: str = "text-embedding-3-large"
+    LLM_MODEL: str = "gpt-4o-mini"
 
     # 프로세스 풀
     MAX_WORKERS: int = 2
