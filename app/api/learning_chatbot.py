@@ -44,7 +44,7 @@ async def learning_chatbot_ws(websocket: WebSocket):
                 )
                 continue
 
-            event = data.get("event")
+            event = data.get("event")         
 
             # -------------------------
             # 1) start_chat
@@ -52,7 +52,6 @@ async def learning_chatbot_ws(websocket: WebSocket):
             if event == "start_chat":
                 session_id = data.get("sessionId")
                 user_id = data.get("userId")
-
                 if not session_id:
                     await websocket.send_json(
                         {"event": "error", "message": "sessionId is required"}
@@ -89,9 +88,7 @@ async def learning_chatbot_ws(websocket: WebSocket):
                     created_at=datetime.now(),
                 )
                 save_learning_chatbot_log(user_id, session_id, [user_record])
-                CHAT_SESSIONS[session_id].append(
-                    {"role": "user", "content": query_text}
-                )
+                CHAT_SESSIONS[session_id].append(user_record)
                 
                 print(f"학습 쿼리 요청 : sessionId-{session_id} userId-{user_id} query-{query_text}")
                 assistant_reply = answer(query_text)
@@ -102,9 +99,7 @@ async def learning_chatbot_ws(websocket: WebSocket):
                     created_at=datetime.now(),
                 )
                 save_learning_chatbot_log(user_id, session_id, [assistant_record])
-                CHAT_SESSIONS[session_id].append(
-                    {"role": "assistant", "content": assistant_reply}
-                )
+                CHAT_SESSIONS[session_id].append(assistant_record)
 
                 await websocket.send_json(
                     {
@@ -119,10 +114,6 @@ async def learning_chatbot_ws(websocket: WebSocket):
             # -------------------------
             elif event == "end_chat":
                 session_id = data.get("sessionId")
-                # if session_id in CHAT_SESSIONS:
-                #     # 필요하다면 여기서 세션 정리/저장 로직 추가
-                #     pass
-
                 print(f"학습 세션 종료 : sessionId-{session_id} userId-{data.get('userId')}")
                 await websocket.send_json(
                     {
