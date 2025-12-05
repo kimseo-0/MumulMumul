@@ -23,19 +23,22 @@ def get_learning_chatbot_log(userId: int, sessionId: int) -> List[ChatMessage]:
         content=log['content'],
         created_at=log['created_at'],
     ) for log in learning_chat_logs]
-    print(chat_messages)
+
     CHAT_SESSIONS[sessionId] = chat_messages
 
     return chat_messages
 
 def save_learning_chatbot_log(userId: int, sessionId: int, records: list[ChatMessage]):
-    learning_chat_logs = [
-        LearningChatLog(
-            user_id=userId,
-            session_id=sessionId,
-            role=record.role,
-            content=record.content,
-            created_at=record.created_at,
-        )   for record in records
-    ]
-    chat_col.insert_many([log.model_dump() for log in learning_chat_logs])
+    try:
+        learning_chat_logs = [
+            LearningChatLog(
+                user_id=userId,
+                session_id=sessionId,
+                role=record.role,
+                content=record.content,
+                created_at=record.created_at,
+            )   for record in records
+        ]
+        chat_col.insert_many([log.model_dump() for log in learning_chat_logs])
+    except Exception as e:
+        print(f"Error saving learning chatbot log: {e}")
