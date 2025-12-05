@@ -3,7 +3,7 @@
 from datetime import datetime
 from typing import Literal, Optional, List, Tuple, Type, Dict, Any
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from pymongo import MongoClient
 from app.config import MONGO_URL, MONGO_DB_NAME
 
@@ -139,5 +139,100 @@ register_mongo_model(
         ("room_id", 1),
         ("user_id", 1),
         ("created_at", -1),
+    ],
+)
+
+# =====================================
+# 3-3. Meeting Transcript 모델 정의
+# =====================================
+class MeetingSegment(BaseModel):
+    """회의 세그먼트"""
+    segment_id: str
+    user_id: int
+    speaker_name: str
+    text: str
+    start_time_ms: int  # 상대 시간
+    end_time_ms: int
+    absolute_start_ms: int  # 절대 시간
+    absolute_end_ms: int
+    confidence: float
+    timestamp_display: str  # "[00:05]"
+
+
+class OverlapInfo(BaseModel):
+    """겹침 구간 정보"""
+    segment1_id: str
+    segment2_id: str
+    speaker1: str
+    speaker2: str
+    overlap_duration_ms: int
+    overlap_start_ms: int
+    overlap_end_ms: int
+
+
+class MeetingTranscript(BaseModel):
+    """회의 전체 전사본"""
+    meeting_id: str
+    title: str
+    start_time: str
+    end_time: Optional[str] = None
+    duration_ms: int
+    participant_count: int
+    organizer_id: int
+    
+    # 전체 텍스트 (타임스탬프 + 화자 포함)
+    full_text: str
+    
+    # 세그먼트 리스트 (시간순 정렬됨)
+    segments: List[MeetingSegment]
+    
+    # 겹침 정보
+    overlaps: List[OverlapInfo] = []
+    
+    # 통계
+    total_segments: int
+    speakers: List[Dict[str, Any]]
+    
+    # 메타데이터
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+# MeetingTranscript 모델 등록
+register_mongo_model(
+    MeetingTranscript,
+    collection_name="meeting_transcripts",
+    indexes=[
+        ("meeting_id", 1),
+        ("organizer_id", 1),
+        ("created_at", -1),
+    ],
+)
+
+
+# =====================================
+# 3-4. Meeting Summary 모델 정의
+# =====================================
+class MeetingSummary(BaseModel):
+    """회의 요약본"""
+    meeting_id: str
+    summary_text: str
+    key_points: List[str] = []
+    action_items: List[str] = []
+    next_agenda: List[str] = []
+    decisions: List[str] = []
+    
+    # 메타데이터
+    generated_at: datetime = Field(default_factory=datetime.utcnow)
+    model_used: str = "gpt-4o-mini"
+
+
+# MeetingSummary 모델 등록
+register_mongo_model(
+    MeetingSummary,
+    collection_name="meeting_summaries",
+    indexes=[
+        ("meeting_id", 1),
+        ("generated_at", -1),
     ],
 )
