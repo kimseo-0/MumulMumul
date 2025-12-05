@@ -106,6 +106,8 @@ class QuestionRow(BaseModel):
     scope: CurriculumScope = Field(..., description="'in' / 'out'")
     category: str = Field(..., description="질문 분류명")
     question_text: str = Field(..., description="사용자 실제 질문 내용")
+    pattern_tags: List[str] = Field(default_factory=list, description="질문 패턴 태그")
+    intent: Optional[str] = Field(None, description="질문 의도 한 줄 요약")
     answer_summary: Optional[str] = Field(
         None,
         description="AI 답변 요약 (있으면 보고용으로 활용)",
@@ -244,14 +246,6 @@ class CurriculumReportPayload(BaseModel):
     커리큘럼 리포트 서비스의 최종 출력 구조.
     Streamlit 화면은 이 Payload 하나를 받아서 그대로 렌더링하면 됨.
     """
-
-    camp_id: int = Field(..., description="캠프 ID")
-    camp_name: str = Field(..., description="캠프 이름 (예: '백엔드 캠프 1기')")
-    week_index: int = Field(..., description="N주차 숫자 (1부터 시작)")
-    week_label: str = Field(..., description="예: '1주차', '3주차'")
-    week_start: date = Field(..., description="리포트 기준 주차 시작일")
-    week_end: date = Field(..., description="리포트 기준 주차 종료일")
-
     summary_cards: CurriculumSummaryCards
     charts: CurriculumCharts
     tables: CurriculumTables
