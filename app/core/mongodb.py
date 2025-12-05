@@ -87,6 +87,10 @@ class CurriculumInsights(BaseModel):
     pattern_tags: List[str] = Field(default_factory=list, description="질문 패턴 태그 리스트")
     intent: Optional[str] = Field(None, description="질문 의도 한 줄 요약")
 
+class ChatMessage(BaseModel):
+    role: Literal["user", "assistant"]
+    content: str
+    created_at: datetime = datetime.utcnow()
 
 class LearningChatLog(BaseModel):
     """

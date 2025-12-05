@@ -11,34 +11,18 @@ from fastapi import APIRouter, WebSocket, WebSocketDisconnect, HTTPException
 from pydantic import BaseModel
 from app.services.learning_chatbot.service import answer
 
-from app.core.mongodb import LearningChatLog
-from app.services.db_service.learning_chatbot_log import get_learning_chatbot_log, save_learning_chatbot_log
+from app.core.mongodb import ChatMessage
+from app.services.db_service.learning_chatbot import CHAT_SESSIONS, get_learning_chatbot_log, save_learning_chatbot_log
 
 router = APIRouter()
-
-# 아주 단순한 in-memory 세션 저장소 (실서비스면 Redis/DB 등으로 교체)
-# key: sessionId, value: list of {"role": "user"/"assistant", "content": str}
-CHAT_SESSIONS: Dict[str, List[Dict]] = {}
-
 
 # ===========================
 # Pydantic Schemas (REST용)
 # ===========================
-class ChatMessage(BaseModel):
-    user_id: int
-    session_id: Optional[int] = None
-
-    role: Literal["user", "assistant"]
-    content: str
-
-    created_at: datetime = datetime.utcnow()
-
-
 class ChatHistoryResponse(BaseModel):
     sessionId: int
     userId: int
     messages: List[ChatMessage]
-
 
 # ===========================
 # WebSocket: 실시간 채팅
@@ -83,7 +67,7 @@ async def learning_chatbot_ws(websocket: WebSocket):
                         "event": "chat_started",
                         "sessionId": session_id,
                         "userId": user_id,
-                        "message": "학습 세션이 시작되었습니다.",
+                        "message": "새로운 학습 세션이 시작되었습니다.",
                     }
                 )
 
@@ -99,14 +83,12 @@ async def learning_chatbot_ws(websocket: WebSocket):
                     CHAT_SESSIONS[session_id] = []
                     print(f"학습 세션 시작 : sessionId-{session_id} userId-{user_id}")
 
-                user_record = LearningChatLog(
-                    user_id=user_id,
-                    session_id=session_id,
+                user_record = ChatMessage(
                     role="user",
                     content= query_text,
                     created_at=datetime.now(),
                 )
-                save_learning_chatbot_log([user_record])
+                save_learning_chatbot_log(user_id, session_id, [user_record])
                 CHAT_SESSIONS[session_id].append(
                     {"role": "user", "content": query_text}
                 )
@@ -114,14 +96,12 @@ async def learning_chatbot_ws(websocket: WebSocket):
                 print(f"학습 쿼리 요청 : sessionId-{session_id} userId-{user_id} query-{query_text}")
                 assistant_reply = answer(query_text)
 
-                assistant_record = LearningChatLog(
-                    user_id=user_id,
-                    session_id=session_id,
+                assistant_record = ChatMessage(
                     role="assistant",
                     content= assistant_reply,
                     created_at=datetime.now(),
                 )
-                save_learning_chatbot_log([assistant_record])
+                save_learning_chatbot_log(user_id, session_id, [assistant_record])
                 CHAT_SESSIONS[session_id].append(
                     {"role": "assistant", "content": assistant_reply}
                 )
@@ -173,7 +153,7 @@ async def learning_chatbot_ws(websocket: WebSocket):
 @router.get("/history/{user_id}/{session_id}",
     response_model=ChatHistoryResponse,
 )
-def get_chat_history(user_id: int, session_id: str):
+def get_chat_history(user_id: int, session_id: int) -> List[ChatMessage]:
     """
     이전 채팅 기록 조회용 GET API
     """
@@ -184,5 +164,11 @@ def get_chat_history(user_id: int, session_id: str):
     return ChatHistoryResponse(
         sessionId=session_id,
         userId=user_id,
-        messages=[ChatMessage(**m) for m in messages],
+        messages=[
+            {
+             "role": msg.role, 
+             "content": msg.content, 
+             "created_at": msg.created_at
+             }
+            for msg in messages],
     )
