@@ -7,6 +7,7 @@ from app.services.meeting.audio_processor import AudioProcessor
 from app.services.meeting.meeting_service import MeetingService
 from app.services.meeting.audio_service import AudioService
 from app.services.meeting.timeline_service import TimelineService
+from app.services.meeting.pipeline_service import RAGPipelineService
 
 logger = setup_logger(__name__)
 router = APIRouter()
@@ -16,7 +17,7 @@ meeting_service = MeetingService()
 audio_service = AudioService()
 audio_processor = AudioProcessor()
 timeline_service = TimelineService()
-
+pipeline_service = RAGPipelineService()
 
 # 회의 시작
 @router.post("/start", response_model = StartMeetingResponse)
@@ -58,12 +59,15 @@ async def upload_audio_chunk(
     audio_file: UploadFile = File(...),
     user_id: int = Form(...),
     chunk_index: int = Form(...),
+    upload_timestamp: int = Form(...),
+    is_last: bool = Form(...),
     background_tasks: BackgroundTasks = BackgroundTasks(),
     db: Session = Depends(get_db)
 ):
     # 파일 이름과 content-type 확인
     logger.info(f"Received file: {audio_file.filename}")
     logger.info(f"Content type: {audio_file.content_type}")
+    logger.info(f"upload_timestamp: {upload_timestamp}, is_last: {is_last}")
 
     try:
         return await audio_service.upload_audio_chunk(
@@ -71,6 +75,8 @@ async def upload_audio_chunk(
             audio_file=audio_file,
             user_id=user_id,
             chunk_index=chunk_index,
+            upload_timestamp=upload_timestamp,
+            is_last=is_last,
             background_tasks=background_tasks,
             db=db
         )
@@ -90,19 +96,26 @@ async def end_meeting(
     db: Session = Depends(get_db)
 ):
     try:
-        result = meeting_service.end_meeting(meeting_id, db)
+        # 1. 처리 완료 대기
+        await audio_service.wait_for_processing(meeting_id)
+
+        # 2. Meeting 종료 처리
+        result = await meeting_service.end_meeting(
+            meeting_id = meeting_id,
+            db = db
+        )
 
         # RAG 파이프라인 시작
-        # background_tasks.add_task(
-        #     pipeline_service.run_rag_pipeline,
-        #     meeting_id=meeting_id
-        # )
-
         background_tasks.add_task(
-            timeline_service.merge_timeline,
-            db=db,
+            pipeline_service.run_rag_pipeline,
             meeting_id=meeting_id
         )
+
+        # background_tasks.add_task(
+        #     timeline_service.merge_timeline,
+        #     db=db,
+        #     meeting_id=meeting_id
+        # )
 
         return result
 
