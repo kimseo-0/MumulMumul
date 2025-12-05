@@ -141,6 +141,8 @@ class TeamChatMessage(BaseModel):
     - user_name: 메시지 보낸 유저 이름 (조회 편의용, 캐시 개념)
     - message: 실제 채팅 내용
     - created_at: 메시지 생성 시각
+    - type: "team" (팀 채팅) or "ai" (AI 챗봇)
+    - role: "user" (사용자 메시지) or "assistant" (AI
     """
     room_id: str
     user_id: int
