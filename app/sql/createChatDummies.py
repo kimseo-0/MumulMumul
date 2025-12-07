@@ -1,4 +1,4 @@
-# scripts/insert_dummy_chatlogs.py
+# app/sql/createChatDummies.py
 import sys
 from pathlib import Path
 

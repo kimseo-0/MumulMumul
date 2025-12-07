@@ -1,4 +1,4 @@
-# app/services/curriculum/llm.py
+# app/services/curriculum/generate_report/llm.py
 import json
 from typing import Dict, Any
 
