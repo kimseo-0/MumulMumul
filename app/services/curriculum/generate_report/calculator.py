@@ -436,8 +436,8 @@ def build_raw_stats(
                 "rank": rank,
                 "category": row["category"],
                 "difficulty_level": level.capitalize(),
-                "main_patterns": [],  # 나중에 패턴 기반으로 채워도 됨
-                "action_hint": "",    # LLM이 생성한 문구를 넣어도 되고
+                "main_patterns": [],
+                "action_hint": "",
             }
         )
 
@@ -456,7 +456,7 @@ def build_raw_stats(
         "example_questions_per_category": dict(questions_per_category),
         "in_category_stats": in_category_stats,
         "out_category_stats": out_category_stats,
-        "pattern_stats": pattern_stats,
+        "pattern_stats_overall": pattern_stats,
         "category_pattern_summary": category_pattern_summary,
         "priority": priority_rows
     }
