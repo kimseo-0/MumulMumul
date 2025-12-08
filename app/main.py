@@ -37,7 +37,7 @@ def create_app() -> FastAPI:
         # whisper 모델 : 앱 시작시 1회 로드
         print("Initializing Whisper model...")
         AudioProcessor.initialize_whisper(
-            max_workers = settings.MAX_WORKERS,
+            # max_workers = settings.MAX_WORKERS,
             model_size = settings.WHISPER_MODEL
         )
         print("Whisper model ready!")
