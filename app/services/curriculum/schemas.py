@@ -191,6 +191,20 @@ class ExtraTopicDetail(BaseModel):
         description="추가 세션/자료 기획 아이디어",
     )
 
+class PriorityItem(BaseModel):
+    """강화 우선순위 Top3에 사용할 요약 정보."""
+
+    rank: int = Field(..., description="우선순위 순위 (1~3)")
+    category: str = Field(..., description="카테고리 이름")
+    difficulty_level: str = Field(..., description="난이도 레벨 (High/Medium/Low 등)")
+    main_patterns: List[str] = Field(
+        default_factory=list,
+        description="이 카테고리에서 많이 나타나는 주요 패턴 태그 (예: 개념 이해 부족, 버그/에러 등)",
+    )
+    action_hint: str = Field(
+        "",
+        description="운영진이 이 카테고리를 어떻게 보완하면 좋은지에 대한 한 줄 액션 가이드",
+    )
 
 class CurriculumAIInsights(BaseModel):
     """AI 심층 분석 탭 전체에 사용할 요약 텍스트."""
@@ -234,6 +248,10 @@ class CurriculumAIInsights(BaseModel):
     extra_session_suggestions: str = Field(
         ...,
         description="커리큘럼 외 세션(포트폴리오, 커리어, IDE 등) 진행 제안 텍스트",
+    )
+    priority: List[PriorityItem] = Field(
+        default_factory=list,
+        description="난이도/질문량 기반으로 선정한 커리큘럼 강화 우선순위 Top3",
     )
 
 

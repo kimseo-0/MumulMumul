@@ -28,6 +28,8 @@ def fetch_curriculum_report(camp_id: int, week_index: str):
     url = f"{BACKEND_BASE_URL}/curriculum/report"
     params = {"camp_id": camp_id, "week_index": week_index}
     resp = requests.get(url, params=params)
+    if resp is None:
+        return None
     return resp.json()
 
 def create_curriculum_report(camp_id: int, week_index: str):
