@@ -1,5 +1,3 @@
-# app/api/meeting_chatbot.py
-
 from datetime import datetime
 import sys
 sys.path.append("../..")
@@ -10,10 +8,11 @@ from typing import Dict, List, Literal
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, HTTPException
 from pydantic import BaseModel
 
-from app.services.learning_chatbot.service import answer
+from app.services.meeting_chatbot.chatbot_service import MeetingChatbotService
 from app.core.mongodb import TeamChatMessage, get_mongo_db
 
 router = APIRouter()
+chatbot_service = MeetingChatbotService()
 
 mongo_db = get_mongo_db()
 collection = mongo_db["team_chat_messages"]
@@ -128,27 +127,56 @@ async def meeting_chatbot_ws(websocket: WebSocket):
                 print(f"[MeetingChat] user query : {query_text}")
 
                 # 2) AI 답변 생성
-                assistant_reply = "테스트 답변입니다."  # TODO: 회의 도우미 모델 적용
+                try:
+                    result = await chatbot_service.ask(
+                        query = query_text,
+                        meeting_id = data.get("meeting_id"),
+                        group_id = groupId
+                    )
+
+                    assistant_doc = {
+                        "role": "assistant",
+                        "content": result["answer"],
+                        "confidence": result["confidence"],
+                        "sources": result["sources"],
+                        "relevant_segments": result["relevant_segments"],
+                        "createdAt": datetime.utcnow().isoformat(),
+                    }
+
+                    CHAT_SESSIONS[groupId].append(assistant_doc)
+
+                    await websocket.send_json({
+                        "event": "answer",
+                        "groupId": groupId,
+                        "answer" : result["answer"]
+                    })
+
+                except Exception as e:
+                    await websocket.send_json({
+                        "event": "error",
+                        "message": f"AI 답변 생성 실패: {e}"
+                    })
+
 
                 # 3) assistant 메시지 저장
-                assistant_doc = {
-                    "roomId": groupId,
-                    "type": "ai",
-                    "role": "assistant",
-                    "userId": None,
-                    "userName": "AI",
-                    "message": assistant_reply,
-                    "createdAt": datetime.utcnow().isoformat(),
-                }
-                collection.insert_one(assistant_doc)
-                CHAT_SESSIONS[groupId].append(assistant_doc)
+                # assistant_doc = {
+                #     "roomId": groupId,
+                #     "type": "ai",
+                #     "role": "assistant",
+                #     "userId": None,
+                #     "userName": "AI",
+                #     "message": assistant_reply,
+                #     "createdAt": datetime.utcnow().isoformat(),
+                # }
+                # collection.insert_one(assistant_doc)
+                # CHAT_SESSIONS[groupId].append(assistant_doc)
 
-                # 클라이언트에게 응답
-                await websocket.send_json({
-                    "event": "answer",
-                    "groupId": groupId,
-                    "answer": assistant_reply,
-                })
+                # # 클라이언트에게 응답
+                # await websocket.send_json({
+                #     "event": "answer",
+                #     "groupId": groupId,
+                #     "answer": assistant_reply,
+                # })
 
             # -------------------------
             # 3) end_chat

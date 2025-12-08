@@ -42,6 +42,11 @@ class MongoMeetingService:
                 upsert=True
             )
             logger.info(f"Summary 저장: {summary.meeting_id}")
+            logger.info(
+                f"Summary 저장 결과 — matched: {result.matched_count}, "
+                f"modified: {result.modified_count}, upserted_id: {result.upserted_id}"
+            )
+            
             return result
         except Exception as e:
             logger.error(f"Summary 저장 실패: {e}", exc_info=True)

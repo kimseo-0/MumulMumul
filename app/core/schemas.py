@@ -89,6 +89,7 @@ class Meeting(Base):
     meeting_id = Column(String(255), primary_key=True)  # 회의 고유 ID (TEXT)
     title = Column(Text, nullable=False)
     organizer_id = Column(Integer, ForeignKey("user.user_id"), nullable=True)
+    chat_room_id = Column(String(255), ForeignKey("chat_room.id"), nullable=False)
 
     start_time = Column(Text, nullable=False)  # ISO8601 string
     end_time = Column(Text, nullable=True)
@@ -109,6 +110,7 @@ class Meeting(Base):
 
     participants = relationship("MeetingParticipant", back_populates="meeting")
     organizer = relationship("User")
+    room = relationship("ChatRoom", back_populates="meeting")
 
 
 # ------------------------
@@ -199,6 +201,7 @@ class ChatRoom(Base):
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
 
     members = relationship("ChatRoomUser", back_populates="room")
+    meeting = relationship("Meeting", back_populates="room")
 
 
 class ChatRoomUser(Base):

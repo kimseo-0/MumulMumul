@@ -30,6 +30,7 @@ class MeetingService:
             logger.info("="*60)
             logger.info(
                 f"Starting new meeting\n"
+                f"team_id: {request.chat_room_id}\n"
                 f"Title: {request.title}\n"
                 f"Organizer: {request.organizer_id}\n"
                 f"timestamp: {request.client_timestamp}"
@@ -70,6 +71,7 @@ class MeetingService:
                 meeting_id = meeting_id,
                 title = request.title,
                 organizer_id = request.organizer_id,
+                chat_room_id = request.chat_room_id,
                 start_time = start_time_iso,
                 end_time = None,
                 start_client_timestamp = request.client_timestamp,
