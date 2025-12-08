@@ -27,10 +27,11 @@ def seed_dummy_data():
     session.commit()
 
     # 2. camp
-    backend_camp = Camp(name="AI 캠프", start_date=datetime(2025, 11, 3), end_date=datetime(2025, 11, 3) + timedelta(weeks=6))
-    frontend_camp = Camp(name="언리얼 캠프", start_date=datetime(2025, 11, 3), end_date=datetime(2025, 11, 3) + timedelta(weeks=6))
+    ai_camp = Camp(name="AI 캠프", start_date=datetime(2025, 11, 3), end_date=datetime(2025, 11, 3) + timedelta(weeks=6))
+    unreal_camp = Camp(name="언리얼 캠프", start_date=datetime(2025, 11, 3), end_date=datetime(2025, 11, 3) + timedelta(weeks=6))
+    test_camp = Camp(name="머물머물 캠프", start_date=datetime(2025, 11, 3), end_date=datetime(2025, 11, 3) + timedelta(weeks=6))
 
-    session.add_all([backend_camp, frontend_camp])
+    session.add_all([test_camp, ai_camp, unreal_camp])
     session.commit()
 
     # -----------------------------
@@ -67,7 +68,7 @@ def seed_dummy_data():
                 name=f"AI강사{i}",
                 email=f"{login_id}@mumul.com",
                 user_type_id=instructor_type.type_id,
-                camp_id=backend_camp.camp_id,
+                camp_id=ai_camp.camp_id,
             )
         )
 
@@ -81,7 +82,7 @@ def seed_dummy_data():
                 name=f"언리얼강사{i}",
                 email=f"{login_id}@mumul.com",
                 user_type_id=instructor_type.type_id,
-                camp_id=frontend_camp.camp_id,
+                camp_id=unreal_camp.camp_id,
             )
         )
 
@@ -95,7 +96,7 @@ def seed_dummy_data():
 
     # 캠프 학생
     for i in range(1, 100):
-        login_id = f"be_student{i}"
+        login_id = f"ai_student{i}"
         students.append(
             User(
                 login_id=login_id,
@@ -103,13 +104,13 @@ def seed_dummy_data():
                 name=f"AI학생{i}",
                 email=f"{login_id}@mumul.com",
                 user_type_id=student_type.type_id,
-                camp_id=backend_camp.camp_id,
+                camp_id=ai_camp.camp_id,
             )
         )
 
     # 프론트 캠프 학생
     for i in range(1, 100):
-        login_id = f"fe_student{i}"
+        login_id = f"ur_student{i}"
         students.append(
             User(
                 login_id=login_id,
@@ -117,9 +118,26 @@ def seed_dummy_data():
                 name=f"언리얼학생{i}",
                 email=f"{login_id}@mumul.com",
                 user_type_id=student_type.type_id,
-                camp_id=frontend_camp.camp_id,
+                camp_id=unreal_camp.camp_id,
             )
         )
+
+    # 테스트 캠프 학생
+    login_ids = ["test1", "test2", "test3", "test4", "test5"]
+    test_name = ["김해찬", "윤여민", "김서영", "이성윤", "차요준"]
+    for i in range(5):
+        login_id = login_ids[i]
+        test_user = [
+                User(
+                    login_id=login_id,
+                    password_hash=login_id,
+                    name=f"{test_name[i]}",
+                    email=f"{login_id}@mumul.com",
+                    user_type_id=student_type.type_id,
+                    camp_id=test_camp.camp_id,
+                )
+        ]
+        students.append(test_user)
 
     session.add_all(students)
     session.commit()
