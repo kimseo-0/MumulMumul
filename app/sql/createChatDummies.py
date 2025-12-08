@@ -93,7 +93,7 @@ def insert_dummy_chatlogs():
 
         for row in reader:
             try:
-                camp_id = 1 # int(row["camp_id"]) if row.get("camp_id") else None
+                camp_id = 2 # int(row["camp_id"]) if row.get("camp_id") else None
                 camp = camps.get(camp_id) if camp_id else None
 
                 # CSV의 week 컬럼 사용 (없으면 "Week 1"로 간주)

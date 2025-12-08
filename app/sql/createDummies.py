@@ -44,7 +44,7 @@ def seed_dummy_data():
             User(
                 login_id=login_id,
                 password_hash=login_id,  # id와 비번 동일
-                name=f"운영진{i}",
+                name=f"운영진_{i}",
                 email=f"admin{i}@mumul.com",
                 user_type_id=admin_type.type_id,
                 camp_id=None,
@@ -65,7 +65,7 @@ def seed_dummy_data():
             User(
                 login_id=login_id,
                 password_hash=login_id,
-                name=f"AI강사{i}",
+                name=f"AI_강사_{i}",
                 email=f"{login_id}@mumul.com",
                 user_type_id=instructor_type.type_id,
                 camp_id=ai_camp.camp_id,
@@ -79,7 +79,7 @@ def seed_dummy_data():
             User(
                 login_id=login_id,
                 password_hash=login_id,
-                name=f"언리얼강사{i}",
+                name=f"언리얼_강사_{i}",
                 email=f"{login_id}@mumul.com",
                 user_type_id=instructor_type.type_id,
                 camp_id=unreal_camp.camp_id,
@@ -90,18 +90,18 @@ def seed_dummy_data():
     session.commit()
 
     # -----------------------------
-    # 5. 학생 20명씩
+    # 5. 학생 100명씩
     # -----------------------------
     students = []
 
     # 캠프 학생
-    for i in range(1, 100):
+    for i in range(1, 101):
         login_id = f"ai_student{i}"
         students.append(
             User(
                 login_id=login_id,
                 password_hash=login_id,
-                name=f"AI학생{i}",
+                name=f"AI_학생_{i}",
                 email=f"{login_id}@mumul.com",
                 user_type_id=student_type.type_id,
                 camp_id=ai_camp.camp_id,
@@ -115,7 +115,7 @@ def seed_dummy_data():
             User(
                 login_id=login_id,
                 password_hash=login_id,
-                name=f"언리얼학생{i}",
+                name=f"언리얼_학생_{i}",
                 email=f"{login_id}@mumul.com",
                 user_type_id=student_type.type_id,
                 camp_id=unreal_camp.camp_id,
