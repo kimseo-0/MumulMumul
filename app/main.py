@@ -15,6 +15,7 @@ from app.services.meeting.embedding_service import EmbeddingService
 from app.api.curriculum import router as curriculum_router
 from app.api.user import router as user_router
 from app.api.learning_chatbot import router as learning_chatbot_router
+from app.api.meeting_chatbot import router as meeting_chatbot_router
 from app.core.mongodb import init_mongo, get_mongo_db
 from app.core.schemas import init_db
 from app.config import SQLITE_URL
@@ -65,4 +66,5 @@ app.include_router(meeting_router, prefix="/meeting")
 app.include_router(curriculum_router, prefix="/curriculum")
 app.include_router(user_router, prefix="/user")
 app.include_router(learning_chatbot_router, prefix="/learning_chatbot")
+app.include_router(meeting_chatbot_router, prefix="/meeting_chatbot")
 app.include_router(team_chat_router, prefix="/chat")

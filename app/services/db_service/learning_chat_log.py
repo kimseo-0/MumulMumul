@@ -5,7 +5,7 @@ from bson import ObjectId
 from pymongo.database import Database
 from requests import Session
 from app.core.db import get_db
-from app.core.mongodb import CurriculumInsights, get_mongo_db
+from app.core.mongodb import CurriculumInsights, LearningChatLog, get_mongo_db
 from app.services.db_service.camp import get_camp_by_id
 
 mongo_db: Database = get_mongo_db()
@@ -57,16 +57,6 @@ def fetch_weekly_logs_no_insights(db: Session, camp_id: int, week_index: int) ->
     }
     docs = list(chat_col.find(query))
     return docs
-
-def save_weekly_logs(logs: List[Dict[str, Any]]) -> None:
-    """
-    주어진 로그 리스트를 MongoDB에 저장한다.
-    """
-    if not logs:
-        return
-
-    chat_col.insert_many(logs)
-
 
 def update_weekly_log(log_id: Any, update_data: Dict[str, Any]) -> None:
     """
