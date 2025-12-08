@@ -64,40 +64,36 @@ def cosine_similarity(a, b):
     return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
 
 
-def is_quiz_like_question(q: str) -> bool:
-    """
-    이 질문이 '문제/퀴즈를 내달라'에 가까운지 간단히 판별.
-    - 여기서는 캐시(특히 '비슷한 질문 찾기')를 막기 위한 용도로만 사용.
-    - 모드(설명/퀴즈) 구분은 LLM이 따로 한다.
-    """
-    q2 = q.replace(" ", "")
-    keywords = ["퀴즈", "문제", "테스트", "연습문제", "ox", "OX"]
-    return any(k in q2 for k in keywords)
-
-
-def search_cache(question: str, grade: str):
+def search_cache(question: str, grade: str, intent: str):
     """
     캐시에서 먼저 답을 찾아보는 함수.
-    1) 질문이 완전히 같으면(exact) → 바로 반환
-    2) 퀴즈/문제 요청이면 → '비슷한 질문' 재사용은 위험해서 건너뜀
-    3) 설명 요청이면 → '뜻이 비슷한 질문'도 찾아보고 충분히 비슷하면 재사용
+    intent(설명 / 퀴즈 / 무관함)에 따라 캐시 사용 방식을 다르게 한다.
+
+    1) exact 캐시는 항상 사용 (문장이 완전히 같을 때)
+    2) intent == "퀴즈"  → semantic 캐시는 사용하지 않음
+    3) intent == "설명"  → semantic 캐시도 사용 (뜻이 비슷한 질문 재사용)
+    4) intent == "무관함" → 원칙적으로 캐시를 쓰지 않도록 위쪽에서 걸러짐
     """
     # 1) 완전히 같은 질문인 경우 (문장 그대로 일치)
     if question in CACHE[grade]["exact"]:
         print("[CACHE HIT] Exact")
         return CACHE[grade]["exact"][question]
 
-    # 2) 퀴즈/문제 요청이면, '비슷한 질문' 캐시는 사용하지 않음
-    #    예: "for문 문제 5개" vs "for문 문제 3개" → 섞이면 안 됨
-    if is_quiz_like_question(question):
-        print("[CACHE SKIP] 퀴즈 요청 → semantic 캐시 사용 안 함")
+    # 2) 퀴즈 모드에서는 semantic 캐시 사용 금지
+    if intent == "퀴즈":
+        print("[CACHE SKIP] 퀴즈 모드 → semantic 캐시 사용 안 함")
         return None
 
-    # 3) 설명 요청인 경우에만 '뜻이 비슷한 질문'을 찾아본다.
+    # 3) 설명 모드일 때만 semantic 캐시 사용
+    if intent != "설명":
+        # 안전장치: 혹시 모르는 intent 값이면 semantic 캐시를 쓰지 않음
+        print("[CACHE SKIP] 설명/퀴즈 모드가 아니므로 semantic 캐시 사용 안 함")
+        return None
+
     print("[CACHE CHECK] Semantic...")
     q_vec = embedder_for_cache.embed_query(question)
 
-    best_score = 0
+    best_score = 0.0
     best_answer = None
 
     for entry in CACHE[grade]["semantic"]:
@@ -112,6 +108,8 @@ def search_cache(question: str, grade: str):
         return best_answer
 
     return None
+
+
 
 
 def save_to_cache(question: str, grade: str, answer: str):
@@ -264,45 +262,79 @@ QUIZ_RULES_TEMPLATE = """
 # ==============================================================
 
 INTENT_PROMPT = """
-당신은 질문의 의도를 분석하는 분류 AI입니다.
+당신은 사용자 질문의 의도를 네 가지 중 하나로 분류하는 AI입니다.
 
-사용자의 질문이 아래 둘 중 무엇에 해당하는지 판단하세요.
+[설명]
+- 개념 설명만 요청하는 경우
 
-1) "설명" → 개념 설명, 이해를 돕는 답변을 원하는 경우
-2) "퀴즈" → 학습을 위한 문제(퀴즈)를 만들어달라는 경우
+[퀴즈]
+- 문제(퀴즈)만 요청하는 경우
 
-출력 형식:
-- 아래 둘 중 하나의 단어만 출력하세요.
-  - 설명
-  - 퀴즈
+[혼합]
+- 설명 요청 + 문제 요청이 함께 포함된 경우  
+- 아래 패턴이 하나라도 있으면 반드시 '혼합'으로 분류:
+  "설명해주고 문제", "설명 + 문제", "설명하고 OX", 
+  "설명해주고 연습문제", "알려주고 문제", "설명 후 문제"
+
+[무관함]
+- 학습과 관계없는 질문
+
+출력은 다음 중 하나만:
+설명
+퀴즈
+혼합
+무관함
+
+사용자 질문:
+{question}
 """
 
 
+
+
 def detect_intent(question: str, llm: ChatOpenAI) -> str:
-    """LLM에게 '설명' 또는 '퀴즈' 중 하나로 분류해 달라고 요청"""
-    prompt = INTENT_PROMPT + f"\n\n[질문]\n{question}\n"
-    result = llm.invoke(prompt)   # AIMessage 객체 반환
+    prompt = INTENT_PROMPT.format(question=question)
+    result = llm.invoke(prompt)
     text = result.content.strip()
 
-    # 혹시라도 이상한 답이 나오면 기본값은 "설명"
+    if "무관함" in text:
+        return "무관함"
+    if "혼합" in text:
+        return "혼합"
     if "퀴즈" in text:
         return "퀴즈"
     return "설명"
 
 
+
+
 def build_rules(question: str, grade: str, llm_for_intent: ChatOpenAI) -> str:
-    """
-    질문을 보고 '설명 모드'로 갈지, '퀴즈 모드'로 갈지 선택한 뒤
-    그에 맞는 규칙 텍스트를 돌려주는 함수.
-    """
-    intent = detect_intent(question, llm_for_intent)  # "설명" 또는 "퀴즈"
+    intent = detect_intent(question, llm_for_intent)
+    print(f"[INTENT] 판단 결과: {intent}")
+
+    if intent == "무관함":
+        return "IRRELEVANT"
 
     if intent == "퀴즈":
         print("[MODE] 학습퀴즈 모드 (LLM 판단)")
         return QUIZ_RULES_TEMPLATE.replace("{GRADE_LEVEL}", grade)
 
+    if intent == "혼합":
+        print("[MODE] 혼합 모드 (LLM 판단)")
+        # 설명 규칙 + 퀴즈 규칙을 합친다
+        mixed = (
+            "### 설명 먼저 수행하세요.\n" +
+            GRADE_RULES[grade] +
+            "\n\n### 그런 다음, 아래 규칙에 따라 JSON 퀴즈를 생성하세요.\n" +
+            QUIZ_RULES_TEMPLATE.replace("{GRADE_LEVEL}", grade)
+        )
+        return mixed
+
+    # 그 외는 설명
     print("[MODE] 설명 모드 (LLM 판단)")
     return GRADE_RULES[grade]
+
+
 
 
 # ==============================================================
@@ -499,53 +531,147 @@ def build_history_text(history, max_turns=2):
 
 def answer_single(question: str, grade: str, history: list):
     """
-    실제로 1개의 질문에 대해 1개의 답변을 만들어주는 함수.
-    - 캐시 확인
-    - 검색량 조정
-    - 설명/퀴즈 모드 판단
-    - RAG 체인 호출
-    - 캐시에 저장 + history 업데이트
+    새 흐름:
+    1) LLM으로 의도 판단 (설명 / 퀴즈 / 혼합 / 무관함)
+    2) 무관함이면 바로 종료
+    3) intent에 따라 1단계 또는 2단계 처리
     """
 
-    # 1) 캐시 확인
-    cached = search_cache(question, grade)
-    if cached:
-        print("[INFO] 캐시 사용")
-        history.append({"question": question, "answer": cached})
-        return cached
-
-    # 2) 검색량 조정
-    adjust_retriever_for_question(question)
-
-    # 3) LLM에게 '설명/퀴즈' 의도 판단 맡기기
+    # 1) LLM으로 의도 판단
     llm_for_intent = ChatOpenAI(model=LLM_MODEL, temperature=0.0)
-    rules_text = build_rules(question, grade, llm_for_intent)
+    intent = detect_intent(question, llm_for_intent)
+    print(f"[INTENT] 판단 결과: {intent}")
 
-    # 4) RAG 체인 준비
-    rag = get_rag_chain()
-    history_text = build_history_text(history)
+    # 2) 무관한 질문
+    if intent == "무관함":
+        answer = "학습과 관련 없는 질문입니다."
+        history.append({"question": question, "answer": answer})
+        return answer
 
-    # 5) 실제 답변 생성
-    start = time.time()
-    answer = rag.invoke({
-        "question": question,
-        "grade": grade,
-        "rules": rules_text,
-        "history": history_text
-    })
-    print(f"[Time] 답변 생성: {time.time() - start:.3f}s")
+    # ==========================================================
+    # 3) 설명 모드 → 기존 방식 그대로 1단계 실행
+    # ==========================================================
+    if intent == "설명":
+        rules_text = GRADE_RULES[grade]
 
-    # 6) 캐시에 저장 + history 업데이트
-    save_to_cache(question, grade, answer)
-    history.append({"question": question, "answer": answer})
+        # 캐시 확인
+        cached = search_cache(question, grade, intent)
+        if cached:
+            history.append({"question": question, "answer": cached})
+            return cached
 
-    return answer
+        adjust_retriever_for_question(question)
+        rag = get_rag_chain()
+        history_text = build_history_text(history)
+
+        answer = rag.invoke({
+            "question": question,
+            "grade": grade,
+            "rules": rules_text,
+            "history": history_text
+        })
+
+        save_to_cache(question, grade, answer)
+        history.append({"question": question, "answer": answer})
+        return answer
+
+    # ==========================================================
+    # 4) 퀴즈 모드 → 기존처럼 JSON만 생성
+    # ==========================================================
+    if intent == "퀴즈":
+        rules_text = QUIZ_RULES_TEMPLATE.replace("{GRADE_LEVEL}", grade)
+
+        cached = search_cache(question, grade, intent)
+        if cached:
+            history.append({"question": question, "answer": cached})
+            return cached
+
+        adjust_retriever_for_question(question)
+        rag = get_rag_chain()
+        history_text = build_history_text(history)
+
+        answer = rag.invoke({
+            "question": question,
+            "grade": grade,
+            "rules": rules_text,
+            "history": history_text
+        })
+
+        save_to_cache(question, grade, answer)
+        history.append({"question": question, "answer": answer})
+        return answer
+
+    # ==========================================================
+    # 5) 🟡 혼합 모드 (핵심!)
+    # ==========================================================
+    if intent == "혼합":
+        print("[MODE] 혼합 모드 (2단계 처리)")
+
+        # ------------------------------------------------------
+        # 5-1단계: 설명 먼저 생성
+        # ------------------------------------------------------
+        explain_rules = GRADE_RULES[grade]
+
+        adjust_retriever_for_question(question)
+        rag = get_rag_chain()
+        history_text = build_history_text(history)
+
+        explanation = rag.invoke({
+            "question": question,
+            "grade": grade,
+            "rules": explain_rules,
+            "history": history_text
+        })
+
+        # ------------------------------------------------------
+        # 5-2단계: 퀴즈만 따로 생성(JSON)
+        # ------------------------------------------------------
+        quiz_rules = QUIZ_RULES_TEMPLATE.replace("{GRADE_LEVEL}", grade)
+
+        quiz_json = rag.invoke({
+            "question": question,
+            "grade": grade,
+            "rules": quiz_rules,
+            "history": history_text
+        })
+
+        # ------------------------------------------------------
+        # 5-3단계: 둘을 합쳐서 최종 결과 만들기
+        # ------------------------------------------------------
+        final_output = (
+            "### 📘 설명\n"
+            + explanation.strip()
+            + "\n\n---\n\n"
+            + "### 📝 학습 퀴즈(JSON)\n"
+            + quiz_json.strip()
+        )
+
+        # 혼합 모드는 캐시에 저장하지 않음 (뒤섞인 질문 특성 때문에)
+        history.append({"question": question, "answer": final_output})
+
+        return final_output
+
 
 
 # ==============================================================
 # CLI 실행부 (터미널에서 테스트용)
 # ==============================================================
+def ask_grade_level():
+    """
+    사용자에게 난이도(초급/중급/고급)를 입력받되,
+    오타나 잘못된 입력이 들어오면 계속 다시 입력하게 한다.
+    """
+    valid = {"초급", "중급", "고급"}
 
+    while True:
+        grade = input("💡 난이도 (초급/중급/고급): ").strip()
+
+        if grade in valid:
+            return grade
+
+        print("⚠ 입력한 난이도가 올바르지 않습니다. 다시 입력해주세요.\n")
+
+        
 if __name__ == "__main__":
     print("\n=== RAG 학습 도우미 챗봇 (설명 + 학습퀴즈 자동 분기) ===\n")
     history = []
@@ -556,7 +682,8 @@ if __name__ == "__main__":
             print("\n👋 종료합니다.")
             break
 
-        grade = input("💡 난이도 (초급/중급/고급): ").strip()
+        # 안전한 난이도 입력
+        grade = ask_grade_level()
 
         print("\n⏳ 생성 중...\n")
         result = answer_single(msg, grade, history)
@@ -564,3 +691,4 @@ if __name__ == "__main__":
         print("\n🧠 학습 도우미 응답:\n")
         print(result)
         print("\n-----------------------------------\n")
+
