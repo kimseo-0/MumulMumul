@@ -9,3 +9,12 @@ def get_camp_by_id(db: Session, camp_id: int) -> Camp | None:
     camp_id로 Camp 객체 1개를 조회하는 가장 기본적인 Repository 함수.
     """
     return db.query(Camp).filter(Camp.camp_id == camp_id).first()
+
+def get_students_by_camp(db: Session, camp_id: int) -> list:
+    """
+    캠프에 등록된 모든 학생(User) 리스트 조회.
+    """
+    camp = get_camp_by_id(db, camp_id)
+    if not camp:
+        return []
+    return camp.students

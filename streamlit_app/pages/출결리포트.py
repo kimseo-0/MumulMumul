@@ -3,263 +3,437 @@
 import streamlit as st
 import pandas as pd
 import altair as alt
-from datetime import date, datetime, timedelta
+from datetime import date, datetime
 
 from api.attendance import (
-    get_attendance_report,
+    get_attendance_report,       # GET /attendance/report
+    generate_attendance_report,  # POST /attendance/report/generate
 )
 
 from api.camp import fetch_camps
 
+# ============================================
+# 0. 페이지 기본 설정
+# ============================================
 st.set_page_config(
     page_title="출결 관리",
     page_icon="👥",
     layout="wide"
 )
 
-# --------------------------------
-# 0) 세션 기반 데이터 캐시 설정
-# --------------------------------
+st.title("🔥 출결 리포트")
+
+# ============================================
+# 0-1. 세션 기반 데이터 캐시 설정
+# ============================================
 if "attendance_session" not in st.session_state:  # 한 번만 초기화
     st.session_state["attendance_session"] = {
-        "camps": None,                       # fetch_camps() 결과
-        "camp_name_to_id": None,            # {name: id}
-        "attendance_reports": {},          # {campid_weekindex: payload}
+        "camps": None,                 # fetch_camps() 결과
+        "camp_info": None,             # {name: camp_dict}
+        "attendance_reports": {},      # {f"{camp_id}_{date_str}": payload}
     }
 
 session_cache = st.session_state["attendance_session"]
 
 # --- 캠프 목록은 세션에 한 번만 저장 ---
 if session_cache["camps"] is None:
-    camps = fetch_camps()  # [{camp_id, name, ...}, ...] 가정
-    camp_name_to_id = {c["name"]: c["camp_id"] for c in camps}
+    camps = fetch_camps()  # [{camp_id, name, start_date, end_date, ...}, ...] 가정
+    camp_info = {c["name"]: c for c in camps}
     session_cache["camps"] = camps
-    session_cache["camp_name_to_id"] = camp_name_to_id
+    session_cache["camp_info"] = camp_info
 else:
     camps = session_cache["camps"]
-    camp_name_to_id = session_cache["camp_name_to_id"]
+    camp_info = session_cache["camp_info"]
 
-# --------------------------------
-# 1) 캠프 목록 / 주차 선택
-# --------------------------------
+# ============================================
+# 1. 사이드바 필터 (캠프 / 날짜)
+# ============================================
 st.sidebar.header("필터 설정")
 
-camp_name = st.sidebar.selectbox("반 선택", list(camp_name_to_id.keys()))
-camp_id = camp_name_to_id[camp_name]
+camp_name = st.sidebar.selectbox("반 선택", list(camp_info.keys()))
+camp = camp_info[camp_name]
+camp_id = camp["camp_id"]
 
-weeks = ["Week 1", "Week 2", "Week 3", "Week 4", "Week 5", "Week 6"]
-selected_week_label = st.sidebar.selectbox("주차 선택", weeks)
-week_index = int(selected_week_label.split()[1])  # "Week 3" -> 3
-week_label = f"{week_index}주차"
+# camp_start_date, camp_end_date는 문자열이라고 가정 ("YYYY-MM-DD")
+camp_start_date = datetime.strptime(camp["start_date"], "%Y-%m-%d").date()
+camp_end_date = datetime.strptime(camp["end_date"], "%Y-%m-%d").date()
 
-# --------------------------------
-# 1-1) 리포트 생성 버튼 + 세션 캐싱
-# --------------------------------
-report_key = f"{camp_id}_{week_index}"
-reports_cache = session_cache["curriculum_reports"]
+selected_date: date = st.sidebar.date_input(
+    "기준 날짜 선택",
+    value=camp_start_date,       # 기본값: 캠프 시작일
+    min_value=camp_start_date,   # 최소: 캠프 시작
+    max_value=camp_end_date,     # 최대: 캠프 종료
+)
 
-# 1) 세션에서 먼저 찾기
+# 캐시 키: 캠프 + 날짜
+date_key = selected_date
+report_key = f"{camp_id}_{date_key}"
+reports_cache = session_cache["attendance_reports"]
+
+# 1) 세션 캐시에서 먼저 찾기
 payload = reports_cache.get(report_key)
 
-# 2) 세션에 없으면 → 백엔드(DB)에서 한 번 조회해서 있으면 캐시
+# 2) 세션에 없으면 → 백엔드에서 조회 (이미 생성된 리포트가 있으면 캐시)
 if payload is None:
-    db_report = get_attendance_report(camp_id=camp_id, week_index=week_index)
+    db_report = get_attendance_report(
+        camp_id=camp_id,
+        target_date=date_key,  # 클라이언트 래퍼에서 쿼리 파라미터로 전달
+    )
     if db_report is not None:
         payload = db_report
         reports_cache[report_key] = payload
     else:
         payload = None
 
+# 리포트 재생성 버튼 (강제 새로 생성)
 generate_clicked = st.sidebar.button("리포트 생성하기")
 if generate_clicked:
     with st.spinner("리포트 생성 중입니다..."):
-        payload = get_attendance_report(
+        # POST로 새 리포트 생성 후 응답 payload 받기
+        payload = generate_attendance_report(
             camp_id=camp_id,
-            week_index=week_index,
+            target_date=date_key,
         )
         session_cache["attendance_reports"][report_key] = payload
 
-# 세션에서 현재 선택된 캠프/주차의 리포트 가져오기
+# 최종 payload 다시 읽기
 payload = session_cache["attendance_reports"].get(report_key)
 
-# -----------------------------
-# 화면
-# -----------------------------
-st.title(f"🔥 출결 리포트 - {camp_name}")
+# ============================================
+# 2. payload 유효성 체크
+# ============================================
+if not payload:
+    st.info(
+        "아직 해당 캠프/날짜의 출결 리포트가 없습니다.\n"
+        "왼쪽에서 '리포트 생성하기' 버튼을 눌러 리포트를 생성해 주세요."
+    )
+    st.stop()
 
-if payload is None:
-    st.info("좌측에서 **반과 주차를 선택**한 뒤, `📊 이 주차 출결 리포트 생성` 버튼을 눌러 리포트를 확인하세요.")
+# --------------------------------------------
+# ⚠️ payload 구조 예시 (백엔드 AttendanceReport와 1:1 매핑)
+# {
+#   "camp_id": 1,
+#   "camp_name": "데이터 분석 1반",
+#   "target_date": "2025-12-08",
+#   "summary": {
+#       "attendance_rate": 0.87,
+#       "total_students": 25,
+#       "high_risk_count": 3,
+#       "warning_count": 5,
+#       "late_rate": 0.12,   # 선택
+#   },
+#   "students": [
+#       {
+#           "student_id": 101,
+#           "name": "김OO",
+#           "attendance_rate": 0.6,
+#           "absent_count": 3,
+#           "late_count": 2,
+#           "early_leave_count": 1,
+#           "pattern_type": "급격 이탈형",
+#           "risk_level": "고위험",   # 고위험 / 위험 / 주의 / 정상
+#           "trend": -0.3,           # 최근 2주 변화율 (선택)
+#           "ops_action": "",        # 운영진 조치 메모 (선택)
+#       },
+#       ...
+#   ]
+# }
+# --------------------------------------------
+
+summary = payload.get("summary", {}) or {}
+students_raw = payload.get("students", []) or []
+
+if not students_raw:
+    st.warning("학생별 출결 데이터가 없습니다.")
+    st.stop()
+
+df = pd.DataFrame(students_raw)
+
+# 안전한 기본값 처리
+if "risk_level" not in df.columns:
+    df["risk_level"] = "정상"
+if "pattern_type" not in df.columns:
+    df["pattern_type"] = ""
+if "ops_action" not in df.columns:
+    df["ops_action"] = ""
+
+# ============================================
+# 3. 페이지 타이틀 및 요약
+# ============================================
+st.subheader(f"{camp_name} / {selected_date.strftime('%Y-%m-%d')} 기준 출결 리포트")
+
+# ============================================
+# 3-1. 상단 KPI 요약 영역
+# ============================================
+attendance_rate = summary.get(
+    "attendance_rate",
+    df["attendance_rate"].mean() if "attendance_rate" in df.columns else None,
+)
+high_risk_count = summary.get(
+    "high_risk_count",
+    int((df["risk_level"] == "고위험").sum()),
+)
+warning_count = summary.get(
+    "warning_count",
+    int(df["risk_level"].isin(["위험", "주의"]).sum()),
+)
+total_students = summary.get("total_students", len(df))
+
+col1, col2, col3, col4 = st.columns(4)
+
+with col1:
+    if attendance_rate is not None:
+        st.metric("전체 출석률 (누적)", f"{attendance_rate*100:.1f}%")
+    else:
+        st.metric("전체 출석률 (누적)", "-")
+
+with col2:
+    st.metric("고위험자 수", f"{high_risk_count}명")
+
+with col3:
+    st.metric("주의 대상 수", f"{warning_count}명")
+
+with col4:
+    st.metric("전체 인원", f"{total_students}명")
+
+st.markdown("---")
+
+# ============================================
+# 4. 고위험 학생 카드 3개 (Critical Area)
+# ============================================
+
+def risk_to_color(risk: str) -> str:
+    if risk == "고위험":
+        return "#ffcccc"
+    if risk == "위험":
+        return "#ffe4b5"
+    if risk == "주의":
+        return "#fff7cc"
+    return "#f5f5f5"
+
+def risk_to_badge(risk: str) -> str:
+    if risk == "고위험":
+        return "🔥 고위험"
+    if risk == "위험":
+        return "⚠️ 위험"
+    if risk == "주의":
+        return "👀 주의"
+    return "✅ 정상"
+
+st.markdown("### 🚨 고위험 학생")
+
+high_risk_df = df[df["risk_level"] == "고위험"].copy()
+
+if high_risk_df.empty:
+    st.info(
+        "고위험으로 분류된 학생이 없습니다.\n"
+        "그래도 출석 패턴이 떨어지는 학생이 있는지 아래 상세 테이블에서 확인해 주세요."
+    )
 else:
-    summary = payload["summary_cards"]
-    charts = payload["charts"]
-    tables = payload["tables"]
-    insights = payload["ai_insights"]
+    # 출석률 오름차순(낮은 순) + 결석 많은 순으로 정렬
+    sort_cols = []
+    ascending = []
+    if "attendance_rate" in high_risk_df.columns:
+        sort_cols.append("attendance_rate")
+        ascending.append(True)
+    if "absent_count" in high_risk_df.columns:
+        sort_cols.append("absent_count")
+        ascending.append(False)
 
-    df_att = pd.DataFrame(charts["attendance_timeseries"])
-    df_students = pd.DataFrame(tables["student_list"])
-    df_risk = pd.DataFrame(tables["top_risk_students"])
-
-    tab1, tab2 = st.tabs(["요약", "AI 분석"])
-
-    # -----------------------------
-    # (1) 요약 탭
-    # -----------------------------
-    with tab1:
-        st.subheader("핵심 요약")
-
-        col1, col2, col3, col4 = st.columns(4)
-        col1.metric("평균 출석률", f"{summary['avg_attendance_rate']}%")
-        col2.metric("3일 이하 접속자", summary["num_low_access_3days"])
-        col3.metric("고위험", summary["num_risky"])
-        col4.metric("주의", summary["num_warning"])
-
-        st.markdown("### 출석률 추이")
-        df_att_chart = df_att.rename(
-            columns={"week_label": "주차", "attendance_rate": "출석률"}
+    if sort_cols:
+        high_risk_df = high_risk_df.sort_values(
+            by=sort_cols,
+            ascending=ascending,
         )
-        chart = (
-            alt.Chart(df_att_chart)
-            .mark_line(point=True)
-            .encode(x="주차:N", y="출석률:Q")
-            .properties(height=300)
-        )
-        st.altair_chart(chart, width="stretch")
 
-        st.markdown("### 위험 학습자 상위")
-        if not df_risk.empty:
-            st.table(df_risk)
-        else:
-            st.write("위험 학습자가 없습니다.")
+    top3 = high_risk_df.head(3)
+    cols = st.columns(len(top3))
 
-        st.markdown("### 전체 학습자 리스트")
-        st.dataframe(df_students, width="stretch")
+    for idx, (_, row) in enumerate(top3.iterrows()):
+        with cols[idx]:
+            bg_color = risk_to_color(row.get("risk_level", ""))
+            name = row.get("name", f"학생 {row.get('student_id', '')}")
+            pattern = row.get("pattern_type", "")
+            att_rate = row.get("attendance_rate", None)
+            absent = row.get("absent_count", 0)
+            late = row.get("late_count", 0)
+            trend = row.get("trend", None)
 
-    # -----------------------------
-    # (2) AI 분석 탭
-    # -----------------------------
-    with tab2:
-        # --- 기본 수치 / 텍스트 준비 (payload 기반) ---
-        avg_attendance = summary["avg_attendance_rate"]
-        low_access_count = summary["num_low_access_3days"]
-        risky_count = summary["num_risky"]
-        warning_count = summary["num_warning"]
+            container_style = f"""
+                <div style="
+                    background-color:{bg_color};
+                    border-radius:16px;
+                    padding:12px 14px;
+                    margin-bottom:12px;
+                    border:1px solid #dddddd;
+                ">
+            """
+            st.markdown(container_style, unsafe_allow_html=True)
+            st.markdown(f"#### {name}")
+            st.markdown(f"**{risk_to_badge(row.get('risk_level', ''))}**")
 
-        df_att_ai = pd.DataFrame(charts["attendance_timeseries"])
-        if not df_att_ai.empty:
-            df_att_ai = df_att_ai.rename(
-                columns={"week_label": "주차", "attendance_rate": "출석률"}
+            if pattern:
+                st.caption(f"패턴: {pattern}")
+
+            stats_line = []
+            if att_rate is not None:
+                stats_line.append(f"출석률 {att_rate*100:.1f}%")
+            if absent is not None:
+                stats_line.append(f"결석 {int(absent)}회")
+            if late is not None:
+                stats_line.append(f"지각 {int(late)}회")
+
+            if stats_line:
+                st.markdown(" · ".join(stats_line))
+
+            if trend is not None:
+                arrow = "⬇️" if trend < 0 else "⬆️"
+                st.caption(f"최근 변화: {arrow} {trend*100:.1f}%p")
+
+            st.markdown("---")
+            st.markdown("**권장 즉시 조치**")
+            st.markdown(
+                "- 1:1 체크인 메시지 발송  \n"
+                "- 금일 데일리 미팅에서 상태 확인  \n"
+                "- 필요 시 팀 담당자와 연계"
             )
 
-        df_students_ai = pd.DataFrame(tables["student_list"])
-        df_risk_ai = pd.DataFrame(tables["top_risk_students"])
-        df_actions = pd.DataFrame(tables.get("per_student_actions", []))
+            st.markdown("</div>", unsafe_allow_html=True)
 
-        # --- 0. 상단 한 줄 요약 & 카드 형태 인사이트 ---
-        colA, colB, colC = st.columns(3)
-        colA.info(
-            f"**출석·참여 패턴 요약**\n\n"
-            f"{insights['summary_one_line']}"
-        )
-        colB.warning(
-            "**주의 신호 요약**\n\n"
-            f"{insights['risk_signals_summary']}\n\n"
-            f"- 3일 이하 접속 학습자: {low_access_count}명\n"
-            f"- 고위험: {risky_count}명 / 주의: {warning_count}명"
-        )
-        colC.success(
-            "**운영 우선 과제(단기)**\n\n"
-            f"{insights['short_term_actions']}"
-        )
+    # 나머지 고위험 학생은 토글로 숨기기
+    if len(high_risk_df) > 3:
+        with st.expander(f"나머지 고위험 학생 {len(high_risk_df) - 3}명 더 보기"):
+            st.dataframe(
+                high_risk_df,
+                hide_index=True,
+                use_container_width=True,
+            )
 
-        st.markdown("---")
+st.markdown("---")
 
-        # --- 1. 출석률 및 참여 경향 분석 ---
-        st.markdown("### 1. 출석률 및 참여 경향 분석")
+# ============================================
+# 5. 운영진 우선 액션 Top 3 (간단 더미)
+# ============================================
 
-        left, right = st.columns([1.3, 1.2])
+st.markdown("### 🏃 운영진 우선 액션 Top 3")
 
-        with left:
-            st.markdown("#### 1-1. 출석률 분석 요약")
-            st.write(insights["attendance_summary"])
+def build_ops_actions_for_attendance(df: pd.DataFrame):
+    actions = []
 
-        with right:
-            st.markdown("#### 1-2. 출석률 추이 그래프")
-            if not df_att_ai.empty:
-                chart_att_ai = (
-                    alt.Chart(df_att_ai)
-                    .mark_line(point=True)
-                    .encode(
-                        x="주차:N",
-                        y="출석률:Q",
-                        tooltip=["주차", "출석률"],
-                    )
-                    .properties(height=260)
-                )
-                st.altair_chart(chart_att_ai, width="stretch")
-                st.caption("주차별 출석률 변동을 통해 특정 구간 이후 이탈 신호를 확인할 수 있음.")
-            else:
-                st.write("출석률 시계열 데이터가 없음.")
-
-        st.markdown("---")
-
-        # --- 2. 위험 학습자 패턴 분석 ---
-        st.markdown("### 2. 위험 학습자 패턴 분석")
-
-        colX, colY = st.columns([1.4, 1.0])
-
-        with colX:
-            st.markdown("#### 2-1. 위험 신호/패턴 요약")
-            st.write(insights["risk_signals_summary"])
-
-        with colY:
-            st.markdown("#### 2-2. 위험 학습자 상위 리스트")
-            if not df_risk_ai.empty:
-                show_cols = [
-                    c
-                    for c in df_risk_ai.columns
-                    if c in ("user_id", "student_id", "name", "class_id", "days_active_7d", "risk_level")
-                ]
-                df_show = df_risk_ai[show_cols]
-                if "name" in df_show.columns:
-                    df_show = df_show.set_index("name")
-                st.table(df_show)
-            else:
-                st.write("현재 위험 학습자가 없음.")
-
-        st.markdown("---")
-
-        # --- 3. 위험 학습자 개별 액션 제안 ---
-        st.markdown("### 3. 위험 학습자 개별 액션 제안")
-
-        st.markdown(
-            """
-            AI는 출결 패턴과 (있다면) 설문 기반 성향,  
-            최근 접속/참여 데이터를 함께 고려하여  
-            **주의·고위험 학습자별 개별 대응 방향**을 제안함.
-            """
+    # 1) 고위험자 있으면: 1:1 케어
+    high_risk_df = df[df["risk_level"] == "고위험"]
+    if not high_risk_df.empty:
+        names = ", ".join(high_risk_df["name"].astype(str).head(3).tolist())
+        actions.append(
+            {
+                "title": "1. 고위험 학생 1:1 체크인",
+                "target": f"고위험 학생: {names} ...",
+                "reason": f"고위험으로 분류된 학생이 총 {len(high_risk_df)}명입니다.",
+                "todo": (
+                    "각 학생에게 개별적으로 현재 상황을 묻는 체크인 메시지를 보내고, "
+                    "필요 시 15~20분 정도의 간단한 1:1 상담 시간을 제안합니다."
+                ),
+            }
         )
 
-        if not df_actions.empty:
-            show_cols = [
-                c
-                for c in df_actions.columns
-                if c in ("name", "risk_level", "pattern_type", "recommended_action", "priority", "suggested_channel")
-            ]
-            df_actions_show = df_actions[show_cols]
-            if "name" in df_actions_show.columns:
-                df_actions_show = df_actions_show.set_index("name")
-            st.table(df_actions_show)
-        else:
-            st.info("현재 선택된 반에는 개별 액션 제안이 필요한 위험 학습자가 없음.")
-
-        st.markdown("---")
-
-        # --- 4. 중기 운영 액션 정리 ---
-        st.markdown("### 4. 중기(3주 이상) 운영 액션 제안")
-
-        st.write(insights["mid_term_actions"])
-
-        st.caption(
-            "※ 위 인사이트는 출결 로그·회의 참여·질문 데이터 및 (있을 경우) 설문 성향을 기반으로 "
-            "LLM이 생성한 제안 결과임."
+    # 2) 위험/주의 학생이 많으면: 그룹 케어
+    warn_df = df[df["risk_level"].isin(["위험", "주의"])]
+    if not warn_df.empty:
+        actions.append(
+            {
+                "title": "2. 주의/위험 학생 그룹 케어 세션",
+                "target": "주의/위험 등급 학생 전체",
+                "reason": f"주의/위험 등급 학생이 총 {len(warn_df)}명입니다.",
+                "todo": (
+                    "공통된 어려움이 있는지 파악하기 위해 3~5명 단위 그룹으로 짧은 케어 세션을 진행하고, "
+                    "진도/과제 난이도/시간 관리 측면에서 지원이 필요한 부분을 함께 정리합니다."
+                ),
+            }
         )
+
+    # 3) 전체 출석률이 낮으면: 공지/환경 개선
+    avg_att = df["attendance_rate"].mean() if "attendance_rate" in df.columns else None
+    if avg_att is not None and avg_att < 0.8:
+        actions.append(
+            {
+                "title": "3. 전체 출석률 저하 공지 및 참여 동기 재강조",
+                "target": "전체 수강생",
+                "reason": f"누적 평균 출석률이 {avg_att*100:.1f}%로 낮은 편입니다.",
+                "todo": (
+                    "현재 출석 현황을 간단히 공유하고, 출석이 학습성과와 어떤 관련이 있는지 안내합니다. "
+                    "또한 매일 시작 5분 전 리마인드 공지를 보내 출석률을 끌어올립니다."
+                ),
+            }
+        )
+
+    return actions[:3]
+
+ops_actions = build_ops_actions_for_attendance(df)
+
+if ops_actions:
+    cols = st.columns(len(ops_actions))
+    for idx, action in enumerate(ops_actions):
+        with cols[idx]:
+            with st.container(border=True):
+                st.markdown(f"#### {action['title']}")
+                st.markdown(f"- **대상**: {action['target']}")
+                st.markdown(f"- **근거**: {action['reason']}")
+                st.markdown("**이번 기준일까지 실행하면 좋은 액션**")
+                st.markdown(action["todo"])
+else:
+    st.info("현재 데이터 기준으로 별도의 우선 액션 제안은 없습니다.")
+
+st.markdown("---")
+
+# ============================================
+# 6. 출결 상세 테이블 (운영진 조치 칼럼 포함)
+# ============================================
+
+st.markdown("### 📂 출결 상세 테이블 (누적)")
+
+columns_map = {
+    "name": "이름",
+    "attendance_rate": "출석률",
+    "absent_count": "결석",
+    "late_count": "지각",
+    "early_leave_count": "조퇴",
+    "pattern_type": "출결 패턴",
+    "risk_level": "위험 등급",
+    "trend": "최근 변화율",
+    "ops_action": "운영진 조치",
+}
+show_cols = [c for c in columns_map.keys() if c in df.columns]
+
+display_df = df[show_cols].rename(columns=columns_map)
+
+# 퍼센트/소수 처리
+if "출석률" in display_df.columns:
+    display_df["출석률"] = (display_df["출석률"] * 100).round(1)
+
+if "최근 변화율" in display_df.columns:
+    display_df["최근 변화율"] = (display_df["최근 변화율"] * 100).round(1)
+
+st.caption(
+    "※ '운영진 조치' 칼럼에 메모를 남기고, 필요하다면 나중에 백엔드 저장 로직을 추가할 수 있습니다."
+)
+
+edited_df = st.data_editor(
+    display_df,
+    hide_index=True,
+    use_container_width=True,
+    num_rows="fixed",
+    column_config={
+        "위험 등급": st.column_config.SelectboxColumn(
+            "위험 등급",
+            options=["고위험", "위험", "주의", "정상"],
+        ),
+        "운영진 조치": st.column_config.TextColumn(
+            "운영진 조치",
+            help="해당 학생에 대해 어떤 조치를 했는지 간단히 기록하세요.",
+        ),
+    },
+)
+
+# TODO: 추후 edited_df를 원본 df와 매핑해 student_id 기준으로 저장하는 API 연동 가능
+# if st.button("운영진 조치 저장하기"):
+#     -> edited_df와 원본 df merge 후 update API 호출

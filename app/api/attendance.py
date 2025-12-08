@@ -4,29 +4,41 @@ from sqlalchemy.orm import Session
 
 from app.core.db import get_db
 from app.core.schemas import Camp, User
-from app.services.attendance.service import create_attendance_report
-from app.services.attendance.schemas import AttendanceReportPayload  # 이미 만든 페이로드
+from app.services.attendance.service import generate_attendance_report
+from app.services.db_service.attendance_report import get_attendance_report
+from app.core.mongodb import AttendanceReport
 
 router = APIRouter()
 
-@router.get("/report", response_model=AttendanceReportPayload)
-def get_attendance_report(
+@router.get("/report", response_model=AttendanceReport)
+def fetch_attendance_report(
     camp_id: int = Query(..., description="리포트를 조회할 캠프 ID"),
-    start_date: date = Query(..., description="분석 시작일 (YYYY-MM-DD)"),
-    end_date: date = Query(..., description="분석 종료일 (YYYY-MM-DD)"),
+    date = Query(..., description="리포트를 생성할 날짜"),
+    db: Session = Depends(get_db),
+):
+    """
+    출결 리포트 조회 API
+    - AttendanceReportPayload 그대로 리턴
+    """
+    payload = get_attendance_report(
+        camp_id=camp_id,
+        date=date,
+    )
+    return payload
+
+@router.get("/report/generate", response_model=AttendanceReport)
+def create_attendance_report(
+    camp_id: int = Query(..., description="리포트를 조회할 캠프 ID"),
+    date = Query(..., description="리포트를 생성할 날짜"),
     db: Session = Depends(get_db),
 ):
     """
     출결 리포트 생성 API
     - AttendanceReportPayload 그대로 리턴
     """
-    if start_date > end_date:
-        raise HTTPException(status_code=400, detail="start_date 가 end_date 이후임")
-
-    payload = create_attendance_report(
+    payload = generate_attendance_report(
         db=db,
         camp_id=camp_id,
-        start_date=start_date,
-        end_date=end_date,
+        date=date,
     )
     return payload
