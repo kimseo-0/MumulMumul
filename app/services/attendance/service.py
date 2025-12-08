@@ -1,11 +1,13 @@
 # app/services/attendance/service.py
 
-from datetime import date
+from datetime import date, datetime
 from typing import List
 
+from fastapi import Depends
 from sqlalchemy.orm import Session
 from pymongo.database import Database
 
+from app.core.db import get_db
 from app.core.schemas import Camp, User, DailyAttendance
 from app.core.mongodb import (
     AttendanceSummary,
@@ -23,6 +25,11 @@ from app.services.db_service.camp import (
 
 FULL_DAY_MINUTES = 8 * 60
 
+def _ensure_date(value: date | datetime) -> date:
+    """datetime 이면 .date()로, 이미 date면 그대로 반환"""
+    if isinstance(value, datetime):
+        return value.date()
+    return value
 
 def _fetch_daily_attendance_for_range(
     db: Session,
@@ -139,10 +146,9 @@ def _build_attendance_report_struct(
 
 
 def generate_attendance_report(
-    db: Session,
-    mongo_db: Database,
     camp_id: int,
     target_date: date,
+    db: Session,
 ) -> AttendanceReport:
     """
     출결 리포트 생성/갱신
@@ -150,19 +156,23 @@ def generate_attendance_report(
     """
     camp: Camp = get_camp_by_id(db, camp_id)
 
+    target = _ensure_date(target_date)
+    camp_start = _ensure_date(camp.start_date)
+    camp_end   = _ensure_date(camp.end_date)
+
     if not hasattr(camp, "start_date") or camp.start_date is None:
         raise ValueError("Camp.start_date가 설정되어 있지 않습니다.")
 
     # target_date가 캠프 기간 밖이면 클램핑(선택)
-    if target_date < camp.start_date:
-        target_date = camp.start_date
-
-    # end_date는 최소 오늘/캠프 종료일 중 작은 값으로 제한하고 싶으면 여기에 로직 추가 가능
-    start_date = camp.start_date
-    end_date = target_date
+    if target < camp_start or target > camp_end:
+        # 필요하면 HTTPException 으로 올려도 되고, ValueError 로 두고 상위에서 처리해도 됨
+        raise ValueError(
+            f"target_date {target} is out of camp range "
+            f"({camp_start} ~ {camp_end})"
+        )
 
     students: List[User] = get_students_by_camp(db, camp_id)
-    daily_rows = _fetch_daily_attendance_for_range(db, camp_id, start_date, end_date)
+    daily_rows = _fetch_daily_attendance_for_range(db, camp_id, camp_start, camp_end)
 
     report = _build_attendance_report_struct(
         camp=camp,
@@ -171,5 +181,5 @@ def generate_attendance_report(
         target_date=target_date,
     )
 
-    upsert_attendance_report(mongo_db, report)
+    upsert_attendance_report(report)
     return report

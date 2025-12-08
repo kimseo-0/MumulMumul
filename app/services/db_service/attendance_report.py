@@ -1,4 +1,4 @@
-
+# app/services/db_service/attendance_report.py
 from datetime import datetime
 from typing import Optional
 from pymongo.database import Database
@@ -28,13 +28,13 @@ def get_attendance_report(
 def upsert_attendance_report(
     report: AttendanceReport,
 ) -> AttendanceReport:
-    payload = report.model_dump(by_alias=True)
-    payload["updated_at"] = datetime.utcnow()
+    payload = report.model_dump()
+    # payload["updated_at"] = datetime.utcnow()
 
     report_col.update_one(
         {
             "camp_id": report.camp_id,
-            "target_date": report.target_date,
+            "target_date": report.target_date.isoformat(),
         },
         {"$set": payload},
         upsert=True,
