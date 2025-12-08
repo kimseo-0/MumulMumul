@@ -1,1 +1,1 @@
-invalid type: string "소켓 통신 가이드북\n14 / 15\n테스트를 위해 터미널의 socket_project>  경로에서 python ./models/chatgpt.py  를 실행해보자.\n오디오가 텍스트로 잘 변환되는 것을 확인할 수 있다.\n웹소켓 라우터 만들기\n그렇다면 이제 챗봇을 위한 웹소켓 라우터를 만들어보자.\n� 추가하면 된다.\n            # 저장\n
+invalid type: string "소켓 통신 가이드북\n15 / 15\n테스트\nws://localhost:8000/ws/stt 으로 요청을 보내보자.\nURL을 작성하고 오른쪽에 보이는 \"Connect\" 버튼을 눌러보자.\n잘 연결되면 아래에 초록색 체크 아이콘과 함께 잘 연결되었음을 확인할 수 있다.\nFastAPI 서버의 터미널에서도 \"WebSocket 연결됨\"됨\"cket(\" 저장\n

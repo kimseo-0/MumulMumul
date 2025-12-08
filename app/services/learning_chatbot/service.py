@@ -1,14 +1,23 @@
 import os
+import logging
 from dotenv import load_dotenv
 from langchain_openai import OpenAIEmbeddings, ChatOpenAI
 from langchain_chroma import Chroma
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.runnables import RunnablePassthrough
 from langchain_core.output_parsers import StrOutputParser
-import pandas as pd
 from operator import itemgetter
 
+# ==============================================================
+# 로깅 설정
+# ==============================================================
+logging.basicConfig(
+    level=logging.INFO,
+    format="[%(levelname)s] %(asctime)s - %(message)s",
+)
+logger = logging.getLogger(__name__)
+
 load_dotenv()
+
 
 # ==============================================================
 # 기본 설정
@@ -20,8 +29,9 @@ COLLECTION = "curriculum_all_new"
 LLM_MODEL = "gpt-4o-mini"
 EMBEDDING_MODEL = "text-embedding-3-large"
 
-SEARCH_K = 5
-FETCH_K = 20
+SEARCH_K = 3
+FETCH_K = 8
+
 
 # ==============================================================
 # 수준별 답변 규칙
@@ -48,113 +58,108 @@ GRADE_RULES = {
 """
 }
 
-# ==============================================================
-# 사용자에게 올바른 난이도를 입력받는 함수
-# ==============================================================
-
-def ask_grade_level():
-    """
-    사용자에게 난이도(초급/중급/고급)를 입력받되,
-    잘못된 입력이 들어오면 계속 다시 입력하게 한다.
-    """
-    valid = {"초급", "중급", "고급"}
-
-    while True:
-        grade = input("💡 난이도 (초급/중급/고급): ").strip()
-
-        if grade in valid:
-            return grade  # 올바르면 그대로 반환
-
-        print("⚠ 입력한 난이도가 올바르지 않습니다. 다시 입력해주세요.\n")
-
-
 
 # ==============================================================
 # RAG 체인 초기화
 # ==============================================================
 
+
+
 def initialize_rag_chain():
-    embeddings = OpenAIEmbeddings(model=EMBEDDING_MODEL)
+    logger.info("🔧 initialize_rag_chain() 실행 시작")
 
-    vectorstore = Chroma(
-        persist_directory=DB_PATH,
-        embedding_function=embeddings,
-        collection_name=COLLECTION,
-    )
+    try:
+        logger.info("1) 임베딩 모델 로딩 중...")
+        embeddings = OpenAIEmbeddings(model=EMBEDDING_MODEL)
 
-    retriever = vectorstore.as_retriever(
-        search_type="mmr",
-        search_kwargs={"k": SEARCH_K, "fetch_k": FETCH_K}
-    )
+        logger.info("2) Chroma 벡터스토어 연결 시도...")
+        vectorstore = Chroma(
+            persist_directory=DB_PATH,
+            embedding_function=embeddings,
+            collection_name=COLLECTION,
+        )
 
-    # 시스템 프롬프트 템플릿
-    template = """
-    당신은 부트캠프 학생을 위한 학습 도우미 챗봇입니다.
-    답변은 반드시 제공된 [Context] 안의 정보만 사용해야 합니다.
-    문서에 없는 내용은 절대 지어내지 마세요.
+        logger.info("3) Retriever 구성 중...")
+        retriever = vectorstore.as_retriever(
+            search_type="mmr",
+            search_kwargs={"k": SEARCH_K, "fetch_k": FETCH_K}
+        )
 
-    [학생 수준]
-    {grade}
+        logger.info("4) 프롬프트 템플릿 설정 중...")
+        template = """
+        당신은 부트캠프 학생을 위한 학습 도우미 챗봇입니다.
+        답변은 반드시 제공된 [Context] 안의 정보만 사용해야 합니다.
+        문서에 없는 내용은 절대 지어내지 마세요.
 
-    [답변 규칙]
-    {grade_rules}
+        [학생 수준]
+        {grade}
 
-    [답변 조건]
-    - 설명은 반드시 학생 수준에 맞춰서 작성
-    - 답변은 한국어로 작성
-    - 출처(파일명, 페이지 등) 반드시 명시
-    - Context 바깥 정보는 사용 금지
+        [답변 규칙]
+        {grade_rules}
 
-    -------------------------
-    [Context]
-    {context}
+        -------------------------
+        [Context]
+        {context}
 
-    [Question]
-    {question}
-    -------------------------
-    """
+        [Question]
+        {question}
+        -------------------------
+        """
 
-    prompt = ChatPromptTemplate.from_template(template)
-    model = ChatOpenAI(model=LLM_MODEL, temperature=0.2)
+        prompt = ChatPromptTemplate.from_template(template)
 
-    rag_chain = (
-        {
-            # 질문만 retriever로 전달
-            "context": itemgetter("question") | retriever,
-            "question": itemgetter("question"),
-            "grade": itemgetter("grade"),
-            "grade_rules": itemgetter("grade_rules"),
-        }
-        | prompt
-        | model
-        | StrOutputParser()
-    )
-    return rag_chain
+        logger.info("5) LLM 모델 로딩 중...")
+        model = ChatOpenAI(model=LLM_MODEL, temperature=0.2)
 
+        logger.info("6) RAG 체인 최종 생성 완료")
+
+        rag_chain = (
+            {
+                "context": itemgetter("question") | retriever,
+                "question": itemgetter("question"),
+                "grade": itemgetter("grade"),
+                "grade_rules": itemgetter("grade_rules"),
+            }
+            | prompt
+            | model
+            | StrOutputParser()
+        )
+
+        return rag_chain
+
+    except Exception as e:
+        logger.error(f"❌ initialize_rag_chain() 중 오류 발생: {e}")
+        raise
 
 
 # ==============================================================
-# 챗봇 호출 함수 (난이도 재입력 기능 포함)
+# answer() 함수
 # ==============================================================
+
+rag_chain = initialize_rag_chain()
 
 def answer(question, grade="중급"):
-    """
-    사용자가 제공한 grade가 잘못되면 ask_grade_level()을 이용해
-    다시 올바르게 입력받고 진행하도록 개선된 버전.
-    """
-    
-    # 1) grade 값이 유효한지 확인
+    logger.info(f"💬 answer() 호출됨 | question='{question}', grade='{grade}'")
+
     if grade not in GRADE_RULES:
-        print("⚠ 잘못된 난이도가 입력되었습니다.")
-        # 2) 올바른 난이도를 다시 입력받는다
-        grade = ask_grade_level()
+        logger.error(f"❌ 잘못된 grade 입력됨: {grade}")
+        raise ValueError("grade는 '초급', '중급', '고급' 중 하나여야 합니다.")
 
-    # 3) RAG 초기화
-    rag = initialize_rag_chain()
+    try:
+        logger.info("🔍 RAG 체인 초기화 중...")
+        rag = rag_chain
 
-    # 4) 최종 실행
-    return rag.invoke({
-        "question": question,
-        "grade": grade,
-        "grade_rules": GRADE_RULES[grade]
-    })
+        logger.info("🤖 RAG 체인 실행 중...")
+        result = rag.invoke({
+            "question": question,
+            "grade": grade,
+            "grade_rules": GRADE_RULES[grade]
+        })
+
+        logger.info("✅ answer() 응답 생성 완료")
+        return result
+
+    except Exception as e:
+        logger.error(f"❌ answer() 실행 중 오류 발생: {e}")
+        return f"[오류 발생] {e}"
+
