@@ -30,6 +30,7 @@ class Segment(BaseModel):
 class StartMeetingRequest(BaseModel):
     """회의 시작 요청"""
     title: str
+    chat_room_id: str
     organizer_id: int
     client_timestamp: int  # 클라이언트의 현재 시간 (epoch ms)
     agenda: Optional[str] = None
