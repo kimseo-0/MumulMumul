@@ -1,520 +1,714 @@
 import streamlit as st
 import pandas as pd
+import numpy as np
 import altair as alt
-from datetime import date, timedelta
+from datetime import datetime, timedelta
+from collections import Counter
 
-st.set_page_config(
-    layout="wide",
-)
+from wordcloud import WordCloud
+import matplotlib.pyplot as plt
+import koreanize_matplotlib
 
-# -----------------------------
-# 공통: 사이드바 (반 선택 / 기간 / 현재 주차)
-# -----------------------------
-st.sidebar.header("캠프 설정")
+# ============================================
+# 0. 더미 데이터 & 유틸 함수 (상단에 몰아두기)
+# ============================================
 
-today = date.today()
+@st.cache_data
+def make_dummy_feedback():
+    np.random.seed(42)
 
-class_options = ["전체", "1반", "2반", "3반", "4반"]
-selected_class = st.sidebar.selectbox("반 선택", class_options, index=0)
+    camps = [
+        {"camp_id": 1, "camp_name": "데이터 분석 1반"},
+        {"camp_id": 2, "camp_name": "프론트엔드 1반"},
+    ]
 
-start_date = st.sidebar.date_input("반 시작일", value=today - timedelta(weeks=3))
-end_date = st.sidebar.date_input("반 종료일", value=today + timedelta(weeks=4))
-
-if start_date > end_date:
-    st.sidebar.error("반 시작일이 종료일 이후입니다. 날짜를 다시 선택해주세요.")
-
-# 현재 주차 계산
-if today < start_date:
-    week_label = "개강 전"
-elif today > end_date:
-    week_label = "수료 이후"
-else:
-    delta_days = (today - start_date).days
-    week_num = delta_days // 7 + 1
-    week_label = f"{week_num}주차"
-
-st.sidebar.markdown(f"**현재 주차:** {week_label}")
-
-# 반별 스케일 팩터 (더미용)
-class_factor_map = {
-    "전체": 1.0,
-    "1반": 1.05,   # 1반: 조금 더 활발
-    "2반": 0.9,    # 2반: 조금 조용
-    "3반": 1.0,
-    "4반": 0.95,
-}
-factor = class_factor_map.get(selected_class, 1.0)
-
-# -----------------------------
-# 페이지 타이틀
-# -----------------------------
-if selected_class == "전체":
-    title_suffix = "전체 반 기준"
-else:
-    title_suffix = f"{selected_class} 기준"
-
-st.title(f"💬 속마음 모닥불 리포트 ({title_suffix})")
-
-# -----------------------------
-# [베이스] 가짜 데이터 생성 (전체 기준)
-# -----------------------------
-
-# 키워드/빈도 (워드클라우드용)
-keyword_data_base = pd.DataFrame(
-    {
-        "키워드": ["git_conflict", "일정압박", "반 분위기", "리더상담", "번아웃", "불안"],
-        "빈도": [19, 14, 11, 7, 5, 4],
+    users = [101, 102, 103, 104, 105]
+    categories = [
+        "팀 갈등",
+        "일정 압박",
+        "과제 난이도",
+        "운영/행정",
+        "피로/번아웃",
+    ]
+    sub_clusters = {
+        "팀 갈등": ["역할 분배 갈등", "팀장-팀원 의사소통 문제"],
+        "일정 압박": ["데드라인 부담", "야근/추가 작업 요구"],
+        "과제 난이도": ["난이도 과도", "요구사항 불명확"],
+        "운영/행정": ["공지/소통 부족", "운영 정책 불만"],
+        "피로/번아웃": ["체력적 피로", "동기 저하"],
     }
-)
 
-# 카테고리별 고민/건의 수
-worry_categories_base = pd.DataFrame(
-    {
-        "분류": ["학습 난이도", "팀 관계", "시간 압박", "진로/미래"],
-        "게시글 수": [18, 12, 9, 5],
-    }
-)
+    types = ["고민", "건의"]
+    severities = ["low", "medium", "high"]
 
-suggest_categories_base = pd.DataFrame(
-    {
-        "분류": ["수업 방식", "과제 난이도", "커뮤니티 운영", "진로/취업 지원"],
-        "게시글 수": [7, 6, 4, 3],
-    }
-)
+    rows = []
+    base_date = datetime(2025, 11, 1)
 
-# 분류별 중요 글 예시 (최대 3개씩) - 텍스트는 반에 상관없이 공통 사용
-worry_examples = {
-    "학습 난이도": [
-        "이번 주 내용이 너무 빠르게 지나가서 복습할 시간이 부족해요.",
-        "기본 개념을 더 천천히 다뤄주면 좋겠습니다.",
-        "당장 따라가기는 하는데, 완전히 이해하지 못한 느낌이에요.",
-    ],
-    "팀 관계": [
-        "팀원들에게 질문하기가 눈치 보일 때가 있어요.",
-        "의견을 내도 묵살되는 느낌이라 위축됩니다.",
-    ],
-    "시간 압박": [
-        "과제, 복습, 기록까지 하다 보니 하루가 너무 부족합니다.",
-        "주중에 일을 병행하는 사람들에게는 일정이 빡빡한 것 같아요.",
-    ],
-    "진로/미래": [
-        "이 과정을 수료한 뒤에 실제로 어떤 일을 할 수 있을지 걱정됩니다.",
-    ],
-}
+    for camp in camps:
+        for week in range(1, 7):  # Week 1~6
+            for _ in range(np.random.randint(8, 18)):  # 주차당 글 수
+                cat = np.random.choice(categories)
+                sub = np.random.choice(sub_clusters[cat])
+                t = np.random.choice(types, p=[0.7, 0.3])
 
-suggest_examples = {
-    "수업 방식": [
-        "실습 위주 수업 시간이 조금 더 길었으면 좋겠습니다.",
-        "실제 코드 리뷰 과정을 한 번 보여주시면 도움이 될 것 같아요.",
-    ],
-    "과제 난이도": [
-        "이번 주 과제가 지난 주보다 난이도가 급격히 올라간 것 같습니다.",
-        "필수/선택 과제로 나누어 주시면 부담이 줄 것 같아요.",
-    ],
-    "커뮤니티 운영": [
-        "반별로 잡담/소통 채널이 있으면 좋겠습니다.",
-        "익명 게시판에 너무 무거운 글이 많아 가볍게 쓸 공간도 필요해요.",
-    ],
-    "진로/취업 지원": [
-        "포트폴리오를 어떻게 준비해야 할지 안내 세션이 있으면 좋겠습니다.",
-    ],
-}
+                severity = np.random.choice(
+                    severities,
+                    p=[0.5, 0.3, 0.2],  # high는 적게
+                )
+                is_toxic = bool(np.random.rand() < 0.25)  # 25% 정도 토식
 
-# 일별 글 수 추이 (이번 주, 전체 기준)
-days = [today - timedelta(days=i) for i in range(6, -1, -1)]
-posts_per_day_base = [8, 9, 10, 11, 12, 10, 14]
-df_daily_posts_base = pd.DataFrame({"날짜": days, "게시글 수": posts_per_day_base})
+                day_offset = (week - 1) * 7 + np.random.randint(0, 7)
+                created_at = base_date + timedelta(days=int(day_offset))
+                hour = np.random.choice([10, 14, 20, 22])
+                created_at = created_at.replace(hour=hour, minute=0)
 
-# -----------------------------
-# [반 기준] 뷰용 데이터 생성 (factor 적용)
-# -----------------------------
-# 숫자형 값들을 factor로 살짝 조정해서 반별 차이가 있는 것처럼 보이게
+                user_id = np.random.choice(users)
 
-# 요약 지표용 숫자
-base_total_posts = 86
-base_worry_posts = 54
-base_negative_posts = 27
+                text = f"[더미] {cat} / {sub} 관련 {t} 글입니다. (user {user_id}, week {week})"
+                summary = f"{cat} – {sub}에 대한 {t} 내용 요약."
 
-total_posts = int(round(base_total_posts * factor))
-worry_posts = int(round(base_worry_posts * factor))
-negative_posts = int(round(base_negative_posts * factor))
+                rows.append(
+                    {
+                        "camp_id": camp["camp_id"],
+                        "camp_name": camp["camp_name"],
+                        "week": week,
+                        "created_at": created_at,
+                        "category": cat,
+                        "sub_cluster": sub,
+                        "type": t,  # 고민 / 건의
+                        "is_toxic": is_toxic,
+                        "severity": severity,  # low / medium / high
+                        "user_id": user_id,
+                        "text": text,
+                        "summary": summary,
+                    }
+                )
 
-# 데이터프레임들 복사 후 스케일 적용
-keyword_data = keyword_data_base.copy()
-keyword_data["빈도"] = (keyword_data["빈도"] * factor).round().astype(int).clip(lower=1)
+    df = pd.DataFrame(rows)
+    return camps, df
 
-worry_categories = worry_categories_base.copy()
-worry_categories["게시글 수"] = (
-    worry_categories["게시글 수"] * factor
-).round().astype(int).clip(lower=1)
 
-suggest_categories = suggest_categories_base.copy()
-suggest_categories["게시글 수"] = (
-    suggest_categories["게시글 수"] * factor
-).round().astype(int).clip(lower=1)
-
-df_daily_posts = df_daily_posts_base.copy()
-df_daily_posts["게시글 수"] = (
-    df_daily_posts["게시글 수"] * factor
-).round().astype(int).clip(lower=1)
-
-# -----------------------------
-# 탭 구성
-# -----------------------------
-tab_summary, tab_ai = st.tabs(["요약", "AI 심층 분석"])
-
-# -----------------------------
-# (1) 요약 탭
-# -----------------------------
-with tab_summary:
-    if selected_class == "전체":
-        st.subheader(f"{week_label} 요약 - 전체 기준")
+def classify_severity_level(count: int) -> str:
+    """반복 이슈 규모에 따른 등급 나누기."""
+    if count >= 10:
+        return "high"
+    elif count >= 5:
+        return "medium"
     else:
-        st.subheader(f"{week_label} 요약 - {selected_class} 기준")
+        return "low"
 
-    st.markdown("#### 이번 주 통계")
+
+def build_repeat_issues(upto_df: pd.DataFrame):
+    """
+    Week 1 ~ 선택 주차까지의 데이터를 바탕으로
+    '반복 이슈' 후보를 클러스터 단위로 생성하는 더미 로직.
+    실제에선 유사도 클러스터링 + LLM 요약으로 대체 예정.
+    """
+    if upto_df.empty:
+        return []
+
+    cluster_stats = (
+        upto_df.groupby(["category", "sub_cluster"])
+        .agg(
+            count=("text", "count"),
+            weeks=("week", lambda x: sorted(set(x))),
+        )
+        .reset_index()
+    )
+
+    issues = []
+    for _, row in cluster_stats.iterrows():
+        weeks = row["weeks"]
+        count = int(row["count"])
+
+        # 2개 이상 주차에서 등장하거나, 전체 4건 이상이면 반복 이슈로 간주 (더미 룰)
+        if len(weeks) >= 2 or count >= 4:
+            label = f"{row['category']} – {row['sub_cluster']}"
+            severity = classify_severity_level(count)
+
+            summary = (
+                f"Week {', '.join(map(str, weeks))}에서 총 {count}건 언급된 이슈로, "
+                f"'{row['category']}' 중 '{row['sub_cluster']}'에 대한 불만/고민이 반복되고 있음."
+            )
+            action_hint = (
+                f"해당 이슈에 대해 공지/정책/보완 세션을 한 번 명확히 정리해 공유하고, "
+                f"추가 피드백을 받을 수 있는 창구(예: 1:1 폼, 익명 설문)를 열어두는 것이 좋음."
+            )
+
+            issues.append(
+                {
+                    "label": label,
+                    "count": count,
+                    "weeks": weeks,
+                    "severity": severity,
+                    "summary": summary,
+                    "action_hint": action_hint,
+                }
+            )
+
+    # count 기준 내림차순 정렬
+    issues = sorted(issues, key=lambda x: x["count"], reverse=True)
+    return issues
+
+
+def build_ops_actions(current_df: pd.DataFrame):
+    """
+    이번 주 데이터를 기반으로 운영진 우선 액션 Top 3를 만드는 간단한 더미 로직.
+    실제에선 LLM + 규칙 기반으로 대체 예정.
+    """
+    actions = []
+
+    if current_df.empty:
+        return actions
+
+    # 1) 카테고리별 글 수
+    cat_count = current_df["category"].value_counts()
+
+    # 액션 1: 가장 많이 나온 카테고리 보강
+    if not cat_count.empty:
+        top_cat = cat_count.index[0]
+        top_cnt = int(cat_count.iloc[0])
+        actions.append(
+            {
+                "title": f"1. '{top_cat}' 관련 집중 케어",
+                "target": "해당 이슈를 자주 언급한 수강생 + 전체 공지",
+                "reason": f"이번 주 '{top_cat}' 관련 글이 {top_cnt}건으로, 전체 이슈 중 가장 높은 비중을 차지함.",
+                "todo": (
+                    f"해당 이슈에 대한 FAQ/가이드 문서를 간단히 정리하여 공지하고, "
+                    f"관계된 수강생에게는 1:1 또는 소규모 그룹으로 추가 설명/조율 세션을 제공."
+                ),
+            }
+        )
+
+    # 2) 토식 글이 많은 경우: 채널/멘토 운영 룰
+    toxic_cnt = int(current_df["is_toxic"].sum())
+    if toxic_cnt > 0:
+        actions.append(
+            {
+                "title": "2. 감정 격앙/토식 글 대응 프로토콜 정비",
+                "target": "운영진·멘토 전체",
+                "reason": f"이번 주 토식 플래그가 찍힌 글이 총 {toxic_cnt}건 발생함.",
+                "todo": (
+                    "토식/격앙된 표현이 감지되었을 때, "
+                    "① 문제 상황 사실 확인 → ② 1차 진정/공감 메시지 → ③ 필요시 개별 상담으로 전환하는 "
+                    "3단계 대응 프로세스를 간단히 문서화하여 공유."
+                ),
+            }
+        )
+
+    # 3) 특정 시간대에 글이 몰리면, 그 타임에 대응 리소스 배치
+    tmp = current_df.copy()
+    tmp["hour"] = tmp["created_at"].dt.hour
+    hour_stats = (
+        tmp.groupby("hour")
+        .size()
+        .reset_index(name="cnt")
+        .sort_values("cnt", ascending=False)
+    )
+    if not hour_stats.empty:
+        peak_hour = int(hour_stats.iloc[0]["hour"])
+        peak_cnt = int(hour_stats.iloc[0]["cnt"])
+        actions.append(
+            {
+                "title": "3. 피크 시간대 채널 모니터링 강화",
+                "target": "멘토/튜터 배치 담당자",
+                "reason": f"{peak_hour}시에 글이 {peak_cnt}건 집중되어 올라오는 패턴이 보임.",
+                "todo": (
+                    f"{peak_hour}시 전후 1~2시간 동안 멘토/운영진이 채널을 우선적으로 체크하고, "
+                    "해당 시간대에 올라오는 고민/건의는 12시간 이내 1차 답변을 달도록 SLA를 설정."
+                ),
+            }
+        )
+
+    return actions[:3]
+
+
+def map_daypart(hour: int) -> str:
+    if 6 <= hour < 12:
+        return "오전"
+    elif 12 <= hour < 18:
+        return "오후"
+    elif 18 <= hour < 24:
+        return "저녁/야간"
+    else:
+        return "새벽"
+
+
+def build_wordcloud_freq(current_df: pd.DataFrame) -> dict:
+    """
+    이번 주 데이터를 기반으로 워드클라우드에 쓸 빈도 dict 생성.
+    간단히 category / sub_cluster 위주로 구성.
+    """
+    if current_df.empty:
+        return {}
+
+    words = []
+    for _, r in current_df.iterrows():
+        # 카테고리는 좀 더 가중치 높게
+        words.extend([r["category"]] * 3)
+        words.extend([r["sub_cluster"]] * 2)
+
+    freq = Counter(words)
+    return dict(freq)
+
+
+# ============================================
+# 1. 페이지 기본 설정
+# ============================================
+st.set_page_config(layout="wide")
+st.title("🌲 속닥숲 리포트")
+
+camps, df_all = make_dummy_feedback()
+
+# ============================================
+# 2. 사이드바 필터
+# ============================================
+st.sidebar.header("필터 설정")
+
+camp_name_to_id = {c["camp_name"]: c["camp_id"] for c in camps}
+camp_name = st.sidebar.selectbox("캠프 선택", list(camp_name_to_id.keys()))
+camp_id = camp_name_to_id[camp_name]
+
+weeks = [f"Week {i}" for i in range(1, 7)]
+selected_week_label = st.sidebar.selectbox("주차 선택 (분석 기준 주차)", weeks)
+selected_week = int(selected_week_label.split()[1])
+
+# 이 캠프의 전체 데이터
+camp_df = df_all[df_all["camp_id"] == camp_id].copy()
+
+# 이번 주 데이터
+current_df = camp_df[camp_df["week"] == selected_week].copy()
+
+# Week 1 ~ 선택 주차까지 데이터
+upto_df = camp_df[camp_df["week"] <= selected_week].copy()
+
+if current_df.empty:
+    st.warning("해당 캠프/주차에 대한 더미 데이터가 없습니다. 필터를 바꿔보세요.")
+    st.stop()
+
+# ============================================
+# 3. 탭 구성: 이번 주 / 전체 누적 / 상세
+# ============================================
+tab_week, tab_all, tab_detail = st.tabs(["📊 이번 주", "📈 전체 누적", "📂 상세 데이터"])
+
+# =========================================================
+# 탭 1) 이번 주 리포트
+# =========================================================
+with tab_week:
+    st.subheader(f"📊 이번 주 리포트 — {camp_name} / Week {selected_week}")
+
+    # -----------------------------
+    # (0) 상단 KPI 카드
+    # -----------------------------
+    total_posts = len(current_df)
+    toxic_posts = int(current_df["is_toxic"].sum())
+    toxic_ratio = toxic_posts / total_posts if total_posts > 0 else 0.0
 
     col1, col2, col3 = st.columns(3)
-    with col1:
-        st.metric("익명 게시글 수", f"{total_posts}건", "▲ 12건")
-    with col2:
-        st.metric("고민 글 수", f"{worry_posts}건", "▲ 9건")
-    with col3:
-        st.metric("부정 감정 글 수", f"{negative_posts}건", "▲ 6건")
+    col1.metric("전체 글 수 (이번 주)", f"{total_posts}건")
+    col2.metric("위험(토식) 글 수", f"{toxic_posts}건")
+    col3.metric("부정/토식 비율", f"{toxic_ratio*100:.1f}%")
 
-    st.markdown("#### 키워드 하이라이트")
-    if selected_class == "전체":
-        st.caption("이번 주 전체 익명 게시판에서 자주 등장한 키워드입니다.")
+    st.markdown("---")
+
+    # -----------------------------
+    # (0-1) 이번 주 키워드 워드클라우드
+    # -----------------------------
+    wc_path = "" #payload.get("wordcloud_image")
+
+    st.markdown("### ☁️ 워드클라우드")
+
+    if wc_path:
+        st.image(wc_path, use_container_width=True)
     else:
-        st.caption(f"이번 주 {selected_class} 익명 게시판에서 자주 등장한 키워드입니다.")
-
-    keyword_chart = (
-        alt.Chart(keyword_data)
-        .mark_bar()
-        .encode(
-            x=alt.X("빈도:Q", title="언급 빈도"),
-            y=alt.Y("키워드:N", sort="-x", title="키워드"),
-            color=alt.Color("키워드:N", legend=None),
-            tooltip=["키워드", "빈도"],
-        )
-        .properties(height=260)
-    )
-    st.altair_chart(keyword_chart, width='stretch')
-
+        st.info("워드클라우드 이미지가 아직 생성되지 않았습니다.")
+    
     st.markdown("---")
-    st.markdown("### 지표 한눈에 보기")
 
-    st.markdown("#### 글 수 추이")
+    # -----------------------------
+    # (1) 매우 위험한 글 리스트
+    # -----------------------------
+    st.markdown("### 🚨 주요 위험 글")
 
-    st.markdown(
-        """
-- 이번 주 동안 익명 게시글이 얼마나 꾸준히 올라왔는지 확인할 수 있습니다.  
-- 특정 날짜에 글이 급증했다면, 그날 진행된 수업/공지/이벤트와 함께 보는 것이 좋습니다.
-"""
-    )
+    risky_df = current_df[
+        (current_df["severity"] == "high") | (current_df["is_toxic"])
+    ].copy()
 
-    trend_chart = (
-        alt.Chart(df_daily_posts)
-        .mark_line(point=True)
-        .encode(
-            x=alt.X("날짜:T", title="날짜"),
-            y=alt.Y("게시글 수:Q", title="게시글 수"),
-            tooltip=["날짜", "게시글 수"],
-        )
-        .properties(height=260)
-    )
-    st.altair_chart(trend_chart, width='stretch')
-
-    top_left, top_right = st.columns(2)
-
-    with top_left:
-        st.markdown("#### 고민글 분류별 통계")
-
-        worry_chart = (
-            alt.Chart(worry_categories)
-            .mark_bar()
-            .encode(
-                x=alt.X("게시글 수:Q", title="게시글 수"),
-                y=alt.Y("분류:N", sort="-x", title="분류"),
-                color=alt.Color("분류:N", legend=None),
-                tooltip=["분류", "게시글 수"],
-            )
-            .properties(height=260)
-        )
-        st.altair_chart(worry_chart, width='stretch')
-
-        selected_worry = st.selectbox(
-            "자세히 보고 싶은 고민글 분류 선택",
-            worry_categories["분류"].tolist(),
-        )
-
-        examples = worry_examples.get(selected_worry, [])
-        if examples:
-            st.markdown(f"**[{selected_worry}] 관련 주요 고민글 (최대 3개)**")
-            for i, txt in enumerate(examples[:3], start=1):
-                st.markdown(f"- {txt}")
-        else:
-            st.markdown("표시할 고민글이 없습니다.")
-
-    with top_right:
-        st.markdown("#### 건의글 분류별 통계")
-
-        suggest_chart = (
-            alt.Chart(suggest_categories)
-            .mark_bar()
-            .encode(
-                x=alt.X("게시글 수:Q", title="게시글 수"),
-                y=alt.Y("분류:N", sort="-x", title="분류"),
-                color=alt.Color("분류:N", legend=None),
-                tooltip=["분류", "게시글 수"],
-            )
-            .properties(height=260)
-        )
-        st.altair_chart(suggest_chart, width='stretch')
-
-        selected_suggest = st.selectbox(
-            "자세히 보고 싶은 건의글 분류 선택",
-            suggest_categories["분류"].tolist(),
-        )
-
-        examples_s = suggest_examples.get(selected_suggest, [])
-        if examples_s:
-            st.markdown(f"**[{selected_suggest}] 관련 주요 건의글 (최대 3개)**")
-            for i, txt in enumerate(examples_s[:3], start=1):
-                st.markdown(f"- {txt}")
-        else:
-            st.markdown("표시할 건의글이 없습니다.")
-
-# -----------------------------
-# (2) AI 심층 분석 탭
-# -----------------------------
-# -----------------------------
-# (2) AI 심층 분석 탭
-# -----------------------------
-with tab_ai:
-    if selected_class == "전체":
-        st.subheader("AI 인사이트 리포트 - 전체 기준")
-        대상_문구 = "전체 익명 게시판에서는"
+    if risky_df.empty:
+        st.info("이번 주에는 고위험 글이 탐지되지 않았습니다.")
     else:
-        st.subheader(f"AI 인사이트 리포트 - {selected_class} 기준")
-        대상_문구 = f"{selected_class} 익명 게시판에서는"
+        risky_df = risky_df.sort_values("created_at", ascending=False).head(6)
 
-    # 상단 요약 카드 (핵심 키워드 / 분위기 / 우선 액션)
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        st.info(
-            "**핵심 키워드 요약**\n\n"
-            "- Git 협업 이슈 다수 발생함\n"
-            "- 일정·시간 관련 언급 증가함\n"
-            "- 반 분위기·소통 어려움 드러남"
-        )
-    with col2:
-        st.warning(
-            "**분위기 진단 요약**\n\n"
-            "- 고민 글 비중이 높아지는 추세임\n"
-            "- 부정 감정 비율도 함께 상승 중임\n"
-            "- 일부 반에서 심리적 안전감 낮을 가능성 있음"
-        )
-    with col3:
-        st.success(
-            "**운영 우선 과제 요약**\n\n"
-            "- Git 문제 해결 지원 강화 필요함\n"
-            "- 일정 압박 완화 메시지 전달이 필요함\n"
-            "- 반 단위 체크인 미팅이 권장됨"
-        )
+        cols = st.columns(2)
+        for idx, (_, r) in enumerate(risky_df.iterrows()):
+            col = cols[idx % 2]
+            with col:
+                with st.container(border=True):
+                    level_label = "CRITICAL" if r["severity"] == "high" else "HIGH"
+                    header = (
+                        f"[{level_label}] Week {int(r['week'])} / "
+                        f"user {r['user_id']} / {r['created_at']:%Y-%m-%d %H:%M}"
+                    )
+
+                    if r["severity"] == "high" or r["is_toxic"]:
+                        st.error(f"**{header}**")
+                    else:
+                        st.warning(f"**{header}**")
+
+                    st.markdown(
+                        f"- 카테고리: {r['category']} / 클러스터: {r['sub_cluster']}"
+                    )
+                    st.markdown(f"- 요약: {r['summary']}")
+                    st.markdown(f"- (원문) {r['text']}")
+                    st.markdown("")
 
     st.markdown("---")
 
-    # 1. 주요 이슈 현황
-    st.markdown("### 1. 주요 이슈 현황")
+    # -----------------------------
+    # (2) 운영진 우선 액션 Top 3
+    # -----------------------------
+    st.markdown("### 🏃 운영진 우선 액션 Top 3")
 
-    col_a, col_b = st.columns([1.2, 1.5])
+    ops_actions = build_ops_actions(current_df)
+    if ops_actions:
+        cols = st.columns(3)
+        for idx, action in enumerate(ops_actions):
+            if idx >= 3:
+                break
+            with cols[idx]:
+                with st.container(border=True):
+                    st.markdown(f"#### {action['title']}")
+                    st.markdown(f"- **대상**: {action['target']}")
+                    st.markdown(f"- **근거**: {action['reason']}")
+                    st.markdown("**이번 주 실행 액션**")
+                    st.markdown(action["todo"])
+    else:
+        st.info("이번 주 기준으로 제안할 액션이 없습니다.")
 
-    with col_a:
-        # 상위 3개 키워드 텍스트 요약
-        top_keywords = (
-            keyword_data.sort_values("빈도", ascending=False)
-            .head(3)
-            .reset_index(drop=True)
-        )
+    st.markdown("---")
 
-        st.markdown("#### 1-1. 상위 키워드 요약")
-        st.markdown(
-            f"""
-- {대상_문구} 아래 이슈가 가장 많이 언급됨  
-- 상위 키워드 Top3 기준 요약임
-"""
-        )
+    # -----------------------------
+    # (3) 카테고리별 이슈 규모 (이번 주)
+    # -----------------------------
+    st.markdown("### 🧱 카테고리별 이슈 규모")
 
-        for idx, row in top_keywords.iterrows():
-            rank = idx + 1
-            st.markdown(f"- **{rank}위:** `{row['키워드']}` · {row['빈도']}회 언급됨")
+    cat_count = (
+        current_df.groupby("category")
+        .agg(posts=("text", "count"), writers=("user_id", lambda x: len(set(x))))
+        .reset_index()
+    )
 
-        st.caption("※ 실제 서비스에서는 기간/반 선택에 따라 상위 키워드가 자동으로 갱신됨.")
-
-    with col_b:
-        st.markdown("#### 1-2. 키워드 빈도 분포")
-
-        keyword_chart_ai = (
-            alt.Chart(keyword_data)
+    if not cat_count.empty:
+        cat_chart = (
+            alt.Chart(cat_count)
             .mark_bar()
             .encode(
-                x=alt.X("빈도:Q", title="언급 빈도"),
-                y=alt.Y("키워드:N", sort="-x", title="키워드"),
-                color=alt.Color("키워드:N", legend=None),
-                tooltip=["키워드", "빈도"],
+                x=alt.X("posts:Q", title="글 수"),
+                y=alt.Y("category:N", sort="-x", title="카테고리"),
+                tooltip=["category", "posts", "writers"],
             )
             .properties(height=260)
         )
-        st.altair_chart(keyword_chart_ai, width='stretch')
-        st.caption("이번 주 기준 키워드별 언급 빈도 분포임.")
+        st.altair_chart(cat_chart, use_container_width=True)
+        st.caption("→ 글 수와 참여한 작성자 수가 많은 카테고리가 우선적으로 관리해야 할 영역입니다.")
+    else:
+        st.write("카테고리 집계 데이터가 없습니다.")
 
-    st.markdown("---")
 
-    # 2. 고민 글 분석
-    st.markdown("### 2. 고민 글 분석")
+# =========================================================
+# 탭 2) 전체 누적 리포트 (Week 1 ~ 선택 주차)
+# =========================================================
+with tab_all:
+    st.subheader(f"📈 전체 누적 리포트 — {camp_name} / Week 1 ~ {selected_week}")
+    
+    # (1) 장기 타임라인
+    st.markdown("### ⏱ 장기 타임라인 (Week 1 ~ 현재)")
 
-    col_c, col_d = st.columns([1.4, 1.3])
-
-    with col_c:
-        st.markdown("#### 2-1. 고민 글 패턴 요약")
-
-        top_worry = (
-            worry_categories.sort_values("게시글 수", ascending=False)
-            .reset_index(drop=True)
-        )
-        top_cat = top_worry.loc[0, "분류"]
-        top_val = top_worry.loc[0, "게시글 수"]
-
-        st.markdown(
-            f"""
-- 고민 글은 **`{top_cat}`** 관련 비중이 가장 높음  
-- 해당 분류 게시글 수는 **{top_val}건** 수준임  
-- 전체적으로는 **학습 난이도·진도, 팀 관계, 시간 압박** 순으로 이슈가 분포하는 양상임
-"""
-        )
-
-        st.markdown("##### 운영 관점 주요 해석")
-        st.markdown(
-            """
-- 학습 난이도와 속도를 동시에 부담으로 느끼는 학습자가 적지 않은 것으로 보임  
-- 팀 내 소통 어려움이 함께 언급되어, 단순 학습 문제가 아닌 **관계·분위기 문제**도 일부 결합되어 있음  
-- 과제·복습·기록을 병행하는 과정에서, **체력·시간 부족감**이 누적되고 있음
-"""
+    tl_df = upto_df.copy()
+    if tl_df.empty:
+        st.info("타임라인 데이터가 없습니다.")
+    else:
+        weekly_stats = (
+            tl_df.groupby("week")
+            .agg(
+                posts=("text", "count"),
+                toxic=("is_toxic", "sum"),
+            )
+            .reset_index()
         )
 
-    with col_d:
-        st.markdown("#### 2-2. 고민 글 분류별 분포")
-
-        worry_chart_ai = (
-            alt.Chart(worry_categories)
-            .mark_bar()
+        chart = (
+            alt.Chart(weekly_stats)
+            .mark_line(point=True)
             .encode(
-                x=alt.X("게시글 수:Q", title="게시글 수"),
-                y=alt.Y("분류:N", sort="-x", title="분류"),
-                color=alt.Color("분류:N", legend=None),
-                tooltip=["분류", "게시글 수"],
+                x=alt.X("week:O", title="주차"),
+                y=alt.Y("posts:Q", title="전체 글 수"),
+                tooltip=["week", "posts", "toxic"],
             )
             .properties(height=260)
         )
-        st.altair_chart(worry_chart_ai, width='stretch')
-        st.caption("분류별 고민 글 분포를 통해 어떤 영역에서 부담이 큰지 확인 가능함.")
+        st.altair_chart(chart, use_container_width=True)
 
-    with st.expander("2-3. 고민 글 예시 문장"):
+        top_week_row = weekly_stats.sort_values("posts", ascending=False).iloc[0]
+        top_week = int(top_week_row["week"])
+        top_week_posts = int(top_week_row["posts"])
+        top_week_toxic = int(top_week_row["toxic"])
+
+        first_row = weekly_stats.iloc[0]
+        last_row = weekly_stats.iloc[-1]
+        delta_posts = int(last_row["posts"] - first_row["posts"])
+        if delta_posts > 0:
+            trend_word = "증가"
+        elif delta_posts < 0:
+            trend_word = "감소"
+        else:
+            trend_word = "유지"
+
+        st.markdown("##### 📈 장기 타임라인 요약")
         st.markdown(
-            """
-- “이번 주 내용이 너무 빠르게 지나가서 복습할 시간이 부족함.”
-- “팀원들에게 질문하기가 눈치 보일 때가 있음.”
-- “과제, 복습, 기록까지 하다 보니 하루가 너무 부족하다고 느껴짐.”
-"""
+            f"- **Week {top_week}**에 글이 가장 많이 올라왔으며, 총 **{top_week_posts}건**, 그 중 토식 글이 **{top_week_toxic}건**입니다.  \n"
+            f"- Week {int(first_row['week'])} 대비 Week {int(last_row['week'])}의 전체 글 수는 "
+            f"**{abs(delta_posts)}건 {trend_word}**하는 양상을 보입니다.  \n"
+            f"- 특정 카테고리/클러스터 필터와 함께 보면, 같은 이슈가 장기적으로 반복되는지 확인할 수 있습니다."
         )
 
     st.markdown("---")
 
-    # 3. 건의 글 분석
-    st.markdown("### 3. 건의 글 분석")
+    # (2) 반복 이슈 요약
+    st.markdown("### 🔁 반복 이슈 요약 (Week 1 ~ 현재)")
 
-    col_e, col_f = st.columns([1.4, 1.3])
+    repeat_issues = build_repeat_issues(upto_df)
 
-    with col_e:
-        st.markdown("#### 3-1. 건의 글 패턴 요약")
+    if repeat_issues:
+        issues_this_week = [
+            issue
+            for issue in repeat_issues
+            if selected_week in issue.get("weeks", [])
+        ]
 
-        top_suggest = (
-            suggest_categories.sort_values("게시글 수", ascending=False)
-            .reset_index(drop=True)
-        )
-        s_cat = top_suggest.loc[0, "분류"]
-        s_val = top_suggest.loc[0, "게시글 수"]
+        if not issues_this_week:
+            st.info("이번 주에 새로 관찰된 반복 이슈는 없습니다.")
+        else:
+            severity_order = {"high": 0, "medium": 1, "low": 2}
 
-        st.markdown(
-            f"""
-- 건의 글은 **`{s_cat}`** 관련 요구가 가장 높게 나타남  
-- 해당 분류 게시글 수는 **{s_val}건** 수준임  
-- 수업 방식·과제 설계·커뮤니티 운영·진로 지원 등 **운영 전반에 대한 구체적 제안**이 다수 존재함
-"""
-        )
-
-        st.markdown("##### 운영 관점 주요 해석")
-        st.markdown(
-            """
-- 수업 방식 측면에서는 실습 비중 확대, 코드 리뷰 데모 등 **실전 중심 개선 요구**가 확인됨  
-- 과제 난이도 측면에서는 필수/선택 구분 등 **부담 조절 장치**에 대한 요구가 나타남  
-- 커뮤니티·진로 측면에서는 **잡담 채널, 포트폴리오/진로 세션** 등 정서·미래 관련 지원이 필요함
-"""
-        )
-
-    with col_f:
-        st.markdown("#### 3-2. 건의 글 분류별 분포")
-
-        suggest_chart_ai = (
-            alt.Chart(suggest_categories)
-            .mark_bar()
-            .encode(
-                x=alt.X("게시글 수:Q", title="게시글 수"),
-                y=alt.Y("분류:N", sort="-x", title="분류"),
-                color=alt.Color("분류:N", legend=None),
-                tooltip=["분류", "게시글 수"],
+            issues_this_week.sort(
+                key=lambda x: (
+                    severity_order.get(x.get("severity", "low"), 2),
+                    -x.get("count", 0),
+                )
             )
-            .properties(height=260)
-        )
-        st.altair_chart(suggest_chart_ai, width='stretch')
-        st.caption("어떤 영역에서 ‘구체적인 개선 제안’이 많이 나오는지 확인 가능함.")
+            issues_to_show = issues_this_week[:5]
 
-    with st.expander("3-3. 건의 글 예시 문장"):
-        st.markdown(
-            """
-- “실습 위주 수업 시간이 조금 더 길었으면 좋겠음.”
-- “이번 주 과제가 지난 주보다 난이도가 급격히 올라간 것으로 느껴짐.”
-- “반별로 잡담/소통 채널이 있으면 좋겠음.”
-- “포트폴리오 준비 방법을 다루는 안내 세션이 있으면 좋겠음.”
-"""
-        )
+            for issue in issues_to_show:
+                weeks_str = ", ".join(f"Week {w}" for w in issue["weeks"])
+
+                if issue["severity"] == "high":
+                    box = st.error
+                    badge = "🔥 매우 빈번"
+                elif issue["severity"] == "medium":
+                    box = st.warning
+                    badge = "⚠️ 반복 발생"
+                else:
+                    box = st.info
+                    badge = "ℹ️ 관찰 필요"
+
+                with st.container():
+                    box(
+                        f"**{issue['label']}**  \n"
+                        f"- 등급: {badge} (총 {issue['count']}건)  \n"
+                        f"- 발생 주차: {weeks_str}"
+                    )
+                    st.markdown(f"- 요약: {issue['summary']}")
+                    st.markdown(f"- 권장 액션: {issue['action_hint']}")
+                    st.markdown("")
+    else:
+        st.info("반복되는 이슈로 판단되는 패턴이 아직 뚜렷하지 않습니다.")
+
+
+# =========================================================
+# 탭 3) 상세 데이터
+# =========================================================
+with tab_detail:
+    st.markdown("### 📂 상세 데이터 — Week 1 ~ 현재")
+
+    st.markdown("#### 🔍 상세 필터")
+
+    all_categories = ["(전체)"] + sorted(upto_df["category"].unique().tolist())
+    selected_cat = st.selectbox("카테고리", all_categories, index=0)
+
+    severity_options = ["(전체)", "low", "medium", "high"]
+    selected_sev = st.selectbox("심각도", severity_options, index=0)
+
+    all_users = ["(전체)"] + sorted(upto_df["user_id"].unique().astype(str).tolist())
+    selected_user = st.selectbox("작성자(user_id)", all_users, index=0)
+
+    filtered_df = upto_df.copy()
+    if selected_cat != "(전체)":
+        filtered_df = filtered_df[filtered_df["category"] == selected_cat]
+    if selected_sev != "(전체)":
+        filtered_df = filtered_df[filtered_df["severity"] == selected_sev]
+    if selected_user != "(전체)":
+        filtered_df = filtered_df[filtered_df["user_id"] == int(selected_user)]
 
     st.markdown("---")
 
-    # 4. 운영 액션 제안 정리
-    st.markdown("### 4. 운영 액션 제안 요약")
+    sub_tab_cat, sub_tab_timeline, sub_tab_user = st.tabs(
+        ["📌 카테고리·클러스터", "⏱ 타임라인", "👤 작성자별"]
+    )
 
-    col_g, col_h = st.columns(2)
+    # (3-1) 카테고리·클러스터 상세
+    with sub_tab_cat:
+        st.markdown("### 📌 카테고리·클러스터별 상세")
 
-    with col_g:
-        st.markdown("#### 4-1. 단기(1~2주) 액션 제안")
-        st.markdown(
-            """
-- Git 협업 실습 세션 1회 추가 및 **자주 발생하는 에러·충돌 시나리오 가이드** 배포 필요함  
-- 이번/다음 주 과제 난이도를 조정하거나, **필수/선택 과제 구분**을 도입하는 방안 검토가 필요함  
-- 잡담/소통 채널 신설 등으로, **가벼운 대화와 정서적 환기**가 가능한 공간을 마련하는 것이 좋음
-"""
+        if filtered_df.empty:
+            st.info("필터 조건에 해당하는 데이터가 없습니다.")
+        else:
+            cluster_stats = (
+                filtered_df.groupby(["category", "sub_cluster"])
+                .agg(
+                    posts=("text", "count"),
+                    writers=("user_id", lambda x: len(set(x))),
+                    weeks=("week", lambda x: sorted(set(x))),
+                )
+                .reset_index()
+            )
+
+            st.markdown("#### 카테고리/클러스터 집계")
+            st.dataframe(cluster_stats, hide_index=True, use_container_width=True)
+
+            st.markdown("---")
+            st.markdown("#### 클러스터별 글 목록")
+
+            cluster_stats["label"] = cluster_stats.apply(
+                lambda r: f"{r['category']} – {r['sub_cluster']} ({int(r['posts'])}건 / 작성자 {int(r['writers'])}명)",
+                axis=1,
+            )
+
+            options = ["(전체 보기)"] + cluster_stats["label"].tolist()
+            selected_cluster = st.selectbox(
+                "클러스터 선택",
+                options,
+                index=0,
+                key="cluster_select",
+            )
+
+            detail_df = filtered_df.copy()
+            detail_df = detail_df.sort_values(["category", "sub_cluster", "created_at"])
+
+            detail_df_display = detail_df[[
+                "week",
+                "created_at",
+                "category",
+                "sub_cluster",
+                "user_id",
+                "severity",
+                "is_toxic",
+                "summary",
+                "text",
+            ]].rename(columns={
+                "week": "주차",
+                "created_at": "작성일시",
+                "category": "카테고리",
+                "sub_cluster": "세부 이슈",
+                "user_id": "user_id",
+                "severity": "심각도",
+                "is_toxic": "위험글 여부",
+                "summary": "요약",
+                "text": "원문",
+            })
+
+            if selected_cluster != "(전체 보기)":
+                sel_row = cluster_stats[cluster_stats["label"] == selected_cluster].iloc[0]
+                detail_df_display = detail_df_display[
+                    (detail_df_display["카테고리"] == sel_row["category"]) &
+                    (detail_df_display["세부 이슈"] == sel_row["sub_cluster"])
+                ]
+
+            st.dataframe(
+                detail_df_display,
+                hide_index=True,
+                use_container_width=True,
+            )
+
+    # (3-2) 타임라인 상세
+    with sub_tab_timeline:
+        st.markdown("### ⏱ Week 1 ~ 현재까지 타임라인 (필터 적용)")
+
+        tl_f_df = filtered_df.copy()
+        if tl_f_df.empty:
+            st.info("필터 조건에 해당하는 데이터가 없습니다.")
+        else:
+            weekly_stats = (
+                tl_f_df.groupby("week")
+                .agg(
+                    posts=("text", "count"),
+                    toxic=("is_toxic", "sum"),
+                )
+                .reset_index()
+            )
+
+            chart = (
+                alt.Chart(weekly_stats)
+                .mark_line(point=True)
+                .encode(
+                    x=alt.X("week:O", title="주차"),
+                    y=alt.Y("posts:Q", title="전체 글 수"),
+                    tooltip=["week", "posts", "toxic"],
+                )
+                .properties(height=260)
+            )
+            st.altair_chart(chart, use_container_width=True)
+
+    # (3-3) 작성자별 상세
+    with sub_tab_user:
+        st.markdown("### 👤 작성자별 글 요약")
+
+        user_stats = (
+            filtered_df.groupby("user_id")
+            .agg(
+                posts=("text", "count"),
+                toxic=("is_toxic", "sum"),
+                high_sev=("severity", lambda x: (x == "high").sum()),
+                first_week=("week", "min"),
+                last_week=("week", "max"),
+            )
+            .reset_index()
+            .sort_values("posts", ascending=False)
         )
 
-    with col_h:
-        st.markdown("#### 4-2. 중기(3주 이상) 액션 제안")
-        st.markdown(
-            """
-- 포트폴리오/진로 Q&A 세션을 정기적으로 운영하여, **미래에 대한 불안**을 완화할 필요가 있음  
-- Git·환경 설정·협업 툴 활용법 등을 **별도 모듈/워크숍**으로 구성하여 반복적으로 활용 가능하게 하는 것이 바람직함  
-- 반별 리더/멘토와 함께, **심리적 안전감·소통 구조**를 정기적으로 점검하는 체계를 갖추는 것이 필요함
-"""
-        )
+        if user_stats.empty:
+            st.info("필터 조건에 해당하는 데이터가 없습니다.")
+        else:
+            st.dataframe(user_stats, hide_index=True, use_container_width=True)
 
-    st.caption("※ 위 제안은 더미 데이터 기반 예시이며, 실제 서비스에서는 실시간 로그·질문·게시글을 기반으로 자동 생성되는 리포트임.")
+            st.markdown("---")
+            st.markdown("#### 특정 작성자 선택해서 글 보기")
+
+            user_choices = ["(선택)"] + user_stats["user_id"].astype(str).tolist()
+            selected_user_detail = st.selectbox(
+                "작성자 선택", user_choices, index=0, key="user_detail_select"
+            )
+
+            if selected_user_detail != "(선택)":
+                u_id = int(selected_user_detail)
+                u_df = filtered_df[filtered_df["user_id"] == u_id].sort_values(
+                    "created_at"
+                )
+                st.markdown(f"##### user {u_id}의 글 목록 (Week 1 ~ {selected_week})")
+
+                for _, r in u_df.iterrows():
+                    st.markdown(
+                        f"- **[Week {int(r['week'])}] category={r['category']} / severity={r['severity']} / toxic={r['is_toxic']}**"
+                    )
+                    st.markdown(f"  - {r['summary']}")
+                    st.markdown(f"  - (원문) {r['text']}")
+                    st.markdown("")
+
+                high_sev_cnt = (u_df["severity"] == "high").sum()
+                recent_weeks = sorted(u_df["week"].unique())
+                st.markdown("**자동 상태 코멘트 (데모)**")
+                st.write(
+                    f"- 최근 글 주차: {recent_weeks}  \n"
+                    f"- high severity 글 수: {high_sev_cnt}  \n"
+                    f"→ 최근 몇 주간 같은 유형의 고민이 반복된다면, 1:1 체크인이나 개별 상담을 검토하는 것이 좋습니다."
+                )

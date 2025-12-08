@@ -15,7 +15,7 @@ llm = ChatOpenAI(
 report_parser = PydanticOutputParser(pydantic_object=FeedbackBoardAIReport)
 
 
-def build_feedback_report_prompt(stats: Dict[str, Any]) -> str:
+def generate_feedback_ai_report(stats: Dict[str, Any]) -> str:
     total_posts = stats.get("total_posts", 0)
     posts_by_category = stats.get("posts_by_category", [])
     priority_candidates = stats.get("priority_candidates", [])

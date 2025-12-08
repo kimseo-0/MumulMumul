@@ -5,7 +5,7 @@ from pymongo.database import Database
 
 from app.services.feedbackBoard.generate_report.calculator import parse_posts, aggregate_feedback_stats
 from .wordcloud import generate_wordclouds_per_category
-from app.services.feedbackBoard.generate_report.llm import build_feedback_report_prompt
+from app.services.feedbackBoard.generate_report.llm import generate_feedback_ai_report
 
 # app/services/feedback_board/service.py
 
@@ -14,7 +14,7 @@ from pymongo.database import Database
 from datetime import datetime
 
 from app.core.mongodb import FeedbackBoardPost
-from .llm import analyze_single_post
+from app.services.feedbackBoard.analyze_feedback.llm import analyze_single_post
 
 
 def attach_analysis_to_new_posts(mongo_db: Database, camp_id: int) -> int:
@@ -24,7 +24,6 @@ def attach_analysis_to_new_posts(mongo_db: Database, camp_id: int) -> int:
     """
     coll = mongo_db["feedback_board_posts"]
 
-    # 분석이 안 된 글 찾기 (예: analysis.category가 기본값 "other"이고 normalized_text가 빈 경우)
     cursor = coll.find({
         "camp_id": camp_id,
         "analysis.normalized_text": {"$in": [None, ""]},
@@ -53,18 +52,6 @@ def create_feedback_board_report(
     camp_id: int,
     wordcloud_output_dir: str,
 ) -> Dict[str, Any]:
-    """
-    1~5번을 한 번에 수행하는 리포트 생성 함수.
-
-    return:
-      {
-        "summary": {...},
-        "charts": {...},
-        "tables": {...},
-        "ai_insights": {...}
-      }
-    """
-
     coll = mongo_db["feedback_board_posts"]
 
     # 0) 아직 분석 안 된 글들에 대해 analysis/moderation 채우기
