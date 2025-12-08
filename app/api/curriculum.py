@@ -1,7 +1,7 @@
 # app/api/curriculum.py
 from datetime import datetime
 from http.client import HTTPException
-from typing import List
+from typing import List, Optional
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
@@ -57,14 +57,14 @@ def create_curriculum_newReport(
 
 @router.get(
     "/report",
-    response_model=CurriculumReport,
+    response_model=Optional[CurriculumReport],
 )
 def fetch_curriculum_report(
     camp_id: int,
     week_index: int,  # "Week 1" / "Week 2" ...
     db: Session = Depends(get_db),
     mongo_db: Database = Depends(get_mongo_db),
-) -> CurriculumReport:
+) -> CurriculumReport | None:
     """
     특정 캠프 + 특정 주차의 커리큘럼 리포트 전체 Payload 반환 API
     (summary_cards, charts, tables, ai_insights 모두 포함)
@@ -74,9 +74,9 @@ def fetch_curriculum_report(
 
     # 1) 기존 리포트 조회
     report = get_curriculum_report(camp_id, camp.name, week_index, week_start, week_end)
-
+    
     if not report:
-        raise HTTPException(status_code=404, detail="Curriculum report not found")
+        return None
     
     return report
 
