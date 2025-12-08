@@ -1,3 +1,4 @@
+# app/services/curriculum/generate_log_insights/llm.py
 from __future__ import annotations
 
 import json

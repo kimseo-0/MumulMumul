@@ -1,3 +1,4 @@
+# app/services/curriculum/generate_log_insights/prompts.py
 from typing import Any, Dict, List, Optional
 
 from app.core.mongodb import CurriculumConfig, CurriculumInsights

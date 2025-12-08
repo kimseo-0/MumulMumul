@@ -1,4 +1,4 @@
-# app/services/curriculum/llm_curriculum_parser.py
+# app/services/curriculum/analyze_curriculum/llm.py
 
 import json
 from typing import Any, Dict
