@@ -6,9 +6,10 @@ import altair as alt
 from datetime import date, datetime, timedelta
 
 from api.attendance import (
-    get_camps,
     get_attendance_report,
 )
+
+from api.camp import fetch_camps
 
 st.set_page_config(
     page_title="출결 관리",
@@ -16,94 +17,75 @@ st.set_page_config(
     layout="wide"
 )
 
-# -----------------------------
-# 헬퍼: 캠프 + 주차 → 날짜 범위 계산
-# -----------------------------
-def get_week_date_range(camp: dict, week_label: str) -> tuple[date, date]:
-    """
-    캠프 시작일 기준으로 주차별 날짜 범위를 계산.
-    - week_label: 'Week 1' 형태
-    - camp["start_date"], camp.get("end_date")는 ISO 문자열이라고 가정.
-    """
-    # week_label에서 숫자 부분만 추출 (예: 'Week 3' -> 3)
-    try:
-        week_idx = int(week_label.split()[-1])
-    except Exception:
-        week_idx = 1
+# --------------------------------
+# 0) 세션 기반 데이터 캐시 설정
+# --------------------------------
+if "attendance_session" not in st.session_state:  # 한 번만 초기화
+    st.session_state["attendance_session"] = {
+        "camps": None,                       # fetch_camps() 결과
+        "camp_name_to_id": None,            # {name: id}
+        "attendance_reports": {},          # {campid_weekindex: payload}
+    }
 
-    # 캠프 시작일 파싱
-    today = date.today()
-    camp_start_str = camp.get("start_date")
-    if camp_start_str:
-        try:
-            # '2025-11-01' 같은 ISO 포맷 가정
-            camp_start = datetime.fromisoformat(camp_start_str).date()
-        except Exception:
-            camp_start = today - timedelta(days=7)  # fallback
-    else:
-        camp_start = today - timedelta(days=7)
+session_cache = st.session_state["attendance_session"]
 
-    # 주차 시작일 = 캠프 시작일 + 7 * (week_idx - 1)
-    start_date = camp_start + timedelta(days=7 * (week_idx - 1))
-    end_date = start_date + timedelta(days=6)
+# --- 캠프 목록은 세션에 한 번만 저장 ---
+if session_cache["camps"] is None:
+    camps = fetch_camps()  # [{camp_id, name, ...}, ...] 가정
+    camp_name_to_id = {c["name"]: c["camp_id"] for c in camps}
+    session_cache["camps"] = camps
+    session_cache["camp_name_to_id"] = camp_name_to_id
+else:
+    camps = session_cache["camps"]
+    camp_name_to_id = session_cache["camp_name_to_id"]
 
-    # 캠프 종료일이 있으면 클램핑
-    camp_end_str = camp.get("end_date")
-    if camp_end_str:
-        try:
-            camp_end = datetime.fromisoformat(camp_end_str).date()
-            if end_date > camp_end:
-                end_date = camp_end
-        except Exception:
-            pass
+# --------------------------------
+# 1) 캠프 목록 / 주차 선택
+# --------------------------------
+st.sidebar.header("필터 설정")
 
-    # 오늘 이후로는 잘라주기
-    if end_date > today:
-        end_date = today
+camp_name = st.sidebar.selectbox("반 선택", list(camp_name_to_id.keys()))
+camp_id = camp_name_to_id[camp_name]
 
-    return start_date, end_date
-
-
-# -----------------------------
-# 캠프 리스트
-# -----------------------------
-camps = get_camps()
-camp_name_to_obj = {camp["name"]: camp for camp in camps}
-camp_names = list(camp_name_to_obj.keys())
-
-# -----------------------------
-# 사이드바 UI
-# -----------------------------
-st.sidebar.header("캠프 / 주차 설정")
-
-selected_camp_name = st.sidebar.selectbox("반 선택", camp_names)
-
-# 커리큘럼 리포트처럼 Week 단위 선택 (필요 시 범위 조정 가능)
 weeks = ["Week 1", "Week 2", "Week 3", "Week 4", "Week 5", "Week 6"]
-selected_week = st.sidebar.selectbox("주차 선택", weeks)
+selected_week_label = st.sidebar.selectbox("주차 선택", weeks)
+week_index = int(selected_week_label.split()[1])  # "Week 3" -> 3
+week_label = f"{week_index}주차"
 
-generate_btn = st.sidebar.button("출결 리포트 생성")
+# --------------------------------
+# 1-1) 리포트 생성 버튼 + 세션 캐싱
+# --------------------------------
+report_key = f"{camp_id}_{week_index}"
+reports_cache = session_cache["curriculum_reports"]
 
-selected_camp = camp_name_to_obj[selected_camp_name]
+# 1) 세션에서 먼저 찾기
+payload = reports_cache.get(report_key)
 
-payload = None
-start_date = None
-end_date = None
+# 2) 세션에 없으면 → 백엔드(DB)에서 한 번 조회해서 있으면 캐시
+if payload is None:
+    db_report = get_attendance_report(camp_id=camp_id, week_index=week_index)
+    if db_report is not None:
+        payload = db_report
+        reports_cache[report_key] = payload
+    else:
+        payload = None
 
-if generate_btn:
-    # 선택한 주차 → 날짜 범위 변환
-    start_date, end_date = get_week_date_range(selected_camp, selected_week)
+generate_clicked = st.sidebar.button("리포트 생성하기")
+if generate_clicked:
+    with st.spinner("리포트 생성 중입니다..."):
+        payload = get_attendance_report(
+            camp_id=camp_id,
+            week_index=week_index,
+        )
+        session_cache["attendance_reports"][report_key] = payload
 
-    # -----------------------------
-    # API에서 리포트 가져오기
-    # -----------------------------
-    camp_id = selected_camp["camp_id"]
-    payload = get_attendance_report(camp_id, start_date, end_date)
+# 세션에서 현재 선택된 캠프/주차의 리포트 가져오기
+payload = session_cache["attendance_reports"].get(report_key)
 
 # -----------------------------
 # 화면
 # -----------------------------
-st.title(f"🧍 출결 & 이탈 위험 리포트 - {selected_camp_name}")
+st.title(f"🔥 출결 리포트 - {camp_name}")
 
 if payload is None:
     st.info("좌측에서 **반과 주차를 선택**한 뒤, `📊 이 주차 출결 리포트 생성` 버튼을 눌러 리포트를 확인하세요.")
@@ -116,10 +98,6 @@ else:
     df_att = pd.DataFrame(charts["attendance_timeseries"])
     df_students = pd.DataFrame(tables["student_list"])
     df_risk = pd.DataFrame(tables["top_risk_students"])
-
-    # 선택된 주차 / 날짜 범위 표시
-    if start_date and end_date:
-        st.caption(f"선택 주차: **{selected_week}**  |  분석 기간: **{start_date} ~ {end_date}**")
 
     tab1, tab2 = st.tabs(["요약", "AI 분석"])
 
