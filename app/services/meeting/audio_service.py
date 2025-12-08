@@ -48,11 +48,19 @@ class AudioService:
         """처리 중인 chunk 추가"""
         if meeting_id in self._meeting_states:
             self._meeting_states[meeting_id]["processing_chunks"].add(chunk_id)
+            logger.debug(
+                f"  현재 처리 중인 chunks: "
+                f"{len(self._meeting_states[meeting_id]['processing_chunks'])}개"
+            )
     
     def _mark_chunk_completed(self, meeting_id: str, chunk_id: str):
         """처리 완료된 chunk 제거"""
         if meeting_id in self._meeting_states:
             self._meeting_states[meeting_id]["processing_chunks"].discard(chunk_id)
+            logger.debug(
+                f"  현재 처리 중인 chunks: "
+                f"{len(self._meeting_states[meeting_id]['processing_chunks'])}개"
+            )
     
     def _is_all_chunks_processed(self, meeting_id: str) -> bool:
         """모든 chunk 처리 완료 여부"""
@@ -217,19 +225,19 @@ class AudioService:
         
         logger.info(f"Audio chunk upload: Meeting={meeting_id}, User={user_id}, Chunk={chunk_index}")
         
-        # # 회의 상태 초기화
-        # self._init_meeting_state(meeting_id)
+        # 회의 상태 초기화
+        self._init_meeting_state(meeting_id)
         
-        # # 마지막 chunk 시간 업데이트
-        # self._update_last_chunk_time(meeting_id)
+        # 마지막 chunk 시간 업데이트
+        self._update_last_chunk_time(meeting_id)
         
-        # # 활성 사용자 업데이트
-        # self._meeting_states[meeting_id]["active_users"][user_id] = chunk_index
+        # 활성 사용자 업데이트
+        self._meeting_states[meeting_id]["active_users"][user_id] = chunk_index
         
-        # # 마지막 chunk 표시
-        # if is_last:
-        #     self._meeting_states[meeting_id]["last_chunks_received"][user_id] = True
-        #     logger.info(f"✓ User {user_id}의 마지막 chunk 수신")
+        # 마지막 chunk 표시
+        if is_last:
+            self._meeting_states[meeting_id]["last_chunks_received"][user_id] = True
+            logger.info(f"User {user_id}의 마지막 chunk 수신")
         
 
         # 1. 파일 읽기
@@ -290,6 +298,7 @@ class AudioService:
         # 11. chunk_id 생성 (처리 추적용)
         chunk_id = f"{meeting_id}_{user_id}_{chunk_index}"
         self._mark_chunk_processing(meeting_id, chunk_id)
+        logger.info(f"Chunk {chunk_id} 처리 시작 표시 완료")
 
         # 누적 시간 가져오기
         # cumulative_time_ms = self._get_cumulative_time(meeting_id, user_id)
@@ -303,7 +312,8 @@ class AudioService:
             chunk_path = chunk_path,
             prev_chunk_path = prev_chunk_path,
             speaker_name = user.name,
-            chunk_relative_start_ms = chunk_relative_start_ms
+            chunk_relative_start_ms = chunk_relative_start_ms,
+            chunk_id = chunk_id
         )
         
         return AudioChunkUploadResponse(
@@ -321,7 +331,8 @@ class AudioService:
         chunk_path: Path,
         prev_chunk_path: Path,
         speaker_name: str,
-        chunk_relative_start_ms: int
+        chunk_relative_start_ms: int,
+        chunk_id: str
     ):
         logger.info(f"[STT] User {user_id}, Chunk {chunk_index} started")
         db = SessionLocal()
@@ -397,9 +408,17 @@ class AudioService:
                 f"[STT] User {user_id}, Chunk {chunk_index} 완료\n"
                 f"   저장된 segments: {saved_count}"
             )
+
+            self._mark_chunk_completed(meeting_id, chunk_id)
+            logger.info(f"[STT] {chunk_id} 처리 완료 표시")
         
         except Exception as e:
             logger.error(f"[STT] Failed: {e}", exc_info=True)
             db.rollback()
+
+            # 에러 발생해도 처리 완료 표시 (무한대기 방지)
+            self._mark_chunk_completed(meeting_id, chunk_id)
+            logger.warning(f"[STT] {chunk_id} 에러로 인한 처리 완료 표시")
+
         finally:
             db.close()
