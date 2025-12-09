@@ -1,6 +1,5 @@
 import os
 import logging
-import time
 from dotenv import load_dotenv
 from langchain_openai import OpenAIEmbeddings, ChatOpenAI
 from langchain_chroma import Chroma
@@ -64,6 +63,8 @@ GRADE_RULES = {
 # RAG 체인 초기화
 # ==============================================================
 
+
+
 def initialize_rag_chain():
     logger.info("🔧 initialize_rag_chain() 실행 시작")
 
@@ -89,13 +90,14 @@ def initialize_rag_chain():
         당신은 부트캠프 학생을 위한 학습 도우미 챗봇입니다.
         답변은 반드시 제공된 [Context] 안의 정보만 사용해야 합니다.
         문서에 없는 내용은 절대 지어내지 마세요.
-        
-        [답변 규칙]
-        - 핵심만 짧고 명확하게 설명할 것
-        - 불필요한 배경 지식이나 장문 설명 금지
-        - 예시는 꼭 필요한 경우 한 줄만 사용
-        - 초보자가 바로 이해할 수 있는 단어로 표현
-        - 질문에 직접적으로 답하기
+        [FORMAT] 형식에 맞는 답변을 하세요.
+
+        [FORMAT]
+        - 답변은 반드시 1문장만 사용
+        - 필요한 경우 예시는 한 줄만 허용
+        - 불릿 포인트 금지
+        - 부가 설명, 실무 포인트 등 추가 정보 금지
+
         
         [학생 수준]
         {grade}
@@ -152,6 +154,7 @@ def answer(question, grade="중급"):
         raise ValueError("grade는 '초급', '중급', '고급' 중 하나여야 합니다.")
 
     try:
+        logger.info("🔍 RAG 체인 초기화 중...")
         rag = rag_chain
 
         logger.info("🤖 RAG 체인 실행 중...")
@@ -168,25 +171,3 @@ def answer(question, grade="중급"):
         logger.error(f"❌ answer() 실행 중 오류 발생: {e}")
         return f"[오류 발생] {e}"
 
-
-# ==============================================================
-# 실행 엔트리포인트 + 전체 실행 시간 측정
-# ==============================================================
-
-if __name__ == "__main__":
-    logger.info("🚀 프로그램 실행 시작")
-
-    start_time = time.time()
-
-    질문 = input("질문을 입력하세요: ")
-    난이도 = input("난이도(초급/중급/고급)를 입력하세요: ")
-
-    응답 = answer(질문, 난이도)
-    print("\n=== 챗봇 응답 ===\n")
-    print(응답)
-
-    end_time = time.time()
-    elapsed = round(end_time - start_time, 2)
-
-    logger.info(f"🏁 프로그램 실행 종료 — 총 {elapsed}초 걸렸습니다.")
-    print(f"\n⏱ 총 실행 시간: {elapsed}초")
