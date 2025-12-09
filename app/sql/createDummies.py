@@ -39,12 +39,12 @@ def seed_dummy_data():
     # -----------------------------
     admins = []
     for i in range(1, 4):
-        login_id = f"admin{i}"
+        login_id = f"test{i}"
         admins.append(
             User(
                 login_id=login_id,
                 password_hash=login_id,  # id와 비번 동일
-                name=f"운영진_{i}",
+                name=f"윤여민",
                 email=f"admin{i}@mumul.com",
                 user_type_id=admin_type.type_id,
                 camp_id=None,
@@ -109,7 +109,7 @@ def seed_dummy_data():
         )
 
     # 프론트 캠프 학생
-    for i in range(1, 100):
+    for i in range(1, 101):
         login_id = f"ur_student{i}"
         students.append(
             User(
@@ -123,21 +123,21 @@ def seed_dummy_data():
         )
 
     # 테스트 캠프 학생
-    login_ids = ["test1", "test2", "test3", "test4", "test5"]
-    test_name = ["김해찬", "윤여민", "김서영", "이성윤", "차요준"]
-    for i in range(5):
+    login_ids = ["user1", "user2", "user3", "user4", "user5"]
+    test_names = ["김해찬", "윤여민", "김서영", "이성윤", "차요준"]
+    for i in range(len(login_ids)):
         login_id = login_ids[i]
         test_user = [
                 User(
                     login_id=login_id,
                     password_hash=login_id,
-                    name=f"{test_name[i]}",
+                    name=f"{test_names[i]}",
                     email=f"{login_id}@mumul.com",
                     user_type_id=student_type.type_id,
                     camp_id=test_camp.camp_id,
                 )
         ]
-        students.append(test_user)
+        students.extend(test_user)
 
     session.add_all(students)
     session.commit()
