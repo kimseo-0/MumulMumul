@@ -55,10 +55,10 @@ camp = camp_info[camp_name]
 camp_id = camp["camp_id"]
 
 # camp_start_date, camp_end_date는 문자열이라고 가정 ("YYYY-MM-DD")
-camp_start_date = datetime.strptime(camp["start_date"], "%Y-%m-%d").date()
-camp_end_date = datetime.strptime(camp["end_date"], "%Y-%m-%d").date()
+camp_start_date = datetime.strptime(camp["start_date"], "%Y-%m-%d")
+camp_end_date = datetime.strptime(camp["end_date"], "%Y-%m-%d")
 
-selected_date: date = st.sidebar.date_input(
+selected_date: datetime = st.sidebar.date_input(
     "기준 날짜 선택",
     value=camp_start_date,       # 기본값: 캠프 시작일
     min_value=camp_start_date,   # 최소: 캠프 시작
@@ -109,36 +109,6 @@ if not payload:
     )
     st.stop()
 
-# --------------------------------------------
-# ⚠️ payload 구조 예시 (백엔드 AttendanceReport와 1:1 매핑)
-# {
-#   "camp_id": 1,
-#   "camp_name": "데이터 분석 1반",
-#   "target_date": "2025-12-08",
-#   "summary": {
-#       "attendance_rate": 0.87,
-#       "total_students": 25,
-#       "high_risk_count": 3,
-#       "warning_count": 5,
-#       "late_rate": 0.12,   # 선택
-#   },
-#   "students": [
-#       {
-#           "student_id": 101,
-#           "name": "김OO",
-#           "attendance_rate": 0.6,
-#           "absent_count": 3,
-#           "late_count": 2,
-#           "early_leave_count": 1,
-#           "pattern_type": "급격 이탈형",
-#           "risk_level": "고위험",   # 고위험 / 위험 / 주의 / 정상
-#           "trend": -0.3,           # 최근 2주 변화율 (선택)
-#           "ops_action": "",        # 운영진 조치 메모 (선택)
-#       },
-#       ...
-#   ]
-# }
-# --------------------------------------------
 
 summary = payload.get("summary", {}) or {}
 students_raw = payload.get("students", []) or []
@@ -251,7 +221,6 @@ else:
 
     for idx, (_, row) in enumerate(top3.iterrows()):
         with cols[idx]:
-            bg_color = risk_to_color(row.get("risk_level", ""))
             name = row.get("name", f"학생 {row.get('student_id', '')}")
             pattern = row.get("pattern_type", "")
             att_rate = row.get("attendance_rate", None)
@@ -259,22 +228,7 @@ else:
             late = row.get("late_count", 0)
             trend = row.get("trend", None)
 
-            container_style = f"""
-                <div style="
-                    background-color:{bg_color};
-                    border-radius:16px;
-                    padding:12px 14px;
-                    margin-bottom:12px;
-                    border:1px solid #dddddd;
-                ">
-            """
-            st.markdown(container_style, unsafe_allow_html=True)
-            st.markdown(f"#### {name}")
-            st.markdown(f"**{risk_to_badge(row.get('risk_level', ''))}**")
-
-            if pattern:
-                st.caption(f"패턴: {pattern}")
-
+            # --- st.error 카드 본문 구성 ---
             stats_line = []
             if att_rate is not None:
                 stats_line.append(f"출석률 {att_rate*100:.1f}%")
@@ -283,22 +237,27 @@ else:
             if late is not None:
                 stats_line.append(f"지각 {int(late)}회")
 
+            lines = [
+                f"**{name}**  |  {risk_to_badge(row.get('risk_level', ''))}",
+            ]
+            if pattern:
+                lines.append(f"- 패턴: {pattern}")
             if stats_line:
-                st.markdown(" · ".join(stats_line))
+                lines.append(f"- " + " · ".join(stats_line))
 
             if trend is not None:
                 arrow = "⬇️" if trend < 0 else "⬆️"
-                st.caption(f"최근 변화: {arrow} {trend*100:.1f}%p")
+                lines.append(f"- 최근 변화: {arrow} {trend*100:.1f}%p")
 
-            st.markdown("---")
+            # 🔴 고위험 학생 카드는 st.error로 강조
+            st.error("\n".join(lines))
+
             st.markdown("**권장 즉시 조치**")
             st.markdown(
                 "- 1:1 체크인 메시지 발송  \n"
                 "- 금일 데일리 미팅에서 상태 확인  \n"
                 "- 필요 시 팀 담당자와 연계"
             )
-
-            st.markdown("</div>", unsafe_allow_html=True)
 
     # 나머지 고위험 학생은 토글로 숨기기
     if len(high_risk_df) > 3:
@@ -312,7 +271,7 @@ else:
 st.markdown("---")
 
 # ============================================
-# 5. 운영진 우선 액션 Top 3 (간단 더미)
+# 5. 운영진 우선 액션 Top 3
 # ============================================
 
 st.markdown("### 🏃 운영진 우선 액션 Top 3")
@@ -411,11 +370,9 @@ if "출석률" in display_df.columns:
     display_df["출석률"] = (display_df["출석률"] * 100).round(1)
 
 if "최근 변화율" in display_df.columns:
+    display_df["최근 변화율"] = pd.to_numeric(display_df["최근 변화율"], errors="coerce")
     display_df["최근 변화율"] = (display_df["최근 변화율"] * 100).round(1)
 
-st.caption(
-    "※ '운영진 조치' 칼럼에 메모를 남기고, 필요하다면 나중에 백엔드 저장 로직을 추가할 수 있습니다."
-)
 
 edited_df = st.data_editor(
     display_df,
@@ -433,7 +390,3 @@ edited_df = st.data_editor(
         ),
     },
 )
-
-# TODO: 추후 edited_df를 원본 df와 매핑해 student_id 기준으로 저장하는 API 연동 가능
-# if st.button("운영진 조치 저장하기"):
-#     -> edited_df와 원본 df merge 후 update API 호출

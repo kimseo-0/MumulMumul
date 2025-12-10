@@ -307,7 +307,7 @@ class AttendanceStudentStat(BaseModel):
 class AttendanceReport(BaseModel):
     camp_id: int
     camp_name: str
-    target_date: date
+    target_date: datetime
 
     summary: AttendanceSummary
     students: List[AttendanceStudentStat]

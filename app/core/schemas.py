@@ -151,6 +151,11 @@ class SessionActivityLog(Base):
     user = relationship("User")
 
 attendance_status_enum = Enum(
+    "정상",
+    "지각",
+    "조퇴",
+    "결석",
+    "부분참여",
     name="attendance_status_enum",
 )
 

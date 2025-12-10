@@ -1,5 +1,5 @@
 # app/api/attendance.py
-from datetime import date
+from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
@@ -13,7 +13,7 @@ router = APIRouter()
 @router.get("/report", response_model=AttendanceReport)
 def fetch_attendance_report(
     camp_id: int = Query(..., description="리포트를 조회할 캠프 ID"),
-    target_date: date = Query(..., alias="target_date", description="리포트를 조회할 날짜"),
+    target_date: datetime = Query(..., alias="target_date", description="리포트를 조회할 날짜"),
 ):
     """
     출결 리포트 조회 API
@@ -30,7 +30,7 @@ def fetch_attendance_report(
 @router.post("/report/generate", response_model=AttendanceReport)
 def create_attendance_report(
     camp_id: int = Query(..., description="리포트를 생성할 캠프 ID"),
-    target_date: date = Query(..., alias="target_date", description="리포트를 생성할 날짜"),
+    target_date: datetime = Query(..., alias="target_date", description="리포트를 생성할 날짜"),
     db: Session = Depends(get_db)
 ):
     """
