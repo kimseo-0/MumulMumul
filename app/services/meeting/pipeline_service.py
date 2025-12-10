@@ -7,6 +7,7 @@ from app.core.db import SessionLocal
 from app.core.mongodb import get_mongo_db, MeetingTranscript, MeetingSegment, OverlapInfo, MeetingSummary
 from app.core.schemas import Meeting
 from app.services.meeting.timeline_service import TimelineService
+from app.services.meeting.chat_service import ChatService
 from app.services.meeting.text_processor import TextProcessor
 from app.services.meeting.mongodb_service import MongoMeetingService
 from app.services.meeting.vectorStore_service import VectorStoreService
@@ -53,18 +54,49 @@ class RAGPipelineService:
         db = SessionLocal()
         
         try:
-            # ===== 1. 타임라인 병합 =====
-            logger.info("1. 타임라인 병합")
-            merged_data = self.timeline_service.merge_timeline(db, meeting_id)
+            # ===== 1. 회의 정보 조회 =====
+            meeting = db.query(Meeting).filter(
+                Meeting.meeting_id == meeting_id
+            ).first()
+
+            if not meeting:
+                raise ValueError(f"Meeting not found: {meeting_id}")
+            
+            # ===== 2. 채팅 메시지 조회 =====
+            chat_service = ChatService()
+            chat_messages = []
+
+            if meeting.chat_room_id:
+                logger.info(f"채팅 메시지 조회: {meeting.chat_room_id}")
+
+                chat_messages = chat_service.get_meeting_chat_messages(
+                    room_id = meeting.chat_room_id,
+                    start_timestamp = meeting.start_server_timestamp,
+                    end_timestamp = meeting.start_server_timestamp + meeting.duration_ms
+                )
+
+                logger.info(f"채팅 메시지: {len(chat_messages)}개")
+
+            # ===== 3. 음성 + 채팅 타임라인 병합 =====
+            logger.info("타임라인 병합 (음성 + 채팅)")
+            merged_data = self.timeline_service.merge_timeline(
+                db = db,
+                meeting_id = meeting_id,
+                chat_messages = chat_messages
+            )
             
             if not merged_data["segments"]:
                 logger.warning("segment가 없어서 파이프라인 종료")
                 return
             
-            logger.info(f"{merged_data['total_segments']}개 segment 병합 완료")
-            
-            # ===== 1-1. 텍스트 후처리 =====
-            logger.info("1-1. 텍스트 후처리")
+            logger.info(
+                f"병합 완료: {merged_data['total_segments']}개 "
+                f"(음성 {merged_data['voice_segments']} + "
+                f"채팅 {merged_data['chat_segments']})"
+            )
+
+            # ===== 4. 텍스트 후처리 =====
+            logger.info("4. 텍스트 후처리")
             
             processed_segments = await self.text_processor.process_segments(
                 segments=merged_data["segments"],
@@ -80,7 +112,7 @@ class RAGPipelineService:
             
             logger.info(f"후처리 완료: {len(processed_segments)}개 segment")
 
-            # ===== 2. 데이터 저장 =====
+            # ===== 5. 데이터 저장 =====
             logger.info("2. MongoDB & ChromaDB 저장")
             
             # MongoDB 전사본 저장
@@ -96,7 +128,7 @@ class RAGPipelineService:
             logger.info("ChromaDB에 segment 임베딩 저장")
             
 
-            # ===== 3. LLM 분석 =====
+            # ===== 6. LLM 분석 =====
             logger.info("3. LLM 요약 생성")
             
             summary = await self.rag_service.generate_meeting_summary(

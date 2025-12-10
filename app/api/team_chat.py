@@ -1,6 +1,7 @@
 # app/api/team_chat_router.py
 
 from typing import List
+from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
@@ -214,7 +215,7 @@ def post_team_chat_message(
         "userId": payload.userId,
         "userName": user.name,
         "message": payload.message,
-        "createdAt": payload.createdAt,  # TODO: 서버 시각으로 덮어쓸지 결정
+        "createdAt": datetime.utcnow().isoformat()
     }
 
     result = collection.insert_one(doc)
