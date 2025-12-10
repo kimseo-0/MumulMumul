@@ -1,6 +1,7 @@
 # app/core/schemas.py
 from datetime import datetime
 from sqlalchemy import (
+    Date,
     create_engine,
     Column,
     Integer,
@@ -9,7 +10,8 @@ from sqlalchemy import (
     DateTime,
     Boolean,
     ForeignKey,
-    Float
+    Float,
+    Enum
 )
 from sqlalchemy.orm import declarative_base, relationship, sessionmaker
 
@@ -150,7 +152,34 @@ class SessionActivityLog(Base):
 
     user = relationship("User")
 
+attendance_status_enum = Enum(
+    "정상",
+    "지각",
+    "조퇴",
+    "결석",
+    "부분참여",
+    name="attendance_status_enum",
+)
 
+class DailyAttendance(Base):
+    __tablename__ = "daily_attendance"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+
+    camp_id = Column(Integer, ForeignKey("camp.camp_id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("user.user_id"), nullable=False)
+    date = Column(Date, nullable=False)
+
+    total_minutes = Column(Integer, nullable=False)
+    morning_minutes = Column(Integer, nullable=False, default=0)   # 9–12
+    afternoon_minutes = Column(Integer, nullable=False, default=0) # 13–18
+
+    status = Column(attendance_status_enum, nullable=False)
+    note = Column(String(255), nullable=True)
+
+# ------------------------
+# STT Segment DB
+# ------------------------
 class STTSegment(Base):
     """
     STT 처리된 세그먼트 (겹침 처리 지원)
