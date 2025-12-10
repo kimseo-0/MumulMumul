@@ -59,28 +59,12 @@ class User(Base):
     camp_id = Column(Integer, ForeignKey("camp.camp_id"), nullable=True)
 
     tendency_completed = Column(Integer, nullable=False, default=0)  # 0 or 1
+    tendency_type_code = Column(String(50), nullable=True)
+
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
 
     user_type = relationship("UserType")
     camp = relationship("Camp", back_populates="users")
-    tendency_profile = relationship(
-        "TendencyProfile", back_populates="user", uselist=False
-    )
-
-
-# ------------------------
-# Tendency Profile DB
-# ------------------------
-class TendencyProfile(Base):
-    __tablename__ = "tendency_profile"
-
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    user_id = Column(Integer, ForeignKey("user.user_id"), nullable=False)
-    type_code = Column(String(50), nullable=False)  # MBTI-lite 코드 등
-    analysis_date = Column(DateTime, nullable=False, default=datetime.utcnow)
-    profile_summary = Column(Text, nullable=True)
-
-    user = relationship("User", back_populates="tendency_profile")
 
 # ------------------------
 # Meetings DB
