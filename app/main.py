@@ -18,6 +18,7 @@ from app.api.learning_chatbot import router as learning_chatbot_router
 from app.api.meeting_chatbot import router as meeting_chatbot_router
 from app.api.learning_quiz import router as learning_quiz_router
 from app.api.feedbackBoard import router as feedback_router
+from app.api.camp import router as camp_router
 from app.core.mongodb import init_mongo, get_mongo_db
 from app.core.schemas import init_db
 from app.config import SQLITE_URL
@@ -72,3 +73,4 @@ app.include_router(meeting_chatbot_router, prefix="/meeting_chatbot")
 app.include_router(team_chat_router, prefix="/chat")
 app.include_router(learning_quiz_router, prefix="/learning_quiz")
 app.include_router(feedback_router, prefix="/feedback")
+app.include_router(camp_router, prefix="/camps")

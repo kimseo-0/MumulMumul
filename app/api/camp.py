@@ -24,8 +24,9 @@ def list_camps(db: Session = Depends(get_db)):
                 "end_date": c.end_date.date().isoformat() if c.end_date else None,
             }
         )
-    print(result)
-    return result
+    return {
+        "camps": result
+    }
 
 
 @router.get("/{camp_id}/students")
