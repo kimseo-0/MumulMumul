@@ -63,3 +63,7 @@ class Settings(BaseSettings):
             path.mkdir(parents=True, exist_ok=True)
 
 settings = Settings()
+
+CURRENT_FILE = Path(__file__).resolve()
+ROOT_DIR = CURRENT_FILE.parents[1]
+PERSONAL_SURVEY_CONFIG_PATH = ROOT_DIR / "storage/personal_survey.json"

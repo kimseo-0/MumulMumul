@@ -1,6 +1,7 @@
 # app/core/schemas.py
 from datetime import datetime
 from sqlalchemy import (
+    Date,
     create_engine,
     Column,
     Integer,
@@ -9,7 +10,8 @@ from sqlalchemy import (
     DateTime,
     Boolean,
     ForeignKey,
-    Float
+    Float,
+    Enum
 )
 from sqlalchemy.orm import declarative_base, relationship, sessionmaker
 
@@ -57,28 +59,12 @@ class User(Base):
     camp_id = Column(Integer, ForeignKey("camp.camp_id"), nullable=True)
 
     tendency_completed = Column(Integer, nullable=False, default=0)  # 0 or 1
+    tendency_type_code = Column(String(50), nullable=True)
+
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
 
     user_type = relationship("UserType")
     camp = relationship("Camp", back_populates="users")
-    tendency_profile = relationship(
-        "TendencyProfile", back_populates="user", uselist=False
-    )
-
-
-# ------------------------
-# Tendency Profile DB
-# ------------------------
-class TendencyProfile(Base):
-    __tablename__ = "tendency_profile"
-
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    user_id = Column(Integer, ForeignKey("user.user_id"), nullable=False)
-    type_code = Column(String(50), nullable=False)  # MBTI-lite 코드 등
-    analysis_date = Column(DateTime, nullable=False, default=datetime.utcnow)
-    profile_summary = Column(Text, nullable=True)
-
-    user = relationship("User", back_populates="tendency_profile")
 
 # ------------------------
 # Meetings DB
@@ -150,7 +136,34 @@ class SessionActivityLog(Base):
 
     user = relationship("User")
 
+attendance_status_enum = Enum(
+    "정상",
+    "지각",
+    "조퇴",
+    "결석",
+    "부분참여",
+    name="attendance_status_enum",
+)
 
+class DailyAttendance(Base):
+    __tablename__ = "daily_attendance"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+
+    camp_id = Column(Integer, ForeignKey("camp.camp_id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("user.user_id"), nullable=False)
+    date = Column(Date, nullable=False)
+
+    total_minutes = Column(Integer, nullable=False)
+    morning_minutes = Column(Integer, nullable=False, default=0)   # 9–12
+    afternoon_minutes = Column(Integer, nullable=False, default=0) # 13–18
+
+    status = Column(attendance_status_enum, nullable=False)
+    note = Column(String(255), nullable=True)
+
+# ------------------------
+# STT Segment DB
+# ------------------------
 class STTSegment(Base):
     """
     STT 처리된 세그먼트 (겹침 처리 지원)

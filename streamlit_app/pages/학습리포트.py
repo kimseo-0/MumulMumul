@@ -5,11 +5,11 @@ import altair as alt
 from streamlit_app.api.curriculum import (
     analyze_curriculum_text,
     create_curriculum_report,
-    fetch_camps,
     fetch_curriculum_report,
     fetch_curriculum_config,
     save_curriculum_config,
 )
+from streamlit_app.api.camp import fetch_camps
 
 st.set_page_config(layout="wide")
 st.title("📚 학습 리포트")

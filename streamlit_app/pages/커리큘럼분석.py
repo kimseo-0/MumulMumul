@@ -4,10 +4,10 @@ import altair as alt
 
 from streamlit_app.api.curriculum import (
     analyze_curriculum_text,
-    fetch_camps,
     fetch_curriculum_config,
     save_curriculum_config,
 )
+from streamlit_app.api.camp import fetch_camps
 
 st.set_page_config(layout="wide")
 st.title("📚 커리큘럼 분석")
@@ -48,13 +48,12 @@ selected_week_label = st.sidebar.selectbox("주차 선택", weeks)
 week_index = int(selected_week_label.split()[1])  # "Week 3" -> 3
 week_label = f"{week_index}주차"
 
-config_cache = session_cache["curriculum_config_by_camp"]
-
-preview_container = st.container()
-
 # --------------------------------
 # 2) 커리큘럼 구조 자동 분석
 # --------------------------------
+config_cache = session_cache["curriculum_config_by_camp"]
+preview_container = st.container()
+
 config = config_cache.get(camp_id)
 if config is None:
     config = fetch_curriculum_config(camp_id=camp_id) or {}
