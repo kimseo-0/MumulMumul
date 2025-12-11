@@ -1,22 +1,49 @@
+# app/services/learning_quiz/service.py
+
 from app.services.learning_quiz.llm import generate_quiz
+from app.services.learning_quiz.schemas import LearningQuizResponse, QuizItem
+from app.services.learning_quiz.vectorstore import search_context
+from app.services.learning_quiz.llm import check_learning_intent
+from app.core.logger import setup_logger
 
-def test_make_quiz(question, grade):
-    
-    # STEP 4 테스트용 context (나중에는 vectorstore에서 가져옴)
-    dummy_context = """
-    Pandas에서 DataFrame을 합치는 방법은 merge(), concat(), join()이 있다.
-    merge()는 SQL JOIN처럼 동작하며 공통 column을 기준으로 결합한다.
-    concat()은 DataFrame을 행 또는 열 기준으로 합칠 수 있다.
-    """
-
-    question = "판다스에서 데이터프레임을 어떻게 합치는지 알려줘"
-    grade = "초급"
-
-    result = generate_quiz(dummy_context, question, grade)
-    
-    for q in result.quiz:
-        print(q.id, q.type, q.question, q.answer)
-
-    return result  
+logger = setup_logger(__name__)
 
 
+class LearningQuizService:
+
+    @staticmethod
+    def validate_grade(grade: str):
+        valid_grades = ["초급", "중급", "고급"]
+        if grade not in valid_grades:
+            logger.error(f"[Invalid Grade] 입력된 grade 값: {grade}")
+            raise ValueError("INVALID_GRADE")
+
+    @staticmethod
+    def get_context(question: str) -> str:
+        return search_context(question, k=3)
+
+    @staticmethod
+    def create_quiz(question: str, grade: str) -> LearningQuizResponse:
+
+        LearningQuizService.validate_grade(grade)
+
+        # 학습 여부 판단
+        if not check_learning_intent(question):
+            logger.info("[LearningQuiz] 학습 관련 없는 질문으로 판정됨.")
+            raise ValueError("NOT_LEARNING_RELATED")
+
+        logger.info("[LearningQuiz] 학습 관련 질문으로 판정됨.")
+
+        # ⭐ 실제 vectorstore 검색 적용됨
+        context = search_context(question, k=5)
+
+        logger.info(f"[LearningQuiz] Context 길이: {len(context)}")
+
+        # context 기반 퀴즈 생성
+        quiz_list = generate_quiz(context, question, grade)
+
+        return LearningQuizResponse(
+            isLearningQuestion=True,
+            grade=grade,
+            quiz=quiz_list.quiz
+        )

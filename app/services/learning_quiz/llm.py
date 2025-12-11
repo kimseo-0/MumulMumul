@@ -56,3 +56,40 @@ def generate_quiz(context: str, question: str, grade: str) -> QuizList:
     except Exception as e:
         logger.error(f"[Quiz Generation Error] {e}")
         raise e
+
+
+# ========= 학습 질문 여부 판단용 Prompt =========
+
+INTENT_PROMPT = ChatPromptTemplate.from_template("""
+당신은 사용자의 질문이 '부트캠프 학습과 관련된 질문인지' 판단하는 AI입니다.
+
+아래 질문이 학습 관련이면 "YES"
+아니면 "NO"만 답변하세요.
+
+질문:
+{question}
+""")
+
+# Intent 판단용 LLM (짧은 응답이므로 작은 모델 가능)
+intent_llm = ChatOpenAI(model="gpt-4.1-mini", temperature=0)
+
+# Chain
+intent_chain = INTENT_PROMPT | intent_llm
+
+
+def check_learning_intent(question: str) -> bool:
+    """
+    LLM을 사용하여 학습 관련 질문인지 판단합니다.
+    YES → True
+    NO → False
+    """
+
+    try:
+        result = intent_chain.invoke({"question": question})
+        answer = result.content.strip().upper()
+
+        return answer == "YES"
+
+    except Exception as e:
+        logger.error(f"[Intent Check Error] {e}")
+        return False

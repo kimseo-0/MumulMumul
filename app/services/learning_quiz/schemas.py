@@ -3,7 +3,7 @@
 from pydantic import BaseModel
 from typing import List
 
-class QuizInfo(BaseModel):
+class QuizItem(BaseModel):
     id: int
     type: str
     question: str
@@ -12,4 +12,25 @@ class QuizInfo(BaseModel):
 
 
 class QuizList(BaseModel):
-    quiz: List[QuizInfo]
+    quiz: List[QuizItem]
+
+
+class LearningQuizResponse(BaseModel):
+    isLearningQuestion: bool
+    grade: str
+    quiz: List[QuizItem]
+
+
+class LearningQuizRequest(BaseModel):
+    question: str
+    grade: str
+
+
+class ErrorDetail(BaseModel):
+    errorCode: str
+    message: str
+
+
+class LearningQuizErrorResponse(BaseModel):
+    isLearningQuestion: bool
+    detail: ErrorDetail
