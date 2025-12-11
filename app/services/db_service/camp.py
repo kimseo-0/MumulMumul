@@ -26,5 +26,12 @@ def get_camp_by_id(db: Session, camp_id: int) -> Camp | None:
     """
     return db.query(Camp).filter(Camp.camp_id == camp_id).first()
     
-    
+def get_camp_by_user_id(db: Session, user_id: int) -> Camp | None:
+    """
+    user_id로 Camp 객체 1개를 조회하는 Repository 함수.
+    """
+    user = db.query(User).filter(User.user_id == user_id).first()
+    if not user:
+        return None
+    return user.camp
     

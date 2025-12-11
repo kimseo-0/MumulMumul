@@ -345,7 +345,7 @@ RiskLevel = Literal["low", "medium", "high"]
 
 
 class AnalysisBlock(BaseModel):
-    """LLM 기반 분석 결과 — 재계산 가능"""
+    """LLM 기반 분석 결과"""
     normalized_text: str = ""
     category: FeedbackCategory = "other"      # 고민/건의/기타
     topic_tags: List[str] = []                # NLP 토픽 태그
@@ -363,22 +363,21 @@ class ModerationBlock(BaseModel):
 
 class FeedbackBoardPost(BaseModel):
     """Mongo 도큐먼트 1건에 해당하는 구조"""
-    id: Optional[str] = Field(None, alias="_id")
-
+    id: str = Field(None, alias="_id", auto_generated=True)
     camp_id: int
-    created_at: datetime
-    
-    author_id: Optional[int] = None  # 또는 str (익명 ID / 해시된 값 등)
+    author_id: Optional[int] = None
 
     raw_text: str
 
-    analysis: AnalysisBlock = AnalysisBlock()
-    moderation: ModerationBlock = ModerationBlock()
+    analysis: Optional[AnalysisBlock] = AnalysisBlock()
+    moderation: Optional[ModerationBlock] = ModerationBlock()
+
+    created_at: datetime = Field(default_factory=datetime.utcnow)
 
 # Mongo 레지스트리에 등록
 register_mongo_model(
     FeedbackBoardPost,
-    collection_name="curriculum_reports",
+    collection_name="feedback_board_posts",
     indexes=[
         ("camp_id", 1),
         ("created_at", -1)
