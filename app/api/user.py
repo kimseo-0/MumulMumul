@@ -30,7 +30,11 @@ class LoginResponse(BaseModel):
     name: str
     campId: Optional[int] = None
     userType: str
-    tendencyTypeCode: Optional[int] = None
+    tendencyCompleted: bool
+    tendencyTypeCode: Optional[str] = None
+
+class LogoutRequest(BaseModel):
+    userId: int
 
 class SurveyResultRequest(BaseModel):
     # 성향 분석 문항 응답 저장
@@ -85,12 +89,14 @@ def login(payload: LoginRequest, db: Session = Depends(get_db)):
         tendencyTypeCode=user.tendency_type_code,
     )
 
-# 로그아웃
+
 @router.post("/logout")
-def logout(userId: int, db: Session = Depends(get_db)):
+def logout(payload: LogoutRequest, db: Session = Depends(get_db)):
     """
     로그아웃 처리 + SessionActivityLog 기록 업데이트
     """
+    userId = payload.userId
+
     log: SessionActivityLog | None = (
         db.query(SessionActivityLog)
         .filter(SessionActivityLog.user_id == userId)
@@ -103,6 +109,7 @@ def logout(userId: int, db: Session = Depends(get_db)):
         db.commit()
 
     return {"message": "로그아웃 처리 완료"}
+
 
 import json
 from pathlib import Path

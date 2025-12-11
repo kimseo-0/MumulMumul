@@ -13,16 +13,16 @@ from typing import List
 from pymongo.database import Database
 from datetime import datetime
 
-from app.core.mongodb import FeedbackBoardPost
+from app.core.mongodb import FeedbackBoardPost, mongo_db
 from app.services.feedbackBoard.analyze_feedback.llm import analyze_single_post
 
+coll = mongo_db["feedback_board_posts"]
 
-def attach_analysis_to_new_posts(mongo_db: Database, camp_id: int) -> int:
+def attach_analysis_to_new_posts(camp_id: int) -> int:
     """
     아직 analysis / moderation 이 비어 있는 글들만 찾아서
     LLM으로 분석 결과를 채워준다.
     """
-    coll = mongo_db["feedback_board_posts"]
 
     cursor = coll.find({
         "camp_id": camp_id,
@@ -52,10 +52,8 @@ def create_feedback_board_report(
     camp_id: int,
     wordcloud_output_dir: str,
 ) -> Dict[str, Any]:
-    coll = mongo_db["feedback_board_posts"]
-
     # 0) 아직 분석 안 된 글들에 대해 analysis/moderation 채우기
-    attach_analysis_to_new_posts(mongo_db, camp_id)
+    attach_analysis_to_new_posts(camp_id)
 
     # 1) 이 캠프의 모든 피드백 글 가져오기
     docs = list(coll.find({"camp_id": camp_id}))
