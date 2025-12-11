@@ -11,7 +11,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-from app.core.schemas import User, UserType
+from app.core.schemas import User, UserType, SessionActivityLog
 from app.core.db import get_db
 
 router = APIRouter()
@@ -30,7 +30,11 @@ class LoginResponse(BaseModel):
     name: str
     campId: Optional[int] = None
     userType: str
-    tendencyTypeCode: Optional[int] = None
+    tendencyCompleted: bool
+    tendencyTypeCode: Optional[str] = None
+
+class LogoutRequest(BaseModel):
+    userId: int
 
 class SurveyResultRequest(BaseModel):
     # 성향 분석 문항 응답 저장
@@ -50,6 +54,7 @@ class SurveyResultResponse(BaseModel):
 def login(payload: LoginRequest, db: Session = Depends(get_db)):
     """
     로그인 + 성향분석 완료 여부 반환
+    SessionActivityLog 기록 추가
     """
     user: User | None = (
         db.query(User)
@@ -66,6 +71,14 @@ def login(payload: LoginRequest, db: Session = Depends(get_db)):
                 "message": "아이디 또는 비밀번호가 잘못되었습니다.",
             },
         )
+    
+    # 세션 활동 로그 기록
+    log = SessionActivityLog(
+        user_id=user.user_id,
+        join_at=datetime.utcnow()
+    )
+    db.add(log)
+    db.commit()
 
     return LoginResponse(
         userId=user.user_id,
@@ -75,6 +88,28 @@ def login(payload: LoginRequest, db: Session = Depends(get_db)):
         tendencyCompleted=bool(user.tendency_completed),
         tendencyTypeCode=user.tendency_type_code,
     )
+
+
+@router.post("/logout")
+def logout(payload: LogoutRequest, db: Session = Depends(get_db)):
+    """
+    로그아웃 처리 + SessionActivityLog 기록 업데이트
+    """
+    userId = payload.userId
+
+    log: SessionActivityLog | None = (
+        db.query(SessionActivityLog)
+        .filter(SessionActivityLog.user_id == userId)
+        .order_by(SessionActivityLog.join_at.desc())
+        .first()
+    )
+
+    if log and not log.leave_at:
+        log.leave_at = datetime.utcnow()
+        db.commit()
+
+    return {"message": "로그아웃 처리 완료"}
+
 
 import json
 from pathlib import Path
