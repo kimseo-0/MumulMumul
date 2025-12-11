@@ -46,6 +46,9 @@ class Settings(BaseSettings):
     EMBEDDING_MODEL: str = "text-embedding-3-large"
     LLM_MODEL: str = "gpt-4o-mini"
 
+    # 잡음 제거 설정
+    ENABLE_DENOISING: bool = True
+
     # 프로세스 풀
     MAX_WORKERS: int = 2
 

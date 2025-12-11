@@ -6,10 +6,12 @@ from typing import Dict
 from app.core.logger import setup_logger
 from app.core.schemas import User, Meeting, MeetingParticipant, STTSegment
 from app.services.meeting.audio_processor import AudioProcessor
+from app.services.meeting.audio_denoiser import AudioDenoiser
 from app.services.meeting.paths import PathManager
 from app.services.meeting.schemas import AudioChunkUploadResponse
 from app.services.meeting.meeting_service import MeetingService
 from app.core.db import SessionLocal
+from app.config import settings
 import asyncio
 
 logger = setup_logger(__name__)
@@ -177,37 +179,6 @@ class AudioService:
             "wait_time_ms": int(wait_time.total_seconds() * 1000),
             "timed_out": timed_out
         }
-    # 사용자의 현재 누적 시간 조회
-    # def _get_cumulative_time(self, meeting_id: str, user_id: int) -> int:
-    #     if meeting_id not in self.user_cumulative_times:
-    #         self.user_cumulative_times[meeting_id] = {}
-
-    #     return self.user_cumulative_times[meeting_id].get(user_id, 0)
-    
-    # # 사용자의 누적 시간 업데이트
-    # def _update_cumulative_time(
-    #         self,
-    #         meeting_id: str,
-    #         user_id: int,
-    #         duration_ms: int
-    # ):
-    #     if meeting_id not in self.user_cumulative_times:
-    #         self.user_cumulative_times[meeting_id] = {}
-        
-    #     current = self.user_cumulative_times[meeting_id].get(user_id, 0)
-        
-    #     # Overlap 제외하고 더함
-    #     if current > 0:
-    #         overlap_ms = int(AudioProcessor.OVERLAP_SECONDS * 1000)
-    #         self.user_cumulative_times[meeting_id][user_id] = current + duration_ms - overlap_ms
-    #     else:
-    #         # 첫 청크
-    #         self.user_cumulative_times[meeting_id][user_id] = duration_ms
-        
-    #     logger.info(
-    #         f"[User {user_id}] Cumulative time updated: "
-    #         f"{self.user_cumulative_times[meeting_id][user_id]}ms"
-    #     )
 
     
     # 음성 청크 업로드 및 STT 처리
@@ -239,7 +210,6 @@ class AudioService:
             self._meeting_states[meeting_id]["last_chunks_received"][user_id] = True
             logger.info(f"User {user_id}의 마지막 chunk 수신")
         
-
         # 1. 파일 읽기
         file_data = await audio_file.read()
         file_size_mb = len(file_data) / (1024 * 1024)
@@ -256,7 +226,6 @@ class AudioService:
         ).first()
         if not meeting:
             raise ValueError("Meeting not found")
-        
         
         # 4. 사용자 확인
         user = db.query(User).filter(User.user_id == user_id).first()
@@ -281,8 +250,20 @@ class AudioService:
             meeting_id, user_id, chunk_index, file_data
         )
 
+        # 잡음 제거 (noisereduce)
+        if settings.ENABLE_DENOISING:
+            try:
+                denoised_path = self.denoiser.denoise_audio(chunk_path)
+                logger.info(f"  잡음 제거 완료")
+            except Exception as e:
+                logger.warning(f"잡음 제거 실패, 원본 사용: {e}")
+                denoised_path = chunk_path
+        else:
+            logger.debug(f"잡음 제거 비활성화 (원본 사용)")
+            denoised_path = chunk_path
+
         # 7. 음성 파일 길이 측정
-        audio_duration_ms = AudioProcessor.get_audio_duration_ms(chunk_path)
+        audio_duration_ms = AudioProcessor.get_audio_duration_ms(denoised_path)
         logger.info(f"  음성 길이: {audio_duration_ms}ms ({audio_duration_ms/1000:.1f}초)")
 
         # 8. 녹음 시작 시점 계산
@@ -293,7 +274,12 @@ class AudioService:
         
         # 10. 이전 청크 경로 (겹침 처리용)
         chunk_dir = PathManager.get_user_chunk_dir(meeting_id, str(user_id))
-        prev_chunk_path = chunk_dir / f"chunk_{chunk_index - 1}.wav" if chunk_index > 0 else None
+        # prev_chunk_path = chunk_dir / f"chunk_{chunk_index - 1}.wav" if chunk_index > 0 else None
+        prev_chunk_path = None
+        if chunk_index > 0:
+            prev_chunk_path = chunk_dir / f"chunk_{chunk_index - 1}.wav"
+            if not prev_chunk_path.exists():
+                prev_chunk_path = None
 
         # 11. chunk_id 생성 (처리 추적용)
         chunk_id = f"{meeting_id}_{user_id}_{chunk_index}"
@@ -309,7 +295,8 @@ class AudioService:
             meeting_id = meeting_id,
             user_id = user_id,
             chunk_index = chunk_index,
-            chunk_path = chunk_path,
+            chunk_path = denoised_path,
+            # chunk_path = chunk_path,
             prev_chunk_path = prev_chunk_path,
             speaker_name = user.name,
             chunk_relative_start_ms = chunk_relative_start_ms,
