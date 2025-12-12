@@ -46,11 +46,11 @@ def calculate_personality_type(result, config):
 
     # 2) 타입별 보정 계수 적용 (analyst 너프, 나머지 살짝 버프)
     adjust_factors = {
-        "analyst": 1,     # ⬅️ 약간 약하게
-        "pillar": 1.1,      # ⬅️ 조금 더 자주 나오게
-        "balancer": 1.05,   # ⬅️ 살짝 업
-        "supporter": 1.1,   # ⬅️ 살짝 업
-        "doer": 1.1,        # ⬅️ 살짝 업
+        "analyst":   0.60,   # 분석가 살짝 너프
+        "doer":      0.65,   # 실행가 살짝 버프
+        "balancer":  0.67,   # 밸런서 약간 버프
+        "supporter": 0.63,   # 협력가 약간 버프
+        "pillar":    0.69    # 원칙주의자 버프
     }
 
     for persona, factor in adjust_factors.items():
@@ -73,7 +73,7 @@ def calculate_personality_type(result, config):
 # -------------------------
 # 2) 시뮬레이션 실행
 # -------------------------
-N = 100_000
+N = 10000
 counter = Counter()
 
 results = {key: [] for key in priority_order}

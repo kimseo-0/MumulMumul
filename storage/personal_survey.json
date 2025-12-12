@@ -36,6 +36,7 @@
       "color": "peach"
     }
   },
+
   "questions": [
     {
       "id": "Q1",
@@ -44,11 +45,11 @@
       "choices": [
         {
           "label": "그렇다",
-          "personaWeights": { "pillar": 1, "doer": 1 }
+          "personaWeights": { "analyst": 1, "pillar": 1 }
         },
         {
           "label": "아니다",
-          "personaWeights": { "analyst": 1, "balancer": 1 }
+          "personaWeights": { "doer": 1, "supporter": 1 }
         }
       ]
     },
@@ -59,11 +60,11 @@
       "choices": [
         {
           "label": "그렇다",
-          "personaWeights": { "analyst": 1, "balancer": 1 }
+          "personaWeights": { "supporter": 1, "doer": 1 }
         },
         {
           "label": "아니다",
-          "personaWeights": { "doer": 1, "supporter": 1 }
+          "personaWeights": { "analyst": 1, "balancer": 1 }
         }
       ]
     },
@@ -74,11 +75,11 @@
       "choices": [
         {
           "label": "그렇다",
-          "personaWeights": { "doer": 1, "analyst": 1 }
+          "personaWeights": { "pillar": 1, "analyst": 1 }
         },
         {
           "label": "아니다",
-          "personaWeights": { "supporter": 1, "pillar": 1 }
+          "personaWeights": { "supporter": 1, "balancer": 1 }
         }
       ]
     },
@@ -89,11 +90,11 @@
       "choices": [
         {
           "label": "그렇다",
-          "personaWeights": { "balancer": 1, "doer": 1 }
+          "personaWeights": { "doer": 1, "balancer": 1 }
         },
         {
           "label": "아니다",
-          "personaWeights": { "analyst": 1, "supporter": 1 }
+          "personaWeights": { "analyst": 1, "pillar": 1 }
         }
       ]
     },
@@ -104,11 +105,11 @@
       "choices": [
         {
           "label": "그렇다",
-          "personaWeights": { "supporter": 1, "doer": 1 }
+          "personaWeights": { "analyst": 1, "pillar": 1 }
         },
         {
           "label": "아니다",
-          "personaWeights": { "balancer": 1, "pillar": 1 }
+          "personaWeights": { "supporter": 1, "doer": 1 }
         }
       ]
     },
@@ -119,11 +120,11 @@
       "choices": [
         {
           "label": "그렇다",
-          "personaWeights": { "doer": 1, "supporter": 1 }
+          "personaWeights": { "supporter": 1, "balancer": 1 }
         },
         {
           "label": "아니다",
-          "personaWeights": { "analyst": 1, "pillar": 1 }
+          "personaWeights": { "pillar": 1, "doer": 1 }
         }
       ]
     },
@@ -134,11 +135,11 @@
       "choices": [
         {
           "label": "그렇다",
-          "personaWeights": { "balancer": 1, "supporter": 1 }
+          "personaWeights": { "pillar": 1, "analyst": 1 }
         },
         {
           "label": "아니다",
-          "personaWeights": { "pillar": 1, "analyst": 1 }
+          "personaWeights": { "doer": 1, "balancer": 1 }
         }
       ]
     },
@@ -149,11 +150,11 @@
       "choices": [
         {
           "label": "그렇다",
-          "personaWeights": { "analyst": 1, "supporter": 1 }
+          "personaWeights": { "supporter": 1, "balancer": 1 }
         },
         {
           "label": "아니다",
-          "personaWeights": { "balancer": 1, "doer": 1 }
+          "personaWeights": { "analyst": 1, "doer": 1 }
         }
       ]
     },
@@ -164,11 +165,11 @@
       "choices": [
         {
           "label": "그렇다",
-          "personaWeights": { "doer": 1, "analyst": 1 }
+          "personaWeights": { "pillar": 1, "analyst": 1 }
         },
         {
           "label": "아니다",
-          "personaWeights": { "pillar": 1, "balancer": 1 }
+          "personaWeights": { "supporter": 1, "balancer": 1 }
         }
       ]
     },
@@ -179,11 +180,11 @@
       "choices": [
         {
           "label": "그렇다",
-          "personaWeights": { "analyst": 1, "balancer": 1 }
+          "personaWeights": { "supporter": 1, "doer": 1 }
         },
         {
           "label": "아니다",
-          "personaWeights": { "supporter": 1, "pillar": 1 }
+          "personaWeights": { "analyst": 1, "pillar": 1 }
         }
       ]
     }
@@ -215,33 +216,5 @@
       "advice": "피드백 시 논리 외에 감정적인 지지도 필요함을 인식해 언어를 선택하세요.",
       "team_role": "명확한 목표와 규칙을 제시하고 프로젝트의 기술적 완성도를 관리합니다."
     }
-  },
-
-  "mapping_rules": [
-    {
-      "score_min": 27,
-      "score_max": 30,
-      "character": "analyst"
-    },
-    {
-      "score_min": 23,
-      "score_max": 26,
-      "character": "pillar"
-    },
-    {
-      "score_min": 19,
-      "score_max": 22,
-      "character": "balancer"
-    },
-    {
-      "score_min": 15,
-      "score_max": 18,
-      "character": "supporter"
-    },
-    {
-      "score_min": 10,
-      "score_max": 14,
-      "character": "doer"
-    }
-  ]
+  }
 }
