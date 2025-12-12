@@ -1,10 +1,23 @@
 # app/api/learning_quiz.py
+import sys
+from pathlib import Path
+
+CURRENT_FILE = Path(__file__).resolve()
+ROOT_DIR = CURRENT_FILE.parents[2]   # .../MumulMumul
+sys.path.append(str(ROOT_DIR))
 
 from typing import Union
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
+from requests import Session
+from app.config import WEEK_INDEX
+from app.core.db import get_db
+from app.core.mongodb import CurriculumReport
+from app.services.db_service.camp import get_camp_by_user_id
+from app.services.db_service.curriculum_reports import fetch_curriculum_report
 from app.services.learning_quiz.service import create_quiz
 from app.services.learning_quiz.schemas import LearningQuizRequest, LearningQuizResponse, LearningQuizErrorResponse
 from app.core.logger import setup_logger
+from streamlit_app.api.curriculum import create_curriculum_report
 
 router = APIRouter()
 logger = setup_logger(__name__)
@@ -12,22 +25,25 @@ logger = setup_logger(__name__)
 
 @router.post(
     "/generate",
-    response_model=Union[LearningQuizResponse, LearningQuizErrorResponse],
-    responses={400: {"description": "학습 무관 또는 잘못된 요청"}}
+    response_model=Union[LearningQuizResponse, LearningQuizErrorResponse]
 )
-def create_learning_quiz(payload: LearningQuizRequest):
+def create_learning_quiz(payload: LearningQuizRequest, db: Session = Depends(get_db)):
     """
     학습 퀴즈 생성 API
-    - 학습 관련 여부 판단
-    - vectorstore 검색
     - OX 퀴즈 5개 생성
     """
 
-    question = "Pandas와 DataFrame에 대한 문제를 만들어줘" # TODO : 김서영이 만든 커리큘럼 리포트 기반 학습 퀴즈 제작 질문 함수로 교체 예정
     grade = payload.grade
+    user_id = payload.userId
+    camp_id = get_camp_by_user_id(db, user_id).camp_id
+    week_index = WEEK_INDEX
 
     try:
-        result = create_quiz(question, grade)
+        curriculum_report: CurriculumReport = fetch_curriculum_report(camp_id, week_index)
+        if not curriculum_report:
+            curriculum_report: CurriculumReport = create_curriculum_report(db, None, camp_id, week_index)
+        context = curriculum_report['ai_insights']['hardest_part_summary']
+        result = create_quiz(context, grade)
         return result
 
     except ValueError as e:
@@ -57,3 +73,16 @@ def create_learning_quiz(payload: LearningQuizRequest):
             raise HTTPException(status_code=500, detail="Internal Server Error")
 
 
+if __name__ == "__main__":
+    grade = "초급"
+    user_id = 208
+    db: Session = next(get_db())
+    camp_id = get_camp_by_user_id(db, user_id).camp_id
+    week_index = WEEK_INDEX
+
+    curriculum_report: CurriculumReport = fetch_curriculum_report(camp_id, week_index)
+    if not curriculum_report:
+        curriculum_report: CurriculumReport = create_curriculum_report(db, None, camp_id, week_index)
+    context = curriculum_report['ai_insights']['hardest_part_summary']
+    result = create_quiz(context, grade)
+    print(result)

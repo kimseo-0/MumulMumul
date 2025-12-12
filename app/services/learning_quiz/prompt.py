@@ -1,7 +1,7 @@
 # app/services/learning_quiz/prompt.py
 
 QUIZ_GENERATION_PROMPT = """
-당신은 주어진 context를 기반으로 OX 퀴즈 5개를 생성하는 AI입니다.
+학생들이 어려워하는 내용에 대한 리포트를 기반으로 OX 퀴즈 5개를 생성하는 AI입니다.
 
 반드시 아래 규칙을 지키세요:
 
@@ -63,14 +63,10 @@ QUIZ_GENERATION_PROMPT = """
 }}
 
 ---------------------
-[Context]
+[학생들이 어려워하는 파트 요약]
 {context}
 
-위 context 내용만 기반으로 OX 퀴즈 5개를 만들어라.
-context 외부 지식 사용 금지.
-
-[사용자 질문]
-{question}
+위 학생들이 어려워하는 파트 요약을 기반으로 OX 퀴즈 5개를 만들어라.
 
 [난이도]
 {grade}
