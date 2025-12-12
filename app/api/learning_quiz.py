@@ -2,7 +2,7 @@
 
 from typing import Union
 from fastapi import APIRouter, HTTPException
-from app.services.learning_quiz.service import LearningQuizService
+from app.services.learning_quiz.service import create_quiz
 from app.services.learning_quiz.schemas import LearningQuizRequest, LearningQuizResponse, LearningQuizErrorResponse
 from app.core.logger import setup_logger
 
@@ -23,11 +23,11 @@ def create_learning_quiz(payload: LearningQuizRequest):
     - OX 퀴즈 5개 생성
     """
 
-    question = payload.question
+    question = "Pandas와 DataFrame에 대한 문제를 만들어줘" # TODO : 김서영이 만든 커리큘럼 리포트 기반 학습 퀴즈 제작 질문 함수로 교체 예정
     grade = payload.grade
 
     try:
-        result = LearningQuizService.create_quiz(question, grade)
+        result = create_quiz(question, grade)
         return result
 
     except ValueError as e:
