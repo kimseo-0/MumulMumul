@@ -340,37 +340,40 @@ register_mongo_model(
 # 3-5. Feedback Board 모델 정의
 # =====================================
 
-FeedbackCategory = Literal["concern", "suggestion", "other"]
-RiskLevel = Literal["low", "medium", "high"]
-
-
-class AnalysisBlock(BaseModel):
-    """LLM 기반 분석 결과"""
-    normalized_text: str = ""
-    category: FeedbackCategory = "other"      # 고민/건의/기타
-    topic_tags: List[str] = []                # NLP 토픽 태그
-    sentiment: Optional[str] = None           # "positive/negative/neutral" 정도
-    importance_score: float = 0.0             # 0~10 우선순위 스코어(LLM가 생성하게)
-
-
-class ModerationBlock(BaseModel):
-    """욕설/실명/위험도 분석 결과"""
-    is_toxic: bool = False
-    has_realname: bool = False
-    risk_level: RiskLevel = "low"
-    moderation_note: Optional[str] = None     # 왜 위험한지 한 줄 메모
-
 class FeedbackBoardPost(BaseModel):
     id: str = Field(None, alias="_id", auto_generated=True)
     camp_id: int
     author_id: Optional[int] = None
 
     raw_text: str
-
-    analysis: Optional[AnalysisBlock] = AnalysisBlock()
-    moderation: Optional[ModerationBlock] = ModerationBlock()
-
     created_at: datetime = Field(default_factory=datetime.utcnow)
+
+    # --------- 2) 필터링 결과 ---------
+    clean_text: Optional[str] = None
+    is_active: Optional[bool] = True
+    inactive_reasons: Optional[list[str]] = None  # ["meaningless", "near_duplicate", ...]
+    duplicate_group_id: Optional[str] = None
+    is_group_representative: Optional[bool] = None
+
+    # --------- 3) 분류 결과 ---------
+    category: Optional[str] = None          # 프론트의 category
+    sub_category: Optional[str] = None      # 프론트의 sub_cluster
+    post_type: Literal["고민", "건의", "기타"] = None         # "고민" | "건의" | "기타"
+
+    # --------- 4) 위험도 ---------
+    is_toxic: Optional[bool] = None
+    toxicity_score: Optional[float] = None
+    severity: Literal["low", "medium", "high"] = None          # "low" | "medium" | "high"
+    sentiment: Optional[str] = None         # (선택) "negative" | ...
+
+    # --------- 5) 요약/키워드 ---------
+    summary: Optional[str] = None           # 한 줄 요약
+    keywords: Optional[list[str]] = None    # 워드클라우드용
+
+    # --------- 6) 분석 메타 ---------
+    analyzed_at: Optional[datetime] = None
+    analyzer_version: Optional[str] = None
+
 
 # Mongo 레지스트리에 등록
 register_mongo_model(
@@ -383,7 +386,39 @@ register_mongo_model(
 )
 
 # =====================================
-# 3-6. 출결 리포트 모델 정의
+# 3-6. Feedback Report 모델 정의
+# =====================================
+class KeyTopic(BaseModel):
+    category: str
+    count: int
+    summary: str
+    texts: list[str]   # 관련 원문 일부
+
+class OpsAction(BaseModel):
+    title: str
+    target: str
+    reason: str
+    todo: str
+    horizon: str       # "immediate" | "short" | "long" | "impossible"
+
+class FeedbackWeeklyReport(BaseModel):
+    camp_id: int
+    week: int
+    start_date: datetime
+    end_date: datetime
+
+    total_posts: int
+    active_posts: int
+    toxic_posts: int
+    high_risk_posts: int
+
+    week_summary: str             # 이번 주 전체 요약
+    key_topics: list[KeyTopic]    # Top3
+    ops_actions: list[OpsAction]  # 운영 개입 가이드 리스트
+
+
+# =====================================
+# 3-7. 출결 리포트 모델 정의
 # =====================================
 class AttendanceSummary(BaseModel):
     attendance_rate: float

@@ -25,21 +25,18 @@ def add_feedback_post(db: Session, user_id: int, raw_text: str) -> FeedbackBoard
     new_post.id = result.inserted_id
     return new_post
 
-# moderation 및 analysis 필드 업데이트 함수 등 추가 가능
-def update_feedback_post_analysis(
-    post_id: str,
-    analysis: dict,
-    moderation: dict,
-) -> None:
+# 일정 기간의 피드백 게시글을 가져오는 함수
+def get_feedback_posts_by_date_range(camp_id: id, start_date: datetime, end_date: datetime) -> list[FeedbackBoardPost]:
     """
-    특정 피드백 게시글의 분석 및 검열 결과를 업데이트합니다.
+    특정 캠프의 지정된 날짜 범위 내의 피드백 게시글을 MongoDB에서 조회합니다.
     """
-    feedback_col.update_one(
-        {"_id": post_id},
-        {
-            "$set": {
-                "analysis": analysis,
-                "moderation": moderation,
-            }
+    query = {
+        "camp_id": camp_id,
+        "created_at": {
+            "$gte": start_date,
+            "$lte": end_date
         }
-    )
+    }
+    posts_cursor = feedback_col.find(query)
+    posts = [FeedbackBoardPost(**post) for post in posts_cursor]
+    return posts
