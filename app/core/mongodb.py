@@ -360,9 +360,7 @@ class ModerationBlock(BaseModel):
     risk_level: RiskLevel = "low"
     moderation_note: Optional[str] = None     # 왜 위험한지 한 줄 메모
 
-
 class FeedbackBoardPost(BaseModel):
-    """Mongo 도큐먼트 1건에 해당하는 구조"""
     id: str = Field(None, alias="_id", auto_generated=True)
     camp_id: int
     author_id: Optional[int] = None
