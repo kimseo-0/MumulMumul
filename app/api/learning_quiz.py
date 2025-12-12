@@ -48,7 +48,7 @@ def create_learning_quiz(payload: LearningQuizRequest, db: Session = Depends(get
 
     except ValueError as e:
 
-        # 1️⃣ grade 잘못된 경우
+        # grade 잘못된 경우
         if str(e) == "INVALID_GRADE":
             raise HTTPException(
                 status_code=400,
@@ -58,17 +58,7 @@ def create_learning_quiz(payload: LearningQuizRequest, db: Session = Depends(get
                 }
             )
 
-        # 2️⃣ 학습 무관 질문일 경우
-        elif str(e) == "NOT_LEARNING_RELATED":
-            return {
-                "isLearningQuestion": False,
-                "detail": {
-                    "errorCode": "NOT_LEARNING_RELATED",
-                    "message": "학습 퀴즈와 관련 없는 질문입니다. 학습 관련 질문을 입력해주세요."
-                }
-            }
-
-        # 3️⃣ 나머지는 서버 오류
+        # 서버 오류
         else:
             raise HTTPException(status_code=500, detail="Internal Server Error")
 
