@@ -22,7 +22,7 @@ class LearningQuizResponse(BaseModel):
 
 
 class LearningQuizRequest(BaseModel):
-    question: str
+    userId: int
     grade: str
 
 
