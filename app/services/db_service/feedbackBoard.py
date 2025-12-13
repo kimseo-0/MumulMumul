@@ -1,11 +1,13 @@
-
+# app/services/db_service/feedbackBoard.py
 from datetime import datetime
 
 from requests import Session
-from app.core.mongodb import FeedbackBoardPost, mongo_db
+from app.core.mongodb import mongo_db
 
 from app.core.schemas import Camp
 from app.services.db_service.camp import get_camp_by_user_id
+
+from app.services.feedbackBoard.schemas import FeedbackBoardPost
 
 feedback_col = mongo_db["feedback_board_posts"]
 
