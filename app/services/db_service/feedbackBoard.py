@@ -24,7 +24,7 @@ def add_feedback_post(db: Session, user_id: int, raw_text: str) -> FeedbackBoard
         created_at=datetime.utcnow(),
     )
     result = feedback_col.insert_one(new_post.model_dump())
-    new_post.id = result.inserted_id
+    new_post.post_id = result.inserted_id
     return new_post
 
 # 일정 기간의 피드백 게시글을 가져오는 함수
