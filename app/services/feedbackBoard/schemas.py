@@ -43,7 +43,7 @@ class FeedbackBoardInsight(BaseModel):
     analyzer_version: Optional[str] = None
 
 class FeedbackBoardPost(BaseModel):
-    id: Optional[str] = Field(default=None, alias="_id")
+    post_id: str = Field(auto_alias=True)
     camp_id: int
     author_id: Optional[int] = None
     raw_text: str

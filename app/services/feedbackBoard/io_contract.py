@@ -237,8 +237,6 @@ class WeeklyReport(BaseModel):
             "이번 주 주요 이슈 Top 3 목록. "
             "'요청 수 + 운영 중요도 + 위험도 가중치'를 종합하여 선정한다."
         ),
-        min_items=3,
-        max_items=3,
     )
 
     ops_actions: List[OpsAction] = Field(
@@ -248,8 +246,6 @@ class WeeklyReport(BaseModel):
             "보통 Top 3 수준으로 생성되며, "
             "각 액션은 서로 다른 action_type을 가질 수 있다."
         ),
-        min_items=3,
-        max_items=3,
     )
 
 

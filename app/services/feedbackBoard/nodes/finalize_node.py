@@ -189,7 +189,7 @@ def finalize_node(state: FeedbackBoardState) -> FeedbackBoardState:
     # source_post_ids (대표/active만 저장 권장)
     source_post_ids = []
     for post in filtered_posts:
-        source_post_ids.append(str(post.id))
+        source_post_ids.append(str(post.post_id))
 
     report = FeedbackWeeklyReport(
         camp_id=camp_id,
@@ -264,7 +264,7 @@ if __name__ == "__main__":
     # 3) posts 더미(대표/active만 프론트 rows로 나가도록 구성)
     state.posts = [
         FeedbackBoardPost(
-            id="p1",
+            post_id="p1",
             camp_id=1,
             author_id=101,
             raw_text="팀 역할이 애매해서 제가 혼자 맡는 일이 많은 것 같아요.",
@@ -286,7 +286,7 @@ if __name__ == "__main__":
             ),
         ),
         FeedbackBoardPost(
-            id="p2",
+            post_id="p2",
             camp_id=1,
             author_id=101,
             raw_text="(중복) 팀 역할이 애매해서...",
@@ -310,7 +310,7 @@ if __name__ == "__main__":
             ),
         ),
         FeedbackBoardPost(
-            id="p3",
+            post_id="p3",
             camp_id=1,
             author_id=102,
             raw_text="팀장님이 의견을 잘 안 듣고 자기 스타일대로만 정해서 답답합니다.",
@@ -333,7 +333,7 @@ if __name__ == "__main__":
             ),
         ),
         FeedbackBoardPost(
-            id="p4",
+            post_id="p4",
             camp_id=1,
             author_id=103,
             raw_text="ㅋㅋㅋㅋ",
@@ -449,5 +449,7 @@ if __name__ == "__main__":
 
     # wordcloud_keywords는 리스트만 전달(이미지 없음)
     assert isinstance(out.final.wordcloud_keywords, list), "wordcloud_keywords는 list여야 함"
+
+    print(out.final)
 
     print("✅ finalize_node test passed")
