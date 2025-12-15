@@ -11,7 +11,7 @@ def build_feedback_report(
 ) -> dict:
     """
     1) 기간 내 FeedbackBoardPost 로드
-    2) 아직 분석 안 된 글이면 → 일괄 분석 (필터링/분류/위험도/요약/키워드)
+    2) 아직 분석 안 된 글이면 → 일괄 분석 (필터링/의미 분리/분류/위험도/요약/키워드)
     3) 주간 기준으로 aggregate 해서
        - logs
        - week_summary_by_camp_week
