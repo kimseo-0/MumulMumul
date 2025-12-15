@@ -53,7 +53,7 @@ class Settings(BaseSettings):
     MAX_WORKERS: int = 2
 
     # Timezone
-    TIMEZONE: pytz.BaseTzInfo = pytz.timezone("Asia/Seoul")
+    TIMEZONE: pytz.BaseTzInfo = pytz.timezone("UTC")
     
     # class Config:
     #     env_file = ".env"
