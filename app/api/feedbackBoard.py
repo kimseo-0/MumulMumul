@@ -5,7 +5,7 @@ from typing import List
 
 from requests import Session
 from app.core.db import get_db
-from app.core.mongodb import FeedbackBoardPost
+from app.services.feedbackBoard.schemas import FeedbackBoardPost
 from app.services.db_service.feedbackBoard import add_feedback_post
 
 router = APIRouter()
