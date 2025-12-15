@@ -210,9 +210,34 @@ class RAGPipelineService:
             )
         
         # 겹침 정보 변환
-        overlap_infos = [
-            OverlapInfo(**overlap) for overlap in merged_data["overlaps"]
-        ]
+        overlap_infos = []
+        overlaps = merged_data["overlaps"]
+
+        # voice_voice 겹침 처리
+        for overlap in overlaps.get("voice_voice", []):
+            overlap_infos.append(
+                OverlapInfo(
+                    overlap_type="voice_voice",
+                    **overlap
+                )
+            )
+
+        # voice_chat 겹침 처리
+        for overlap in overlaps.get("voice_chat", []):
+            # voice_chat은 필드명이 다르므로 매핑
+            overlap_infos.append(
+                OverlapInfo(
+                    overlap_type = "voice_chat",
+                    voice_segment_id = overlap["voice_segment_id"],
+                    chat_segment_id = overlap["chat_segment_id"],
+                    speaker1 = overlap["voice_speaker"],
+                    speaker2 = overlap["chat_speaker"],
+                    chat_timestamp_ms = overlap["chat_timestamp_ms"],
+                    voice_start_ms = overlap["voice_start_ms"],
+                    voice_end_ms = overlap["voice_end_ms"],
+                    overlap_start_ms = overlap["chat_timestamp_ms"]
+                )
+            )
         
         return MeetingTranscript(
             meeting_id=meeting_id,

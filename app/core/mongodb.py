@@ -260,13 +260,25 @@ class MeetingSegment(BaseModel):
 
 class OverlapInfo(BaseModel):
     """겹침 구간 정보"""
-    segment1_id: str
-    segment2_id: str
+    overlap_type: Literal["voice_voice", "voice_chat"]
+
+    # 공통 필드
     speaker1: str
     speaker2: str
-    overlap_duration_ms: int
     overlap_start_ms: int
-    overlap_end_ms: int
+
+    # voice_voice 전용
+    segment1_id: Optional[str] = None
+    segment2_id: Optional[str] = None
+    overlap_duration_ms: Optional[int] = None
+    overlap_end_ms: Optional[int] = None
+
+    # voice_chat 전용
+    voice_segment_id: Optional[str] = None
+    chat_segment_id: Optional[str] = None
+    chat_timestamp_ms: Optional[int] = None
+    voice_start_ms: Optional[int] = None
+    voice_end_ms: Optional[int] = None
 
 
 class MeetingTranscript(BaseModel):

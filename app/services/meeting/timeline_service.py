@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
 from app.core.schemas import STTSegment, User, Meeting
 from app.core.logger import setup_logger
+from app.services.meeting.overlap_handler import OverlapHandler
 from typing import List, Dict
 from collections import defaultdict
 import os
@@ -10,8 +11,6 @@ logger = setup_logger(__name__)
 
 class TimelineService:
     """타임라인 병합 및 정리 서비스"""
-
-    OVERLAP_THRESHOLD_MS = 1000     # 1초이내 겹침은 동시 발화로 간주
 
     # 모든 사용자의 segment를 시간순으로 병합
     @staticmethod
@@ -111,14 +110,28 @@ class TimelineService:
             f"(음성 {len(voice_segments)} + 채팅 {len(chat_segments)})"
         )
 
-        # 4. 겹침 구간 감지 (음성끼리만)
-        overlaps = TimelineService._detect_overlaps(voice_segments)
-        if overlaps:
-            logger.info(f"감지된 겹침 구간 : {len(overlaps)}개")
+        # 4. 겹침 구간 감지 (음성-음성, 음성-채팅)
+        overlaps = OverlapHandler.detect_all_overlaps(all_segments)
+
+        logger.info(
+            f"겹침 감지\n"
+            f"  음성-음성: {len(overlaps['voice_voice'])}개\n"
+            f"  음성-채팅: {len(overlaps['voice_chat'])}개"
+        )
+
+        if overlaps["voice_voice"] or overlaps["voice_chat"]:
+            all_segments = OverlapHandler.process_overlaps(
+                all_segments,
+                overlaps
+            )
+
+            # 다시 정렬
+            all_segments.sort(key = lambda x: x["start_time_ms"])
+
+            logger.info(f"겹침 처리 완료: {len(all_segments)}개 segment")
 
         # 5. 전체 텍스트 생성 (음성 + 채팅)
-        full_text = TimelineService._generate_full_text(all_segments)
-        logger.info(f"전체 텍스트 : {full_text}")
+        full_text = OverlapHandler.format_overlapping_text(all_segments)
 
         # 6. 화자 통계 (음성 + 채팅)
         speakers = TimelineService._calculate_speaker_stats(all_segments)

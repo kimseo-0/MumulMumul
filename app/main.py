@@ -11,6 +11,7 @@ from app.core.db import engine
 from app.core import schemas
 from app.config import settings
 from app.services.meeting.audio_processor import AudioProcessor
+from app.services.meeting.audio_denoiser import AudioDenoiser
 from app.services.meeting.embedding_service import EmbeddingService
 from app.api.curriculum import router as curriculum_router
 from app.api.user import router as user_router
@@ -45,6 +46,11 @@ def create_app() -> FastAPI:
         )
         print("Whisper model ready!")
 
+        # AudioDenoiser 초기화
+        print("AudioDenoiser 초기화 중...")
+        AudioDenoiser.initialize()
+        print("AudioDenoiser 초기화 완료")
+
         # Embedding 모델 초기화
         EmbeddingService.get_instance()
         print("All services initialized")
@@ -52,6 +58,7 @@ def create_app() -> FastAPI:
         yield
 
         AudioProcessor.shutdown()
+        AudioDenoiser.shutdown()
         print("Application Shutdown Complete")
 
     app = FastAPI(title="Mumul Mumul Api", version="0.1.0", lifespan=lifespan)
