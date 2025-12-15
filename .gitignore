@@ -4,3 +4,6 @@ __pycache__/
 
 # 음성 chunk 파일
 storage/meetings/
+
+# vector DB
+storage/vectorstore
