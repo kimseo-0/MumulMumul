@@ -66,64 +66,37 @@ def _build_weekly_stats(state: FeedbackBoardState) -> WeeklyStats:
     wc = state.weekly_context
     posts = state.posts
 
-    # wc.risk 정보가 있으면 그것을 우선 사용
-    if wc and wc.risk:
-        total = wc.risk.total
-        toxic = wc.risk.toxic_count
-        ratio = (toxic / total) if total else 0.0
+    # wc.risk 가 없으면 에러
+    if wc is None or wc.risk is None:
+        raise ValueError("weekly_context.risk is required to build WeeklyStats")
 
-        # active_posts는 "is_active True" 기준
-        active_posts = sum(1 for p in posts if (p.ai_analysis is None or p.ai_analysis.is_active))
-
-        # category/sub_category 집계는 weekly_context.categories로부터 만들기
-        category_count: Dict[str, int] = {}
-        sub_category_count: Dict[str, int] = {}
-        for cat in (wc.categories or []):
-            category_count[cat.category] = cat.count
-            for sub in (cat.sub_items or []):
-                sub_category_count[f"{cat.category}::{sub.sub_category}"] = sub.count
-
-        return WeeklyStats(
-            total_posts=total,
-            active_posts=active_posts,
-            toxic_posts=toxic,
-            toxic_ratio=ratio,
-            danger_count=wc.risk.danger_count,
-            warning_count=wc.risk.warning_count,
-            normal_count=wc.risk.normal_count,
-            severity_count=wc.risk.severity_count,
-            category_count=category_count,
-            sub_category_count=sub_category_count,
-            action_type_count=wc.action_type_count or {},
-        )
-
-    # 없으면 posts를 직접 집계
-    active = [p for p in posts if (p.ai_analysis is None or p.ai_analysis.is_active)]
-    total = len(active)
-    toxic = sum(1 for p in active if (p.ai_analysis and p.ai_analysis.is_toxic))
+    total = wc.risk.total
+    toxic = wc.risk.toxic_count
     ratio = (toxic / total) if total else 0.0
 
-    sev_count = {"low": 0, "medium": 0, "high": 0}
-    for p in active:
-        if p.ai_analysis and p.ai_analysis.severity:
-            sev_count[p.ai_analysis.severity] += 1
+    # active_posts는 "is_active True" 기준
+    active_posts = sum(1 for p in posts if (p.ai_analysis is None or p.ai_analysis.is_active))
 
-    danger = sum(1 for p in active if (p.ai_analysis and (p.ai_analysis.is_toxic or p.ai_analysis.severity == "high")))
-    warning = sum(1 for p in active if (p.ai_analysis and (p.ai_analysis.severity == "medium" and not p.ai_analysis.is_toxic)))
-    normal = max(total - danger - warning, 0)
+    # category/sub_category 집계는 weekly_context.categories로부터 만들기
+    category_count: Dict[str, int] = {}
+    sub_category_count: Dict[str, int] = {}
+    for cat in (wc.categories or []):
+        category_count[cat.category] = cat.count
+        for sub in (cat.sub_items or []):
+            sub_category_count[f"{cat.category}::{sub.sub_category}"] = sub.count
 
     return WeeklyStats(
         total_posts=total,
-        active_posts=total,
+        active_posts=active_posts,
         toxic_posts=toxic,
         toxic_ratio=ratio,
-        danger_count=danger,
-        warning_count=warning,
-        normal_count=normal,
-        severity_count=sev_count,
-        category_count={},
-        sub_category_count={},
-        action_type_count={},
+        danger_count=wc.risk.danger_count,
+        warning_count=wc.risk.warning_count,
+        normal_count=wc.risk.normal_count,
+        severity_count=wc.risk.severity_count,
+        category_count=category_count,
+        sub_category_count=sub_category_count,
+        action_type_count=wc.action_type_count or {},
     )
 
 
@@ -157,19 +130,19 @@ def finalize_node(state: FeedbackBoardState) -> FeedbackBoardState:
     for r in rows:
         r["week"] = week
 
-    # 2) stats / wordcloud_keywords
+    # 2) stats
     stats_model = _build_weekly_stats(state)
+
+    # 워드클라우드 키워드 집계
     wc_keywords: List[str] = []
     
     # 워드클라우드 키워드 집계
-    # 대표 게시글의 ai_analysis.keywords 는 
-    # kiwi 한글 형태소 분석기로 명사, 동사 등 주요 단어를 추출한 것
     for post in filtered_posts:
         if post.ai_analysis and post.ai_analysis.keywords:
             # 하나의 포스트내에서 중복 제거
             wc_keywords.extend(list(set(post.ai_analysis.keywords)))
 
-    # 3) FinalizePayload 생성
+    # FinalizePayload 생성
     final = FinalizePayload(
         logs=rows,
         week_summary=state.weekly_report.week_summary,
@@ -180,11 +153,9 @@ def finalize_node(state: FeedbackBoardState) -> FeedbackBoardState:
     )
     state.final = final
 
-    # 4) DB 저장용 FeedbackWeeklyReport 생성
-    # key_topics / ops_actions 변환
+    # DB 저장용 FeedbackWeeklyReport 생성
     db_key_topics: List[WeeklyKeyTopic] = []
     for key_topic in state.weekly_report.key_topics:
-        # texts는 excerpt 취급 (원문 대신)
         db_key_topics.append(
             WeeklyKeyTopic(
                 category=key_topic.category,
@@ -236,7 +207,7 @@ def finalize_node(state: FeedbackBoardState) -> FeedbackBoardState:
         context_snapshot=snapshot,
     )
 
-    # 5) DB upsert 저장
+    # DB upsert 저장
     try:
         saved = upsert_weekly_report(report)
         # 필요하면 state.warnings에 저장 결과를 남겨도 됨
