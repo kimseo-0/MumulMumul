@@ -6,4 +6,4 @@ __pycache__/
 storage/meetings/
 
 # vector DB
-storage/vectorstore
+storage/vectorstore/
