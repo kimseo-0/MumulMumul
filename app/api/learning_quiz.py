@@ -43,7 +43,7 @@ def create_learning_quiz(payload: LearningQuizRequest, db: Session = Depends(get
         if not curriculum_report:
             # 로그는 항상 한글로
             logger.info(f"[커리큘럼 리포트 없음] camp_id: {camp_id}, week_index: {week_index} - 새로운 커리큘럼 리포트 생성 시도")
-            curriculum_report: CurriculumReport = create_curriculum_report(db, None, camp_id, week_index)
+            curriculum_report: CurriculumReport = create_curriculum_report(camp_id, week_index)
         context = curriculum_report['ai_insights']['hardest_part_summary']
         logger.info(f"[커리큘럼 리포트 기반 컨텍스트 획득] camp_id: {camp_id}, week_index: {week_index}")
         result = create_quiz(context, grade)
@@ -76,7 +76,7 @@ if __name__ == "__main__":
 
     curriculum_report: CurriculumReport = fetch_curriculum_report(camp_id, week_index)
     if not curriculum_report:
-        curriculum_report: CurriculumReport = create_curriculum_report(db, None, camp_id, week_index)
+        curriculum_report: CurriculumReport = create_curriculum_report(camp_id, week_index)
     context = curriculum_report['ai_insights']['hardest_part_summary']
     result = create_quiz(context, grade)
     print(result)
