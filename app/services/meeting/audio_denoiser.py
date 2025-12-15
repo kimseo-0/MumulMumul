@@ -11,10 +11,20 @@ logger = setup_logger(__name__)
 class AudioDenoiser:
     """음성 잡음 제거 서비스 (noisereduce)"""
 
+    _instance = None
+
     @classmethod
     def initialize(cls):
         """초기화 (noisereduce는 초기화 불필요)"""
+        if cls._instance is None:
+            cls._instance = cls()
         logger.info("AudioDenoiser 초기화 완료 (noisereduce)")
+
+    @classmethod
+    def get_instance(cls):
+        if cls._instance is None:
+            cls.initialize()
+        return cls._instance
 
     @classmethod
     def denoise_audio(

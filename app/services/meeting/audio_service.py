@@ -28,6 +28,7 @@ class AudioService:
     
     def __init__(self):
         self.audio_processor = AudioProcessor()
+        self.denoiser = AudioDenoiser.get_instance()
         # self.user_cumulative_times = {}
 
 
@@ -251,7 +252,7 @@ class AudioService:
         )
 
         # 잡음 제거 (noisereduce)
-        if settings.ENABLE_DENOISING:
+        if settings.ENABLE_DENOISING and self.denoiser:
             try:
                 denoised_path = self.denoiser.denoise_audio(chunk_path)
                 logger.info(f"  잡음 제거 완료")
