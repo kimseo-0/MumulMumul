@@ -40,5 +40,16 @@ def get_feedback_posts_by_date_range(camp_id: id, start_date: datetime, end_date
         }
     }
     posts_cursor = feedback_col.find(query)
-    posts = [FeedbackBoardPost(**post) for post in posts_cursor]
+    print(posts_cursor)
+    posts = []
+    for post in posts_cursor:
+        print(post)
+        posts.append(FeedbackBoardPost(
+            post_id=str(post.get("_id")),
+            camp_id=post.get("camp_id"),
+            author_id=post.get("author_id"),
+            raw_text=post.get("content"),
+            created_at=post.get("created_at"),
+            ai_analysis=post.get("ai_analysis"),
+        ))
     return posts
