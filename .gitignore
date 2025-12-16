@@ -9,4 +9,4 @@ storage/mumul.db
 storage/meetings/
 
 # 벡터 스토어
-storage/vector_store/
+storage/vectorstore/
