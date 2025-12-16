@@ -41,6 +41,21 @@ def topic_cluster_node(state: FeedbackBoardState, embed_fn) -> FeedbackBoardStat
         return state
 
     # ---- 2) HDBSCAN 클러스터링 ----
+    n = len(active_posts)
+    print(n)
+    if n < 2:
+        # 클러스터링 불가 → 전부 noise 취급(혹은 단일 이슈로 처리)
+        template = state.input.config.category_template or []
+        cat = template[0] if template else "기타"
+
+        for post in active_posts:
+            post.ai_analysis.category = cat
+            post.ai_analysis.sub_category = "기타"
+
+        state.warnings.append(f"topic_cluster_node: not enough posts to cluster (n={n})")
+        state.posts = posts
+        return state
+    
     try:
         import hdbscan  # pip install hdbscan
     except Exception as e:
